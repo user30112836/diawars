@@ -1,0 +1,33 @@
+Bugs:
+- GUI does not update correctly
+- Border does not align correctly
+
+Features:
+- pvpStatusToggle
+    -> Making the delay for pvpStatusToggle configurable
+    -> Editing the pvpStatusToggle messages
+- DiamondScoreboard
+    -> Making the sidebar togglable
+    -> Making the components of the sidebar configurable
+- Additional Dimensions Events
+- GUI
+    -> Better Buttons for backward and forward
+    -> Integrating the particle density and amount settings
+- Glow for diamonds in inventory
+
+Admin Command:
+- pvpStatusToggle
+    -> Instant toggle of pvpStatus
+    -> Toggle of pvpStatus for other players
+    -> Toggle of pvpStatus for all players
+- Setting for limits
+    -> Setting the diamond limit
+    -> Setting bonus diamond amount
+- Inspecting inv of players
+- Editing player teams
+
+Test in multiplayer:
+- Bonus Diamonds on Kills
+- Friendly Mode
+- Diamond Scoreboard
+

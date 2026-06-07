@@ -1,0 +1,33 @@
+name: Diawars
+version: '1.0'
+main: de.davidsw.diawars.Diawars
+api-version: '1.21'
+author: DavidSW
+
+depend: [NBTAPI]
+
+commands:
+  teamzones:
+    description: Hauptbefehl des Plugins
+    usage: /<command> <reload|info|border>
+    permission: diawars.use
+  pvp:
+    description: Schaltet PvP an oder aus (5 Minuten Wartezeit)
+    usage: /<command> (<status|cancel|toggle>)
+    permission: diawars.use
+  scores:
+    description: Anzeige des Punktestands
+    usage: /<command>
+    permission: diawars.use
+  menu:
+    description: Hauptmenü des Plugins
+    usage: /<command>
+    permission: diawars.use
+
+permissions:
+  diawars.use:
+    description: Standardberechtigung für gewöhnliche Spieler
+    default: true
+  diawars.admin:
+    description: Erlaubt Admin-Befehle
+    default: op

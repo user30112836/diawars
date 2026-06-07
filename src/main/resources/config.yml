@@ -1,0 +1,42 @@
+# TeamZones Plugin Konfiguration
+#
+# Die Welt wird bei X=0 geteilt:
+# - Team A: negative X-Koordinaten (X > 0)
+# - Team B: positive X-Koordinaten (X < 0)
+
+border:
+  enabled: true
+  render-distance: 32
+  particle-type: "REDSTONE" # REDSTONE, FLAME, GLOW, END_ROD
+  color: "YELLOW"
+  amount: 1
+  density:
+    horizontal: 2 # (1=dense, 8=parse)
+    vertical: 3 # (1=dense, 8=parse)
+
+teams:
+  # Team A (Westliche Zone, X > 0)
+  team-a:
+    - "Spieler1"
+    - "Spieler2"
+    - "Spieler3"
+
+  # Team B (Östliche Zone, X < 0)
+  team-b:
+    - "Spieler4"
+    - "Spieler5"
+    - "Spieler6"
+
+dia-timer:
+  yellow: 3000 # 2.5min
+  red: 1200 # 1min
+  despawn-time: 12000 # default: 6000 ticks = 5min
+
+diamond-limit: 32
+diamonds-per-kill: 2
+
+messages:
+  prefix: "&8[&6Server&8]&r "
+  enter-generic-area: "&eDu betrittst jetzt den gegnerischen Bereich!"
+  no-build-permission: "&cDu kannst hier nicht bauen oder abbauen!"
+  return-to-zone: "&aDu bist wieder in deiner Zone!"
