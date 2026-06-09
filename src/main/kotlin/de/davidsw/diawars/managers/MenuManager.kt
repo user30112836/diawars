@@ -4,25 +4,23 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MenuUtils.skullFromUrl
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
 import org.bukkit.Material
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
-import org.bukkit.inventory.ItemFlag
-import org.bukkit.inventory.ItemStack
 import java.util.UUID
 
 class MenuManager(private val plugin: Diawars) {
     private var taskId = mutableMapOf<UUID, Int>()
     private var position = mutableMapOf<UUID, Int>()
     private val history = mutableMapOf<UUID, MutableList<String>>()
+    private val menuInvSwap = mutableMapOf<UUID, Boolean>()
     companion object {
         const val TITLE_MAIN = "§aDiawars"
         const val TITLE_BORDER = "§aBorder-Einstellungen"
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
+        menuInvSwap[player.uniqueId] = true
         if (memorize) {
             val playerHistory: MutableList<String> = history[player.uniqueId] ?: mutableListOf()
             val playerPosition = position[player.uniqueId] ?: -1
@@ -38,6 +36,7 @@ class MenuManager(private val plugin: Diawars) {
     }
 
     fun openBorderMenu(player: Player, memorize: Boolean = true) {
+        menuInvSwap[player.uniqueId] = true
         if (memorize) {
             val playerHistory: MutableList<String> = history[player.uniqueId] ?: mutableListOf()
             val playerPosition = position[player.uniqueId] ?: -1
@@ -75,6 +74,10 @@ class MenuManager(private val plugin: Diawars) {
     }
 
     fun emptyHistory(player: Player) {
+        if (menuInvSwap[player.uniqueId] ?: false) {
+            menuInvSwap[player.uniqueId] = false
+            return
+        }
         if (!history.containsKey(player.uniqueId) || !position.containsKey(player.uniqueId)) return
         history.remove(player.uniqueId)
         position.remove(player.uniqueId)

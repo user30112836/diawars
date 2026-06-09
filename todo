@@ -1,7 +1,6 @@
 Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
-- Menu history remembers previous sessions
 - Chest explosion does not destroy ender chests
 - PvP logic is reversed
 - Can't eat in opponents territory
