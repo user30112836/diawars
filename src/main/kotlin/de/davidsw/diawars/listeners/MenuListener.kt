@@ -34,5 +34,6 @@ class MenuListener(private val plugin: Diawars): Listener {
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryClose(event: InventoryCloseEvent) {
         plugin.menuManager.stopUpdater(event.player as Player)
+        plugin.menuManager.emptyHistory(event.player as Player)
     }
 }

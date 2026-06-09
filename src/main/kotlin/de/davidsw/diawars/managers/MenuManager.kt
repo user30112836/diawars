@@ -74,6 +74,12 @@ class MenuManager(private val plugin: Diawars) {
         }
     }
 
+    fun emptyHistory(player: Player) {
+        if (!history.containsKey(player.uniqueId) || !position.containsKey(player.uniqueId)) return
+        history.remove(player.uniqueId)
+        position.remove(player.uniqueId)
+    }
+
     private fun back(player: Player) {
         val playerHistory = history[player.uniqueId] ?: return
         val playerPosition = position[player.uniqueId] ?: return
