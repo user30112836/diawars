@@ -25,7 +25,7 @@ class PvPListener(private val plugin: Diawars): Listener {
         val attackerPvPEnabled = plugin.pvpManager.isPvPEnabled(attacker.uniqueId)
         val victimPvPEnabled = plugin.pvpManager.isPvPEnabled(victim.uniqueId)
 
-        if (attackerPvPEnabled || victimPvPEnabled) {
+        if (!attackerPvPEnabled || !victimPvPEnabled) {
             event.isCancelled = true
         }
     }

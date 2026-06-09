@@ -1,12 +1,21 @@
 Bugs:
 - GUI does not update correctly
-- Border does not align correctly
+- Border does not align correctly (It's fine on default settings)
+- Menu history remembers previous sessions
+- Chest explosion does not destroy ender chests
+- PvP logic is reversed
+- Can't eat in opponents territory
+- PvP State is not permanent (Restart)
+- Exclude workbench from diamond container explosion
+- /scores throws an unspecific exception (Should show usage)
+- Border-Particles don't show up with particles on minimal or specific resource packs
 
 Features:
 - pvpStatusToggle
     -> Making the delay for pvpStatusToggle configurable
     -> Editing the pvpStatusToggle messages
 - DiamondScoreboard
+    -> Leaderboard for players
     -> Making the sidebar togglable
     -> Making the components of the sidebar configurable
 - Additional Dimensions Events
@@ -14,6 +23,12 @@ Features:
     -> Better Buttons for backward and forward
     -> Integrating the particle density and amount settings
 - Glow for diamonds in inventory
+- Diamond vaults
+    -> Multiple small areas where you can place diamonds
+    -> Only selected players from own team can place in specific vaults
+    -> All Players from the other team
+- Self-kill via command or menu
+    -> Not during fights
 
 Admin Command:
 - pvpStatusToggle
@@ -31,3 +46,5 @@ Test in multiplayer:
 - Friendly Mode
 - Diamond Scoreboard
 
+Ideas:
+- Combat logging (Lose Dias on logout during fights)
