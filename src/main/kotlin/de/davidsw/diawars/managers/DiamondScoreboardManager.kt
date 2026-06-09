@@ -34,16 +34,16 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
 
     fun update() {
         for (player in Bukkit.getOnlinePlayers()) {
-            plugin.playerDiamondStore.snapshotIfChanged(player)
+            plugin.store.playerDiamondStore.snapshotIfChanged(player)
             updateListName(player)
             updateSidebar(player)
         }
     }
 
     private fun updateListName(player: Player) {
-        val pvpEnabled = plugin.pvpManager.isPvPEnabled(player.uniqueId)
+        val pvpEnabled = plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId)
 
-        val playerDiamonds = plugin.playerDiamondStore.getStoredCount(player.uniqueId)
+        val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
         val playerColor = when (pvpEnabled) {
             true -> "§4" // dark_red
             false -> "§2" // dark_green
@@ -60,11 +60,11 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
     }
 
     private fun updateSidebar(player: Player) {
-        val playerDiamonds = plugin.playerDiamondStore.getStoredCount(player.uniqueId)
+        val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return
-        val teamDiamonds = plugin.playerDiamondStore.getTotalTeamCount(team)
+        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team)
         val opponents = team.opponent()
-        val opponentsDiamonds = plugin.playerDiamondStore.getTotalTeamCount(opponents)
+        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents)
         val ownZone = plugin.zoneManager.isInOwnZone(player)
 
         val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone)

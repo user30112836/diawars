@@ -3,61 +3,33 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.bukkit.Bukkit
-import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.entity.Player
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.math.floor
 
 class PvPManager(private val plugin: Diawars) {
-    private val pvpStatus = ConcurrentHashMap<UUID, Boolean>()
-    private val pendingToggles = ConcurrentHashMap<UUID, PendingToggle>()
-    private val actionbarTasks = ConcurrentHashMap<UUID, Int>()
+    private val store = plugin.store.pvpStatusStore
     private val toggleDelaySeconds = 300L
-
-    data class PendingToggle(
-        val targetStatus: Boolean,
-        val startTime: Int,
-        val taskId: Int,
-    )
-
-    fun isPvPEnabled(playerId: UUID): Boolean {
-        return pvpStatus.getOrDefault(playerId, true)
-    }
-
-    fun hasPendingToggle(playerId: UUID): Boolean {
-        return pendingToggles.containsKey(playerId)
-    }
-
-    fun getToggleDestination(playerId: UUID): Boolean? {
-        val pending = pendingToggles[playerId] ?: return null
-        return pending.targetStatus
-    }
-
-    fun getRemainingTime(playerId: UUID): Long {
-        val pending = pendingToggles[playerId] ?: return 0
-        val elapsed = (getCurrentTick() - pending.startTime) / 20
-        return (toggleDelaySeconds - elapsed).coerceAtLeast(0)
-    }
+    private val actionbarTasks = ConcurrentHashMap<UUID, Int>()
+    private val toggleTasks = ConcurrentHashMap<UUID, Int>()
 
     fun togglePvP(playerId: UUID): ToggleResult {
-        if (hasPendingToggle(playerId)) {
+        if (store.hasPendingToggle(playerId)) {
             return ToggleResult.ALREADY_PENDING
         }
 
-        val currentStatus = isPvPEnabled(playerId)
+        val currentStatus = store.isPvPEnabled(playerId)
         val targetStatus = !currentStatus
 
         val taskId = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
-            applyPvPStatus(playerId, targetStatus)
-            pendingToggles.remove(playerId)
+            store.applyPvPStatus(playerId, targetStatus)
         }, toggleDelaySeconds * 20L).taskId
+        toggleTasks[playerId] = taskId
 
-        pendingToggles[playerId] = PendingToggle(
-            targetStatus = targetStatus,
-            startTime = getCurrentTick(),
-            taskId = taskId,
-        )
+        store.applyToggle(playerId, targetStatus)
 
         return if (targetStatus) {
             ToggleResult.ENABLING
@@ -66,23 +38,18 @@ class PvPManager(private val plugin: Diawars) {
         }
     }
 
+    fun continueToggle(playerId: UUID, targetStatus: Boolean, delay: Int) {
+        val taskId = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            store.applyPvPStatus(playerId, targetStatus)
+        }, delay * 20L).taskId
+        toggleTasks[playerId] = taskId
+    }
+
     fun cancelToggle(playerId: UUID): Boolean {
-        val pending = pendingToggles.remove(playerId) ?: return false
-        Bukkit.getScheduler().cancelTask(pending.taskId)
+        store.removeToggle(playerId)
+        val taskId = toggleTasks.remove(playerId) ?: return false
+        Bukkit.getScheduler().cancelTask(taskId)
         return true
-    }
-
-    private fun applyPvPStatus(playerId: UUID, status: Boolean) {
-        pvpStatus[playerId] = status
-        val statusText = if (status) "aktiviert" else "deaktiviert"
-        Bukkit.getPlayer(playerId)?.sendMessage("§aDein PvP-Status wurde §e$statusText§a!")
-    }
-
-    fun cancelAllPendingToggles() {
-        pendingToggles.values.forEach { pending ->
-            Bukkit.getScheduler().cancelTask(pending.taskId)
-        }
-        pendingToggles.clear()
     }
 
     fun cleanupPlayer(playerId: UUID) {
@@ -92,17 +59,17 @@ class PvPManager(private val plugin: Diawars) {
 
     fun startActionbar(player: Player) {
         val actionBarTaskId = Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
-            if (hasPendingToggle(player.uniqueId)) {
-                val minutes = floor(getRemainingTime(player.uniqueId).toDouble() / 60).toInt()
-                val seconds = (getRemainingTime(player.uniqueId).toDouble() % 60).toInt()
+            if (store.hasPendingToggle(player.uniqueId)) {
+                val minutes = floor(store.getRemainingTime(player.uniqueId).toDouble() / 60).toInt()
+                val seconds = (store.getRemainingTime(player.uniqueId).toDouble() % 60).toInt()
                 val timeText = if (minutes != 0) "${minutes}:${if (seconds < 10) "0${seconds}" else seconds.toString()}" else seconds.toString()
-                if (pendingToggles[player.uniqueId]?.targetStatus ?: false) {
+                if (store.getToggleDestination(player.uniqueId) ?: false) {
                     player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>PvP-Aktivierung in ${timeText}</yellow>"))
                 } else {
                     player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>PvP-Deaktivierung in ${timeText}</yellow>"))
                 }
             } else {
-                if (isPvPEnabled(player.uniqueId)) {
+                if (store.isPvPEnabled(player.uniqueId)) {
                     player.sendActionBar(MiniMessage.miniMessage().deserialize("<green>PvP aktiviert</green>"))
                 } else {
                     player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>PvP deaktiviert</red>"))
@@ -116,6 +83,20 @@ class PvPManager(private val plugin: Diawars) {
         val task = actionbarTasks.remove(player.uniqueId) ?: return false
         Bukkit.getScheduler().cancelTask(task)
         return true
+    }
+
+    fun reactivateTasks() {
+        for ((playerId, status) in store.getAll().entries) {
+            if (status.toggleActive) {
+                val timeLeft = status.oldTimeRemaining
+                if (timeLeft <= 0) {
+                    store.applyToggle(playerId, status.toggleDestination)
+                } else {
+                    store.setRemainingTimeTicks(playerId, timeLeft)
+                    continueToggle(playerId, status.toggleDestination, timeLeft)
+                }
+            }
+        }
     }
 
     enum class ToggleResult {

@@ -1,4 +1,4 @@
-package de.davidsw.diawars.managers
+package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
@@ -8,6 +8,7 @@ import org.bukkit.Particle
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.UUID
+import kotlin.collections.iterator
 
 data class BorderDensity(
     val horizontal: Int = 2,
@@ -28,7 +29,7 @@ data class BorderPreference(
     val amount: Int = 1,
 )
 
-class BorderPreferences(private val plugin: Diawars) {
+class BorderPreferencesStore(private val plugin: Diawars) {
     private val preferences = mutableMapOf<UUID, BorderPreference>()
     private val preferencesFile = File(plugin.dataFolder, "border_preferences.yml")
     private lateinit var config: YamlConfiguration

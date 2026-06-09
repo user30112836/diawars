@@ -18,8 +18,8 @@ class MainMenu(private val plugin: Diawars) {
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
-        val pvpEnabled = plugin.pvpManager.isPvPEnabled(player.uniqueId)
-        val hasPending = plugin.pvpManager.hasPendingToggle(player.uniqueId)
+        val pvpEnabled = plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId)
+        val hasPending = plugin.store.pvpStatusStore.hasPendingToggle(player.uniqueId)
         val team       = plugin.teamManager.getPlayerTeam(player.uniqueId)
         val inZone     = plugin.zoneManager.isInOwnZone(player)
 
@@ -27,7 +27,7 @@ class MainMenu(private val plugin: Diawars) {
         if (hasPending) {
             inv.setItem(SLOT_PVP_TOGGLE, item(
                 material = Material.BARRIER,
-                name = if (plugin.pvpManager.getToggleDestination(player.uniqueId) ?: return) "§e§lPvP Aktivierung abbrechen" else "§e§lPvP Deaktivierung abbrechen",
+                name = if (plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: return) "§e§lPvP Aktivierung abbrechen" else "§e§lPvP Deaktivierung abbrechen",
                 lore = formatPvPToggleCancelLore(player),
                 glow = false,
             ))
@@ -45,7 +45,7 @@ class MainMenu(private val plugin: Diawars) {
         }
 
         // Border settings
-        val borderPref = plugin.borderManager.preferences.getPreference(player.uniqueId)
+        val borderPref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
         inv.setItem(SLOT_BORDER, item(
             material = Material.END_ROD,
             name     = "§b§lBorder-Einstellungen",
@@ -61,8 +61,8 @@ class MainMenu(private val plugin: Diawars) {
         ))
 
         // Scores
-        val playerDia = plugin.playerDiamondStore.getStoredCount(player.uniqueId)
-        val teamDia   = if (team != null) plugin.playerDiamondStore.getTotalTeamCount(team) else 0
+        val playerDia = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
+        val teamDia   = if (team != null) plugin.store.playerDiamondStore.getTotalTeamCount(team) else 0
         inv.setItem(SLOT_SCORES, item(
             material = Material.DIAMOND,
             name = "§b§lDiamanten",
@@ -117,7 +117,7 @@ class MainMenu(private val plugin: Diawars) {
     }
 
     private fun formatPvPToggleCancelLore(player: Player): List<String> {
-        val remaining = plugin.pvpManager.getRemainingTime(player.uniqueId)
+        val remaining = plugin.store.pvpStatusStore.getRemainingTime(player.uniqueId)
         val minutes = remaining / 60
         val seconds = remaining % 60
         return if (minutes.toInt() == 0) {

@@ -23,7 +23,7 @@ class BorderMenu(private val plugin: Diawars) {
     }
 
     fun populateBorderMenu(inv: Inventory, player: Player) {
-        val pref = plugin.borderManager.preferences.getPreference(player.uniqueId)
+        val pref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
 
         // On/Off toggle
         inv.setItem(SLOT_BORDER_TOGGLE, item(
@@ -92,7 +92,7 @@ class BorderMenu(private val plugin: Diawars) {
     }
 
     fun handleBorderClick(player: Player, slot: Int, inv: Inventory) {
-        val prefs = plugin.borderManager.preferences
+        val prefs = plugin.store.borderPreferencesStore
 
         when (slot) {
             SLOT_BORDER_TOGGLE -> {

@@ -1,7 +1,7 @@
 package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.managers.BorderDensity
+import de.davidsw.diawars.stores.BorderDensity
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.ParticleParser
 import org.bukkit.command.Command
@@ -55,7 +55,7 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
                         sender.sendMessage("§7Du bist in keinem Team")
                     }
 
-                    val pref = plugin.borderManager.preferences.getPreference(sender.uniqueId)
+                    val pref = plugin.store.borderPreferencesStore.getPreference(sender.uniqueId)
                     sender.sendMessage("§7Border: ${if (pref.enabled) "§aAktiviert" else "§cDeaktiviert"}")
                 }
             }
@@ -89,7 +89,7 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
             return
         }
 
-        val prefs = plugin.borderManager.preferences
+        val prefs = plugin.store.borderPreferencesStore
 
         when (args[1].lowercase()) {
             "on", "enable" -> {

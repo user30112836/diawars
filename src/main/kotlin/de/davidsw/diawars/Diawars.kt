@@ -16,13 +16,15 @@ import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
-import de.davidsw.diawars.managers.PlayerDiamondStore
+import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.ScoresManager
 import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.MainMenu
+import de.davidsw.diawars.stores.BorderPreferencesStore
+import de.davidsw.diawars.stores.PvPStatusStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRule
 import org.bukkit.plugin.java.JavaPlugin
@@ -30,6 +32,12 @@ import org.bukkit.plugin.java.JavaPlugin
 data class Menu(
     var mainMenu: MainMenu,
     var borderMenu: BorderMenu,
+)
+
+data class Store(
+    var playerDiamondStore: PlayerDiamondStore,
+    var borderPreferencesStore: BorderPreferencesStore,
+    var pvpStatusStore: PvPStatusStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -44,11 +52,18 @@ class Diawars : JavaPlugin() {
     lateinit var diamondScoreboardManager: DiamondScoreboardManager
     lateinit var menuManager: MenuManager
     lateinit var scoresManager: ScoresManager
-    lateinit var playerDiamondStore: PlayerDiamondStore
+
+    lateinit var store: Store
     lateinit var menu: Menu
 
     override fun onEnable() {
         saveDefaultConfig()
+
+        store = Store(
+            playerDiamondStore = PlayerDiamondStore(this),
+            borderPreferencesStore = BorderPreferencesStore(this),
+            pvpStatusStore = PvPStatusStore(this),
+        )
 
         messageManager = MessageManager(this)
         teamManager = TeamManager(this)
@@ -60,17 +75,16 @@ class Diawars : JavaPlugin() {
         diamondScoreboardManager = DiamondScoreboardManager(this)
         menuManager = MenuManager(this)
         scoresManager = ScoresManager(this)
-        playerDiamondStore = PlayerDiamondStore(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
             borderMenu = BorderMenu(this),
         )
 
-        borderManager.initialize()
         diamondLimitManager.startTrackingTask()
         diamondLimitManager.trackExistingDiamonds()
         diamondScoreboardManager.start()
+        pvpManager.reactivateTasks()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)
@@ -97,7 +111,7 @@ class Diawars : JavaPlugin() {
     }
 
     override fun onDisable() {
-        diamondLimitManager.cleanup()
+        store.pvpStatusStore.stop()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
     }

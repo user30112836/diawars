@@ -196,9 +196,4 @@ class DiamondLimitManager(private val plugin: Diawars) {
             trackDiamond(item)
         }, 2L)
     }
-
-    fun cleanup() {
-        trackedDiamonds.values.forEach { it.textDisplay.remove() }
-        trackedDiamonds.clear()
-    }
 }

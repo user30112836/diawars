@@ -5,10 +5,10 @@ import org.bukkit.entity.Player
 
 class ScoresManager(private val plugin: Diawars) {
     fun handleInfo(sender: Player) {
-        plugin.playerDiamondStore.snapshotIfChanged(sender)
+        plugin.store.playerDiamondStore.snapshotIfChanged(sender)
 
         val limit = plugin.config.getInt("diamond-limit", 32)
-        val playerDiamonds = plugin.playerDiamondStore.getStoredCount(sender.uniqueId)
+        val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(sender.uniqueId)
         val playerColor = when {
             playerDiamonds > limit -> "§c" // red
             playerDiamonds == limit -> "§e" // yellow
@@ -18,16 +18,16 @@ class ScoresManager(private val plugin: Diawars) {
         val team = plugin.teamManager.getPlayerTeam(sender.uniqueId) ?: return
         val teamLabel = team.displayName
         val teamColor = teamColor(team)
-        val teamDiamonds = plugin.playerDiamondStore.getTotalTeamCount(team)
-        val teamOnlineDiamonds = plugin.playerDiamondStore.getOnlineTeamCount(team)
-        val teamOfflineDiamonds = plugin.playerDiamondStore.getOfflineTeamCount(team)
+        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team)
+        val teamOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(team)
+        val teamOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(team)
 
         val opponents = team.opponent()
         val opponentsLabel = opponents.displayName
         val opponentsColor = teamColor(opponents)
-        val opponentsDiamonds = plugin.playerDiamondStore.getTotalTeamCount(opponents)
-        val opponentsOnlineDiamonds = plugin.playerDiamondStore.getOnlineTeamCount(opponents)
-        val opponentsOfflineDiamonds = plugin.playerDiamondStore.getOfflineTeamCount(opponents)
+        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents)
+        val opponentsOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(opponents)
+        val opponentsOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(opponents)
 
         sender.sendMessage("§6=== Punkte ===")
         sender.sendMessage("§7Deine Diamanten: $playerColor$playerDiamonds / $limit")

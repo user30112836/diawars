@@ -1,10 +1,13 @@
-package de.davidsw.diawars.managers
+package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.DiamondCounter
+import de.davidsw.diawars.managers.Team
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import java.io.File
 import java.util.UUID
+import kotlin.collections.iterator
 
 class PlayerDiamondStore(private val plugin: Diawars) {
     private val storeFile = File(plugin.dataFolder, "diamond_scores.yml")

@@ -1,6 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.stores.BorderPreference
 import org.bukkit.Location
 import org.bukkit.Particle
 import org.bukkit.entity.Player
@@ -8,14 +9,8 @@ import org.bukkit.scheduler.BukkitRunnable
 import kotlin.math.abs
 
 class BorderManager(private val plugin: Diawars) {
-
-    lateinit var preferences: BorderPreferences
     private var borderTask: BukkitRunnable? = null
     private val particleHeight = 128.0
-
-    fun initialize() {
-        preferences = BorderPreferences(plugin)
-    }
 
     fun startBorderDisplay() {
         stopBorderDisplay()
@@ -36,7 +31,7 @@ class BorderManager(private val plugin: Diawars) {
 
     private fun displayBorderForOnlinePlayers() {
         for (player in plugin.server.onlinePlayers) {
-            val pref = preferences.getPreference(player.uniqueId)
+            val pref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
             if (pref.enabled) {
                 displayBorderNearPlayer(player, pref)
             }
@@ -54,7 +49,7 @@ class BorderManager(private val plugin: Diawars) {
             return
         }
 
-        val particleType = preferences.parseParticleType(pref.particleType) ?: Particle.DUST
+        val particleType = plugin.store.borderPreferencesStore.parseParticleType(pref.particleType) ?: Particle.DUST
         val color = pref.color
         val startZ = playerZ - renderDistance
         val endZ = playerZ + renderDistance

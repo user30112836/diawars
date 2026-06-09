@@ -12,6 +12,8 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 
 class PvPListener(private val plugin: Diawars): Listener {
+    private val store = plugin.store.pvpStatusStore
+
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         plugin.pvpManager.startActionbar(event.player)
@@ -22,8 +24,8 @@ class PvPListener(private val plugin: Diawars): Listener {
         val attacker = event.damager as? Player ?: return
         val victim = event.entity as? Player ?: return
 
-        val attackerPvPEnabled = plugin.pvpManager.isPvPEnabled(attacker.uniqueId)
-        val victimPvPEnabled = plugin.pvpManager.isPvPEnabled(victim.uniqueId)
+        val attackerPvPEnabled = store.isPvPEnabled(attacker.uniqueId)
+        val victimPvPEnabled = store.isPvPEnabled(victim.uniqueId)
 
         if (!attackerPvPEnabled || !victimPvPEnabled) {
             event.isCancelled = true

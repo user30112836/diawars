@@ -19,7 +19,7 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
         val player = event.player
         val limit = plugin.config.getInt("diamond-limit", 32)
         plugin.diamondLimitManager.enforceLimit(player, limit)
-        plugin.playerDiamondStore.snapshot(player)
+        plugin.store.playerDiamondStore.snapshot(player)
     }
 
     @EventHandler
@@ -72,6 +72,6 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
         if (!(event.player.world.getGameRuleValue(GameRule.KEEP_INVENTORY) ?: false)) return
         val player = event.entity
         plugin.diamondLimitManager.dropAll(player)
-        plugin.playerDiamondStore.saveCount(player, 0)
+        plugin.store.playerDiamondStore.saveCount(player, 0)
     }
 }

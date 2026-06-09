@@ -9,6 +9,9 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 
 class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
+    private val manager = plugin.pvpManager
+    private val store = plugin.store.pvpStatusStore
+
     override fun onCommand(
         sender: CommandSender,
         command: Command,
@@ -22,19 +25,19 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
         when {
             args.isEmpty() -> {
-                handleToggle(sender, plugin.pvpManager)
+                handleToggle(sender)
             }
 
             args[0].equals("cancel", ignoreCase = true) -> {
-                handleCancel(sender, plugin.pvpManager)
+                handleCancel(sender)
             }
 
             args[0].equals("status", ignoreCase = true) -> {
-                handleStatus(sender, plugin.pvpManager)
+                handleStatus(sender)
             }
 
             args[0].equals("toggle", ignoreCase = true) -> {
-                handleToggle(sender, plugin.pvpManager)
+                handleToggle(sender)
             }
 
             else -> {
@@ -45,7 +48,7 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         return true
     }
 
-    private fun handleToggle(player: Player, manager: PvPManager) {
+    private fun handleToggle(player: Player) {
         val result = manager.togglePvP(player.uniqueId)
 
         when (result) {
@@ -80,7 +83,7 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             }
 
             PvPManager.ToggleResult.ALREADY_PENDING -> {
-                val remaining = manager.getRemainingTime(player.uniqueId)
+                val remaining = store.getRemainingTime(player.uniqueId)
                 val minutes = remaining / 60
                 val seconds = remaining % 60
                 player.sendMessage("§cDu hast bereits eine wartende PvP-Änderung!")
@@ -90,7 +93,7 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
     }
 
-    private fun handleCancel(player: Player, manager: PvPManager) {
+    private fun handleCancel(player: Player) {
         if (manager.cancelToggle(player.uniqueId)) {
             player.sendMessage("")
             player.sendMessage("§7§m                                    ")
@@ -106,8 +109,8 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
     }
 
-    private fun handleStatus(player: Player, manager: PvPManager) {
-        val currentStatus = manager.isPvPEnabled(player.uniqueId)
+    private fun handleStatus(player: Player) {
+        val currentStatus = store.isPvPEnabled(player.uniqueId)
         val statusText = if (currentStatus) "§a§lAKTIVIERT" else "§c§lDEAKTIVIERT"
         val statusSymbol = if (currentStatus) "§a✔" else "§c✖"
 
@@ -118,8 +121,8 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         player.sendMessage("")
         player.sendMessage("§7Aktueller Status: $statusSymbol $statusText")
 
-        if (manager.hasPendingToggle(player.uniqueId)) {
-            val remaining = manager.getRemainingTime(player.uniqueId)
+        if (store.hasPendingToggle(player.uniqueId)) {
+            val remaining = store.getRemainingTime(player.uniqueId)
             val minutes = remaining / 60
             val seconds = remaining % 60
             player.sendMessage("")
@@ -152,7 +155,7 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         if (args.size == 1) {
             val list = mutableListOf("status")
             if (sender is Player) {
-                list += if (plugin.pvpManager.hasPendingToggle(sender.uniqueId)) {
+                list += if (store.hasPendingToggle(sender.uniqueId)) {
                     "cancel"
                 } else {
                     "toggle"
