@@ -34,10 +34,6 @@ class MessageManager(private val plugin: Diawars) {
         player.sendMessage(prefix + returnToZone)
     }
 
-    fun sendCannotBuild(player: Player) {
-        player.sendMessage(prefix + noBuildPermission)
-    }
-
     fun sendNoPermission(player: Player) {
         player.sendMessage(prefix + ChatColor.RED + "Du hast keine Berechtigung für diesen Befehl!")
     }

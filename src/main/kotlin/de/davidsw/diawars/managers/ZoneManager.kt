@@ -11,12 +11,7 @@ class ZoneManager(private val plugin: Diawars) {
 
     fun isInOwnZone(player: Player): Boolean {
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return false
-        val x = player.location.x
-
-        return when (team) {
-            Team.TEAM_A -> x > ZONE_BOUNDARY
-            Team.TEAM_B -> x <= ZONE_BOUNDARY
-        }
+        return isInTeamZone(player, team)
     }
 
     fun isInTeamZone(player: Player, team: Team): Boolean {

@@ -2,6 +2,7 @@ package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
 import org.bukkit.Sound
+import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
@@ -9,7 +10,6 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
 class PlayerEventListener(private val plugin: Diawars): Listener {
-
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
         if (!plugin.teamManager.isPlayerInTeam(event.player.uniqueId) && !event.player.isOp) {
@@ -47,13 +47,11 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
     fun onInteraction(event: PlayerInteractEvent) {
         val player = event.player
 
-        if (!plugin.teamManager.isPlayerInTeam(player.uniqueId)) {
+        if (!plugin.teamManager.isPlayerInTeam(player.uniqueId) || plugin.zoneManager.isInOwnZone(player)) {
             return
         }
 
-        if (!plugin.zoneManager.isInOwnZone(player)) {
-            event.isCancelled = true
-            plugin.messageManager.sendCannotBuild(player)
-        }
+        event.setUseInteractedBlock(Event.Result.DENY)
+        event.setUseItemInHand(Event.Result.ALLOW)
     }
 }
