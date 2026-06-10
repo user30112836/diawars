@@ -90,7 +90,7 @@ class PvPManager(private val plugin: Diawars) {
             if (status.toggleActive) {
                 val timeLeft = status.oldTimeRemaining
                 if (timeLeft <= 0) {
-                    store.applyToggle(playerId, status.toggleDestination)
+                    store.applyPvPStatus(playerId, status.toggleDestination)
                 } else {
                     store.setRemainingTimeTicks(playerId, timeLeft)
                     continueToggle(playerId, status.toggleDestination, timeLeft)

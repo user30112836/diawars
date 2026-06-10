@@ -2,10 +2,9 @@ Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
 - Chest explosion does not destroy ender chests
-- PvP logic is reversed
 - Exclude workbench from diamond container explosion
-- /scores throws an unspecific exception (Should show usage)
 - Border-Particles don't show up with particles on minimal or specific resource packs
+- PvP logic is reversed (Might be fixed)
 
 Features:
 - pvpStatusToggle

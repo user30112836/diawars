@@ -23,7 +23,6 @@ class PvPListener(private val plugin: Diawars): Listener {
     fun onEntityDamage(event: EntityDamageByEntityEvent) {
         val attacker = event.damager as? Player ?: return
         val victim = event.entity as? Player ?: return
-
         val attackerPvPEnabled = store.isPvPEnabled(attacker.uniqueId)
         val victimPvPEnabled = store.isPvPEnabled(victim.uniqueId)
 

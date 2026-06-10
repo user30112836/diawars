@@ -12,6 +12,11 @@ class ScoresCommand(private val plugin: Diawars): CommandExecutor, TabCompleter 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) return false
 
+        if (args.isEmpty()) {
+            sender.sendMessage("§7Verwendung: /scores <info>")
+            return true
+        }
+
         when (args[0]) {
             "info" -> plugin.scoresManager.handleInfo(sender)
             else -> {
