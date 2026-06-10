@@ -1,7 +1,9 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import org.bukkit.BanList
 import org.bukkit.Material
+import org.bukkit.entity.Entity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryCloseEvent
@@ -19,8 +21,15 @@ class ContainerExplosionListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
         val inventory = event.inventory
+        val holder = inventory.holder ?: return
         val hasDiamond = inventory.contents.any { it != null && it.type in diamondMaterials }
+
         if (!hasDiamond) return
+        if (inventory.type == InventoryType.ENDER_CHEST) {
+            plugin.containerExplosionManager.explodeEnderChest(event.player)
+            return
+        }
+        if (holder !is BlockInventoryHolder) return
 
         plugin.server.scheduler.runTask(plugin, Runnable {
             plugin.containerExplosionManager.explodeHolder(inventory.holder ?: return@Runnable)

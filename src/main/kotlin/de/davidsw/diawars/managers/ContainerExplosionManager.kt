@@ -2,7 +2,10 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.DiamondMaterials
+import org.bukkit.Material
 import org.bukkit.entity.Entity
+import org.bukkit.entity.HumanEntity
+import org.bukkit.entity.Player
 import org.bukkit.inventory.BlockInventoryHolder
 import org.bukkit.inventory.InventoryHolder
 
@@ -22,9 +25,9 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val loc = entity.location.add(0.5, 0.5, 0.5)
         val world = loc.world
 
-        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+        plugin.server.scheduler.runTask(plugin, Runnable {
             world.createExplosion(loc, 4f)
-        }, 1L)
+        })
     }
 
     fun explodeContainer(holder: BlockInventoryHolder) {
@@ -37,9 +40,28 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val loc = block.location.add(0.5, 0.5, 0.5)
         val world = loc.world
 
-        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+        plugin.server.scheduler.runTask(plugin, Runnable {
             world.createExplosion(loc, 4f)
-        }, 1L)
+        })
+    }
+
+    fun explodeEnderChest(player: HumanEntity) {
+        val block = player.openInventory.topInventory.location?.block ?: return
+        val loc = block.location.add(0.5, 0.5, 0.5)
+        val world = loc.world
+        val inventory = player.openInventory.topInventory
+
+        inventory.forEach { item ->
+            if (item?.type in DiamondMaterials.DIAMOND_ITEMS) {
+                world.dropItemNaturally(loc, item ?: return@forEach)
+                item.amount = 0
+            }
+        }
+
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            block.type = Material.AIR
+            block.world.createExplosion(loc,4f)
+        })
     }
 
     fun explodeShulker(holder: BlockInventoryHolder) {
@@ -54,8 +76,8 @@ class ContainerExplosionManager(private val plugin: Diawars) {
             }
         }
 
-        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+        plugin.server.scheduler.runTask(plugin, Runnable {
             world.createExplosion(loc, 4f)
-        }, 1L)
+        })
     }
 }

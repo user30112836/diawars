@@ -26,15 +26,15 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
     fun onItemSpawn(event: ItemSpawnEvent) {
         val item = event.entity.itemStack
         if (item.type == Material.DIAMOND) {
-            plugin.server.scheduler.runTaskLater(plugin, Runnable {
+            plugin.server.scheduler.runTask(plugin, Runnable {
                 plugin.diamondLimitManager.resetTicksLived(event.entity)
                 plugin.diamondLimitManager.trackDiamond(event.entity)
-            }, 2L)
+            })
         }
         if (item.type == Material.DIAMOND_BLOCK) {
-            plugin.server.scheduler.runTaskLater(plugin, Runnable {
+            plugin.server.scheduler.runTask(plugin, Runnable {
                 plugin.diamondLimitManager.convertDiamondBlocks(event.entity)
-            }, 1L)
+            })
         }
     }
 
