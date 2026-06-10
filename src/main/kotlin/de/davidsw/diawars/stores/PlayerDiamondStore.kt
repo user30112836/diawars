@@ -1,7 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.managers.DiamondCounter
+import de.davidsw.diawars.util.DiamondCounter
 import de.davidsw.diawars.managers.Team
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -93,7 +93,7 @@ class PlayerDiamondStore(private val plugin: Diawars) {
         try {
             yaml.save(storeFile)
         } catch (e: Exception) {
-            plugin.logger.severe("Could not save diamond scores: ${e.message}")
+            plugin.logger.severe("Could not save diamond scores to $storeFile: ${e.message}")
         }
     }
 }

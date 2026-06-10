@@ -149,7 +149,7 @@ class BorderPreferencesStore(private val plugin: Diawars) {
         try {
             config.save(preferencesFile)
         } catch (e: Exception) {
-            plugin.logger.severe("An error occurred while saving the border-settings")
+            plugin.logger.severe("Could not save border settings to $preferencesFile: ${e.message}")
         }
     }
 }

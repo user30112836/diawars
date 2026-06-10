@@ -1,9 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
-import org.bukkit.BanList
 import org.bukkit.Material
-import org.bukkit.entity.Entity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryCloseEvent

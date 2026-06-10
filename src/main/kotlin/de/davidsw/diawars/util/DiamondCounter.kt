@@ -1,6 +1,5 @@
-package de.davidsw.diawars.managers
+package de.davidsw.diawars.util
 
-import de.davidsw.diawars.util.DiamondMaterials
 import org.bukkit.Material
 import org.bukkit.block.ShulkerBox
 import org.bukkit.entity.Player
@@ -14,11 +13,6 @@ object DiamondCounter {
             player.enderChest.contents.toList(),
         ).sumOf { items -> items.sumOf { item -> if (item != null) countInItem(item) else 0 } }
     }
-
-    fun countForPlayers(players: Collection<Player>): Int = players.sumOf { countForPlayer(it) }
-
-    fun countForTeam(team: Team, onlinePlayers: Collection<Player>, teamManager: TeamManager): Int =
-        countForPlayers(onlinePlayers.filter { teamManager.getPlayerTeam(it.uniqueId) == team })
 
     private fun countInItem(item: ItemStack): Int = when (item.type) {
         Material.DIAMOND -> item.amount

@@ -12,12 +12,6 @@ enum class Team(val configKey: String, val displayName: String) {
         TEAM_A -> TEAM_B
         TEAM_B -> TEAM_A
     }
-
-    companion object {
-        fun fromConfigKey(key: String): Team? {
-            return entries.find { it.configKey == key }
-        }
-    }
 }
 
 class TeamManager(private val plugin: Diawars) {

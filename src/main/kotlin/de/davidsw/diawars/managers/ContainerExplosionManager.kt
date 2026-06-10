@@ -5,7 +5,6 @@ import de.davidsw.diawars.util.DiamondMaterials
 import org.bukkit.Material
 import org.bukkit.entity.Entity
 import org.bukkit.entity.HumanEntity
-import org.bukkit.entity.Player
 import org.bukkit.inventory.BlockInventoryHolder
 import org.bukkit.inventory.InventoryHolder
 

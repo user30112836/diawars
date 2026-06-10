@@ -1,6 +1,8 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.DiamondCounter
+import de.tr7zw.nbtapi.NBT
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Display
@@ -10,7 +12,6 @@ import org.bukkit.entity.TextDisplay
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 import java.util.UUID
-import de.tr7zw.nbtapi.NBTEntity
 
 class DiamondLimitManager(private val plugin: Diawars) {
     val trackedDiamonds = mutableMapOf<UUID, DiamondData>()
@@ -148,16 +149,19 @@ class DiamondLimitManager(private val plugin: Diawars) {
 
     fun resetTicksLived(item: Item) {
         try {
-            val nbtEntity = NBTEntity(item)
-            nbtEntity.setInteger("Age", 6000 - plugin.config.getInt("dia-timer.despawn-time", 6000))
+            NBT.modify(item) { nbt ->
+                nbt.setInteger("Age", 6000 - plugin.config.getInt("dia-timer.despawn-time", 6000))
+            }
         } catch (e: Exception) {
             plugin.logger.warning("Failed to reset item ticks: ${e.message}")
         }
     }
 
     fun getTicksLived(item: Item): Int {
-        val nbtEnt = NBTEntity(item);
-        val age = nbtEnt.getInteger("Age")
+        var age = 0
+        NBT.get(item) { nbt ->
+            age = nbt.getInteger("Age")
+        }
         return age
     }
 
@@ -179,7 +183,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
         } else {
             val stacks = diamondCount / 64
             val left = diamondCount % 64
-            for (i in 0 until stacks) {
+            repeat(stacks) {
                 val drop = item.location.world.dropItem(item.location, ItemStack(Material.DIAMOND, 64))
                 drop.velocity = item.velocity
                 drop.pickupDelay = item.pickupDelay

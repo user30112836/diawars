@@ -3,7 +3,6 @@ package de.davidsw.diawars.menu
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.MenuUtils.item
-import de.davidsw.diawars.util.MenuUtils.skullFromUrl
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Player

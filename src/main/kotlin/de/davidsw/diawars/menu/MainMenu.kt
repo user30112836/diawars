@@ -1,7 +1,6 @@
 package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.util.MenuUtils.item
 import org.bukkit.Color

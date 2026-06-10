@@ -84,11 +84,4 @@ class BorderManager(private val plugin: Diawars) {
             }
         }
     }
-
-    fun reload() {
-        stopBorderDisplay()
-        if (plugin.config.getBoolean("border.enabled", true)) {
-            startBorderDisplay()
-        }
-    }
 }
