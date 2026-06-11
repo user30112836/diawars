@@ -3,6 +3,8 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MenuUtils.skullFromUrl
+import de.davidsw.diawars.util.MiniMessageHelper.mm
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -12,17 +14,17 @@ import java.util.UUID
 class MenuManager(private val plugin: Diawars) {
     private var taskId = mutableMapOf<UUID, Int>()
     private var position = mutableMapOf<UUID, Int>()
-    private val history = mutableMapOf<UUID, MutableList<String>>()
+    private val history = mutableMapOf<UUID, MutableList<Component>>()
     private val menuInvSwap = mutableMapOf<UUID, Boolean>()
     companion object {
-        const val TITLE_MAIN = "§aDiawars"
-        const val TITLE_BORDER = "§aBorder-Einstellungen"
+        val TITLE_MAIN = mm("<green>Diawars</green>")
+        val TITLE_BORDER = mm("<green>Border-Einstellungen</green>")
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
         menuInvSwap[player.uniqueId] = true
         if (memorize) {
-            val playerHistory: MutableList<String> = history[player.uniqueId] ?: mutableListOf()
+            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
             val playerPosition = position[player.uniqueId] ?: -1
             while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
             playerHistory.add(TITLE_MAIN)
@@ -38,7 +40,7 @@ class MenuManager(private val plugin: Diawars) {
     fun openBorderMenu(player: Player, memorize: Boolean = true) {
         menuInvSwap[player.uniqueId] = true
         if (memorize) {
-            val playerHistory: MutableList<String> = history[player.uniqueId] ?: mutableListOf()
+            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
             val playerPosition = position[player.uniqueId] ?: -1
             while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
             playerHistory.add(TITLE_BORDER)
@@ -113,7 +115,7 @@ class MenuManager(private val plugin: Diawars) {
     }
 
     private fun fillBorder(inv: Inventory, player: Player) {
-        val pane = item(Material.GRAY_STAINED_GLASS_PANE, "§r", emptyList())
+        val pane = item(Material.GRAY_STAINED_GLASS_PANE)
         for (i in 0 until 9) inv.setItem(i, pane)
         for (i in 45 until 54) inv.setItem(i, pane)
         for (i in listOf(9, 18, 27, 36)) inv.setItem(i, pane)
@@ -124,20 +126,17 @@ class MenuManager(private val plugin: Diawars) {
         if (playerPosition > 0) {
             inv.setItem(48, skullFromUrl(
                 textureUrl = "http://textures.minecraft.net/texture/ca553ee38d14ee2e3526219215448e3466df8ee7c2199494944f42d74776",
-                name = "§7§l← Zurück",
-                lore = listOf(),
+                name = mm("<gray><bold>← Zurück</bold></gray>"),
             ))
         }
         inv.setItem(49, item(
             material = Material.STRUCTURE_VOID,
-            name = "§7§lSchließen",
-            lore = listOf(),
+            name = mm("<gray><bold>Schließen</bold></gray>"),
         ))
         if (playerHistory.size > playerPosition + 1) {
             inv.setItem(50, skullFromUrl(
                 textureUrl = "http://textures.minecraft.net/texture/ca553ee38d14ee2e3526219215448e3466df8ee7c2199494944f42d74776",
-                name = "§7§lWeiter →",
-                lore = listOf(),
+                name = mm("<gray><bold>Weiter →</bold></gray>"),
             ))
         }
     }

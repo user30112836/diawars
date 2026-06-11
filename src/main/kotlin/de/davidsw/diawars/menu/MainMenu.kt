@@ -3,6 +3,8 @@ package de.davidsw.diawars.menu
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.util.MenuUtils.item
+import de.davidsw.diawars.util.MiniMessageHelper.mm
+import net.kyori.adventure.text.Component
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -19,25 +21,25 @@ class MainMenu(private val plugin: Diawars) {
     fun populateMainMenu(inv: Inventory, player: Player) {
         val pvpEnabled = plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId)
         val hasPending = plugin.store.pvpStatusStore.hasPendingToggle(player.uniqueId)
-        val team       = plugin.teamManager.getPlayerTeam(player.uniqueId)
-        val inZone     = plugin.zoneManager.isInOwnZone(player)
+        val team = plugin.teamManager.getPlayerTeam(player.uniqueId)
+        val inZone = plugin.zoneManager.isInOwnZone(player)
 
         // PvP toggle
         if (hasPending) {
             inv.setItem(SLOT_PVP_TOGGLE, item(
                 material = Material.BARRIER,
-                name = if (plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: return) "§e§lPvP Aktivierung abbrechen" else "§e§lPvP Deaktivierung abbrechen",
+                name = mm(if (plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: return) "<yellow><bold>PvP Aktivierung abbrechen</bold></yellow>" else "<yellow><bold>PvP Aktivierung</bold></yellow>"),
                 lore = formatPvPToggleCancelLore(player),
                 glow = false,
             ))
         } else {
             inv.setItem(SLOT_PVP_TOGGLE, item(
                 material = if (pvpEnabled) Material.RED_WOOL else Material.GREEN_WOOL,
-                name = if (pvpEnabled) "§c§lPvP deaktivieren" else "§a§lPvP aktivieren",
+                name = mm(if (pvpEnabled) "<red><bold>PvP deaktivieren</bold></red>" else "<green><bold>PvP aktivieren</bold></green>"),
                 lore = listOf(
-                    "§7Status: ${if (pvpEnabled) "§aAktiviert" else "§cDeaktiviert"}",
-                    "§7Klicken zum Umschalten",
-                    "§7(5 Min. Verzögerung)",
+                    mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
+                    mm("<gray>Klicken zum Umschalten</gray>"),
+                    mm("<gray>(5 Min. Verzögerung)</gray"),
                 ),
                 glow = false,
             ))
@@ -47,14 +49,14 @@ class MainMenu(private val plugin: Diawars) {
         val borderPref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
         inv.setItem(SLOT_BORDER, item(
             material = Material.END_ROD,
-            name     = "§b§lBorder-Einstellungen",
+            name     = mm("<aqua><bold>Border-Einstellungen</bold></aqua>"),
             lore     = listOf(
-                "§7Status: ${if (borderPref.enabled) "§aAktiviert" else "§cDeaktiviert"}",
-                "§7Partikel: §f${borderPref.particleType}",
-                "§7Farbe: §f${colorToName(borderPref.color)}",
-                "§7Sichtweite: §f${borderPref.renderDistance} Blöcke",
-                "",
-                "§eKlicken zum Öffnen",
+                mm("<gray>Status: </gray>${if (borderPref.enabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
+                mm("<gray>Partikel: </gray><white>${borderPref.particleType}</white>"),
+                mm("<gray>Farbe: </gray><white>${colorToName(borderPref.color)}</white>"),
+                mm("<gray>Sichtweite: </gray><white>${borderPref.renderDistance} Blöcke</white>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
             ),
             glow = false,
         ))
@@ -64,10 +66,10 @@ class MainMenu(private val plugin: Diawars) {
         val teamDia   = if (team != null) plugin.store.playerDiamondStore.getTotalTeamCount(team) else 0
         inv.setItem(SLOT_SCORES, item(
             material = Material.DIAMOND,
-            name = "§b§lDiamanten",
+            name = mm("<aqua><bold>Diamanten</bold></aqua>"),
             lore = listOf(
-                "§7Deine: §b$playerDia",
-                if (team != null) "§7${team.displayName}: §b$teamDia" else "§8Kein Team",
+                mm("<gray>Deine: <aqua>$playerDia</aqua></gray>"),
+                mm(if (team != null) "<gray>${team.displayName}: </gray><aqua>$$teamDia</aqua>" else "<dark_gray>Kein Team</dark_gray>"),
             ),
             glow = playerDia > 0,
         ))
@@ -75,10 +77,10 @@ class MainMenu(private val plugin: Diawars) {
         // Zone info
         inv.setItem(SLOT_ZONE_INFO, item(
             material = Material.COMPASS,
-            name     = "§a§lZonen-Info",
+            name     = mm("<green><bold>Zonen-Info</bold></green>"),
             lore     = listOf(
-                "§7Team: §f${team?.displayName ?: "Kein Team"}",
-                "§7In eigener Zone: ${if (inZone) "§aJa" else "§cNein"}",
+                mm("<gray>Team: </gray><white>${team?.displayName ?: "Kein Team"}</white>"),
+                mm("<gray>In eigener Zone: ${if (inZone) "<green>Ja</green>" else "<red>Nein</red>"}</gray>"),
             ),
             glow = false,
         ))
@@ -106,24 +108,24 @@ class MainMenu(private val plugin: Diawars) {
                 val team = plugin.teamManager.getPlayerTeam(player.uniqueId)
                 if (team != null) {
                     val inZone = plugin.zoneManager.isInOwnZone(player)
-                    player.sendMessage("§7Team: §6${team.displayName}")
-                    player.sendMessage("§7In eigener Zone: ${if (inZone) "§aJa" else "§cNein"}")
+                    player.sendMessage(mm("<gray>Team: </gray><gold>${team.displayName}</gold>"))
+                    player.sendMessage(mm("<gray>In eigener Zone: </gray>${if (inZone) "<green>Ja</green>" else "<red>Nein</red>"}"))
                 } else {
-                    player.sendMessage("§7Du bist in keinem Team.")
+                    player.sendMessage(mm("<gray>Du bist in keinem Team</gray>"))
                 }
             }
         }
     }
 
-    private fun formatPvPToggleCancelLore(player: Player): List<String> {
+    private fun formatPvPToggleCancelLore(player: Player): List<Component> {
         val remaining = plugin.store.pvpStatusStore.getRemainingTime(player.uniqueId)
         val minutes = remaining / 60
         val seconds = remaining % 60
-        return if (minutes.toInt() == 0) {
-            listOf("§7Verbleibend: §e${seconds}s")
-        } else {
-            listOf("§7Verbleibend: §e${minutes}m ${seconds}s")
+        val duration = buildString {
+            if (minutes.toInt() != 0) append(" ${minutes}m")
+            if (seconds.toInt() != 0) append(" ${seconds}s")
         }
+        return listOf(mm("<gray>Verbleibend: </gray><yellow>${duration}</yellow>"))
     }
 
     private fun colorToName(color: Color): String = when (color) {

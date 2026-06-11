@@ -2,6 +2,7 @@ Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
 - Border-Particles don't show up with particles on minimal or specific resource packs
+- TeamZones command does not show the names from the config (hardcoded)
 - PvP logic is reversed (Might be fixed)
 
 Features:

@@ -3,6 +3,7 @@ package de.davidsw.diawars.commands
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.stores.BorderDensity
 import de.davidsw.diawars.util.ColorParser
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.ParticleParser
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -18,8 +19,7 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
         args: Array<out String>
     ): Boolean {
         if (args.isEmpty()) {
-            sender.sendMessage("§6 Plugin v1.0.0")
-            sender.sendMessage("§7Verwendung: /teamzones <reload|info|border>")
+            sender.sendMessage(mm("<gray>Verwendung: /teamzones &lt;reload|info|border&gt;</gray>"))
             return true
         }
 
@@ -40,29 +40,49 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
             }
 
             "info" -> {
-                sender.sendMessage("§6=== TeamZones Info ===")
-                sender.sendMessage("§7Zonenteilung: X = 0")
-                sender.sendMessage("§7Team A Zone: X > 0 (Westen)")
-                sender.sendMessage("§7Team B Zone: X < 0 (Osten)")
+                val lines = mutableListOf(
+                    "<gold>=== TeamZones Info ===</gold>",
+                    "<gray>Zonenteilung: X = 0</gray>",
+                    "<gray>Team A Zone: X > 0 (Westen)</gray>",
+                    "<gray>Team B Zone: X < 0 (Osten)</gray>"
+                )
 
                 if (sender is Player) {
                     val team = plugin.teamManager.getPlayerTeam(sender.uniqueId)
+
+                    lines += ""
+
                     if (team != null) {
-                        sender.sendMessage("§7Dein Team: §6${team.displayName}")
                         val inOwnZone = plugin.zoneManager.isInOwnZone(sender)
-                        sender.sendMessage("§7In eigener Zone: ${if (inOwnZone) "§aJa" else "§cNein"}")
+
+                        lines += "<gray>Dein Team: <gold>${team.displayName}</gold></gray>"
+                        lines += if (inOwnZone) {
+                            "<gray>In eigener Zone: <green>Ja</green></gray>"
+                        } else {
+                            "<gray>In eigener Zone: <red>Nein</red></gray>"
+                        }
                     } else {
-                        sender.sendMessage("§7Du bist in keinem Team")
+                        lines += "<gray>Du bist in keinem Team</gray>"
                     }
 
-                    val pref = plugin.store.borderPreferencesStore.getPreference(sender.uniqueId)
-                    sender.sendMessage("§7Border: ${if (pref.enabled) "§aAktiviert" else "§cDeaktiviert"}")
+                    val pref = plugin.store.borderPreferencesStore
+                        .getPreference(sender.uniqueId)
+
+                    lines += if (pref.enabled) {
+                        "<gray>Border: <green>Aktiviert</green></gray>"
+                    } else {
+                        "<gray>Border: <red>Deaktiviert</red></gray>"
+                    }
                 }
+
+                sender.sendMessage(
+                    mm(lines.joinToString("\n"))
+                )
             }
 
             "border" -> {
                 if (sender !is Player) {
-                    sender.sendMessage("§cDieser Befehl kann nur von Spielern ausgeführt werden!")
+                    sender.sendMessage(mm("<red>Dieser Befehl kann nur von Spielern ausgeführt werden!</red>"))
                     return true
                 }
 
@@ -70,7 +90,7 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
             }
 
             else -> {
-                sender.sendMessage("§cUnbekannter Befehl. Verwendung: /teamzones <reload|info>")
+                sender.sendMessage(mm("<red>Unbekannter Befehl. Verwendung: /teamzones &lt;reload|info&gt;</red>"))
             }
         }
 
@@ -79,13 +99,16 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
 
     private fun handleBorderCommand(player: Player, args: Array<out String>) {
         if (args.size < 2) {
-            player.sendMessage("§6=== Border Einstellungen ===")
-            player.sendMessage("§7/teamzones border <on|off> - Border aktivieren/deaktivieren")
-            player.sendMessage("§7/teamzones border type <typ> - Partikel-Typ ändern")
-            player.sendMessage("§7/teamzones border color <farbe> - Farbe ändern")
-            player.sendMessage("§7/teamzones border distance <zahl> - Sichtweite ändern")
-            player.sendMessage("§7/teamzones border reset - Auf Standard zurücksetzen")
-            player.sendMessage("§7/teamzones border info - Aktuelle Einstellungen")
+            val message = mm("""
+                <gold>=== Border Einstellungen ===</gold>
+                <gray>/teamzones border &lt;on|off&gt; - Border aktivieren/deaktivieren</gray>
+                <gray>/teamzones border type &lt;typ&gt; - Partikel-Typ ändern</gray>
+                <gray>/teamzones border color &lt;farbe&gt; - Farbe ändern</gray>
+                <gray>/teamzones border distance &lt;zahl&gt; - Sichtweite ändern</gray>
+                <gray>/teamzones border reset - Auf Standard zurücksetzen</gray>
+                <gray>/teamzones border info - Aktuelle Einstellungen</gray>
+            """.trimIndent())
+            player.sendMessage(message)
             return
         }
 
@@ -94,32 +117,32 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
         when (args[1].lowercase()) {
             "on", "enable" -> {
                 prefs.setEnabled(player.uniqueId, true)
-                player.sendMessage("§a✓ Border wurde aktiviert!")
+                player.sendMessage(mm("<green>✓ Border wurde aktiviert!</green>"))
             }
 
             "off", "disable" -> {
                 prefs.setEnabled(player.uniqueId, false)
-                player.sendMessage("§c✗ Border wurde deaktiviert!")
+                player.sendMessage(mm("<red>✗ Border wurde deaktiviert!</red>"))
             }
 
             "type", "particle" -> {
                 if (args.size < 3) {
-                    player.sendMessage("§cVerwendung: /teamzones border type <REDSTONE|FLAME|GLOW|END_ROD|BARRIER|SOUL|ENCHANT|PORTAL|HEART>")
+                    player.sendMessage(mm("<red>Verwendung: /teamzones border type &lt;REDSTONE|FLAME|GLOW|END_ROD|BARRIER|SOUL|ENCHANT|PORTAL|HEART&gt;</red>"))
                     return
                 }
 
                 val type = args[2].uppercase()
                 if (ParticleParser.parse(type) != null) {
                     prefs.setParticleType(player.uniqueId, type)
-                    player.sendMessage("§a✓ Partikel-Typ wurde auf §6$type §agesetzt!")
+                    player.sendMessage(mm("<green>✓ Partikel-Typ wurde auf <gold>$type</gold> gesetzt!</green>"))
                 } else {
-                    player.sendMessage("§cUngültiger Partikel-Typ! Verfügbar: FLAME, GLOW, END_ROD, SOUL, ENCHANT, PORTAL, HEART, DUST")
+                    player.sendMessage(mm("<red>Ungültiger Partikel-Typ! Verfügbar: FLAME, GLOW, END_ROD, SOUL, ENCHANT, PORTAL, HEART, DUST</red>"))
                 }
             }
 
             "color", "colour" -> {
                 if (args.size < 3) {
-                    player.sendMessage("§cVerwendung: /teamzones border color <RED|BLUE|GREEN|YELLOW|ORANGE|PURPLE|WHITE|AQUA|R,G,B>")
+                    player.sendMessage(mm("<red>Verwendung: /teamzones border color &lt;RED|BLUE|GREEN|YELLOW|ORANGE|PURPLE|WHITE|AQUA|R,G,B&gt;</red>"))
                     return
                 }
 
@@ -128,93 +151,96 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
 
                 if (color != null) {
                     prefs.setColor(player.uniqueId, color)
-                    player.sendMessage("§a✓ Border-Farbe wurde geändert!")
+                    player.sendMessage(mm("<green>✓ Border-Farbe wurde geändert!</green>"))
                 } else {
-                    player.sendMessage("§cUngültige Farbe! Verwende z.B. RED, BLUE oder RGB wie: 255,100,0")
+                    player.sendMessage(mm("<red>Ungültige Farbe! Verwende z.B. RED, BLUE oder RGB wie: 255,100,0</red>"))
                 }
             }
 
             "distance", "render" -> {
                 if (args.size < 3) {
-                    player.sendMessage("§cVerwendung: /teamzones border distance <8-64>")
+                    player.sendMessage(mm("<red>Verwendung: /teamzones border distance &lt;8-64&gt;</red>"))
                     return
                 }
 
                 val distance = args[2].toIntOrNull()
                 if (distance != null && distance in 8..64) {
                     prefs.setRenderDistance(player.uniqueId, distance)
-                    player.sendMessage("§a✓ Sichtweite wurde auf §6$distance Blöcke §agesetzt!")
+                    player.sendMessage(mm("<green>✓ Sichtweite wurde auf <gold>$distance</gold> Blöcke gesetzt!</green>"))
                 } else {
-                    player.sendMessage("§cUngültige Distanz! Verwende eine Zahl zwischen 8 und 64")
+                    player.sendMessage(mm("<red>Ungültige Distanz! Verwende eine Zahl zwischen 8 und 64</red>"))
                 }
             }
 
             "density" -> {
                 if (args.size < 3) {
-                    player.sendMessage("§cVerwendung: /teamzones border density <1-8|horizontal|vertical> [<1-8>]")
-                    player.sendMessage("§81 = sehr dicht, 8 = sehr dünn")
+                    player.sendMessage(mm("<red>Verwendung: /teamzones border density &lt;1-8|horizontal|vertical&gt; [&lt;1-8&gt;]"))
+                    player.sendMessage(mm("<dark_gray>1 = sehr dicht, 8 = sehr dünn</dark_gray>"))
                     return
                 }
                 if (args.size == 3) {
                     val value = args[2].toIntOrNull()
                     if (value == null || value !in 1..8) {
-                        player.sendMessage("§cUngültiger Wert! Verwende eine Zahl zwischen 1 und 8")
+                        player.sendMessage(mm("<red>Ungültiger Wert! Verwende eine Zahl zwischen 1 und 8</red>"))
                         return
                     }
                     prefs.setDensity(player.uniqueId, BorderDensity(value, value))
-                    player.sendMessage("§a✓ Dichte auf §6$value §agesetzt!")
+                    player.sendMessage(mm("<green>✓ Dichte auf <gold>$value</gold> gesetzt!</green>"))
                     return
                 }
                 val value = args[3].toIntOrNull()
                 if (value == null || value !in 1..8) {
-                    player.sendMessage("§cUngültiger Wert! Verwende eine Zahl zwischen 1 und 8")
+                    player.sendMessage(mm("<red>Ungültiger Wert! Verwende eine Zahl zwischen 1 und 8</red>"))
                     return
                 }
                 when (args[2].lowercase()) {
                     "horizontal", "h" -> {
                         prefs.setHorizontalDensity(player.uniqueId, value)
-                        player.sendMessage("§a✓ Horizontale Dichte auf §6$value §agesetzt!")
+                        player.sendMessage(mm("<green>✓ Horizontale Dichte auf <gold>$value</gold> gesetzt!</green>"))
                     }
                     "vertical", "v" -> {
                         prefs.setVerticalDensity(player.uniqueId, value)
-                        player.sendMessage("§a✓ Vertikale Dichte auf §6$value §agesetzt!")
+                        player.sendMessage(mm("<green>✓ Vertikale Dichte auf <gold>$value</gold> gesetzt!</green>"))
                     }
-                    else -> player.sendMessage("§cUnbekannte Achse! Verwende §6horizontal §coder §6vertical")
+                    else -> player.sendMessage(mm("<red>Unbekannte Achse! Verwende <gold>horizontal</gold> oder <gold>vertical</gold></red>"))
                 }
             }
 
             "amount", "count" -> {
                 if (args.size < 3) {
-                    player.sendMessage("§cVerwendung: /teamzones border amount <1-10>")
+                    player.sendMessage(mm("<red>Verwendung: /teamzones border amount &lt;1-10&gt;</red>"))
                     return
                 }
                 val amount = args[2].toIntOrNull()
                 if (amount != null && amount in 1..10) {
                     prefs.setAmount(player.uniqueId, amount)
-                    player.sendMessage("§a✓ Partikel-Menge wurde auf §6$amount §agesetzt!")
+                    player.sendMessage(mm("<green>✓ Partikel-Menge wurde auf <gold>$amount</gold> gesetzt!</green>"))
                 } else {
-                    player.sendMessage("§cUngültiger Wert! Verwende eine Zahl zwischen 1 und 10")
+                    player.sendMessage(mm("<red>Ungültiger Wert! Verwende eine Zahl zwischen 1 und 10</red>"))
                 }
             }
 
             "reset", "default" -> {
                 prefs.resetToDefault(player.uniqueId)
-                player.sendMessage("§a✓ Border-Einstellungen wurden auf Standard zurückgesetzt!")
+                player.sendMessage(mm("<green>✓ Border-Einstellungen wurden auf Standard zurückgesetzt!</green>"))
             }
 
             "info", "status" -> {
                 val pref = prefs.getPreference(player.uniqueId)
-                player.sendMessage("§6=== Deine Border-Einstellungen ===")
-                player.sendMessage("§7Status: ${if (pref.enabled) "§aAktiviert" else "§cDeaktiviert"}")
-                player.sendMessage("§7Partikel-Typ: §6${pref.particleType}")
-                player.sendMessage("§7Farbe: §6${pref.color.red},${pref.color.green},${pref.color.blue}")
-                player.sendMessage("§7Sichtweite: §6${pref.renderDistance} Blöcke")
-                player.sendMessage("§7Dichte horizontal: §6${pref.density.horizontal} §8(1=dicht, 8=dünn)")
-                player.sendMessage("§7Dichte vertikal: §6${pref.density.vertical} §8(1=dicht, 8=dünn)")
+                val message = mm("""
+                    <gold>=== Deine Border-Einstellungen ===</gold>
+                    <gray>Status: ${if (pref.enabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}</gray>
+                    <gray>Partikel-Typ: <gold>${pref.particleType}</gold></gray>
+                    <gray>Farbe: <gold>${pref.color.red},${pref.color.green},${pref.color.blue}</gold></gray>
+                    <gray>Sichtweite: <gold>${pref.renderDistance} Blöcke</gold></gray>
+                    <gray>Dichte horizontal: <gold>${pref.density.horizontal}</gold> <dark_gray>(1=dicht, 8=dünn)</dark_gray></gray>
+                    <gray>Dichte vertikal: <gold>${pref.density.vertical}</gold> <dark_gray>(1=dicht, 8=dünn)</dark_gray></gray>
+                """.trimIndent())
+                player.sendMessage(message)
             }
 
             else -> {
-                player.sendMessage("§cUnbekannte Option! Verwende: /teamzones border")
+                player.sendMessage(mm("<red>Unbekannte Option! Verwende: /teamzones border</red>"))
             }
         }
     }

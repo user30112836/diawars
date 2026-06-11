@@ -1,7 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import net.kyori.adventure.text.minimessage.MiniMessage
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import java.util.UUID
@@ -64,15 +64,15 @@ class PvPManager(private val plugin: Diawars) {
                 val seconds = (store.getRemainingTime(player.uniqueId).toDouble() % 60).toInt()
                 val timeText = if (minutes != 0) "${minutes}:${if (seconds < 10) "0${seconds}" else seconds.toString()}" else seconds.toString()
                 if (store.getToggleDestination(player.uniqueId) ?: false) {
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>PvP-Aktivierung in ${timeText}</yellow>"))
+                    player.sendActionBar(mm("<yellow>PvP-Aktivierung in ${timeText}</yellow>"))
                 } else {
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<yellow>PvP-Deaktivierung in ${timeText}</yellow>"))
+                    player.sendActionBar(mm("<yellow>PvP-Deaktivierung in ${timeText}</yellow>"))
                 }
             } else {
                 if (store.isPvPEnabled(player.uniqueId)) {
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<green>PvP aktiviert</green>"))
+                    player.sendActionBar(mm("<green>PvP aktiviert</green>"))
                 } else {
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>PvP deaktiviert</red>"))
+                    player.sendActionBar(mm("<red>PvP deaktiviert</red>"))
                 }
             }
         }, 0, 20).taskId

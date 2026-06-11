@@ -1,6 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.configuration.file.YamlConfiguration
@@ -70,7 +71,7 @@ class PvPStatusStore(private val plugin: Diawars) {
         )
         save()
         val statusText = if (status) "aktiviert" else "deaktiviert"
-        Bukkit.getPlayer(playerId)?.sendMessage("§aDein PvP-Status wurde §e$statusText§a!")
+        Bukkit.getPlayer(playerId)?.sendMessage(mm("<green>Dein PvP-Status wurde <yellow>$statusText</yellow>!</green>"))
     }
 
     fun applyToggle(playerId: UUID, destination: Boolean) {

@@ -1,7 +1,7 @@
 package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.managers.Team
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -13,14 +13,14 @@ class ScoresCommand(private val plugin: Diawars): CommandExecutor, TabCompleter 
         if (sender !is Player) return false
 
         if (args.isEmpty()) {
-            sender.sendMessage("§7Verwendung: /scores <info>")
+            sender.sendMessage(mm("<gray>Verwendung: /scores &lt;info&gt;</gray>"))
             return true
         }
 
         when (args[0]) {
             "info" -> plugin.scoresManager.handleInfo(sender)
             else -> {
-                sender.sendMessage("§cUnbekannter Befehl. Verwendung: /scores <info>")
+                sender.sendMessage(mm("<red>Unbekannter Befehl! Verwendung: /scores &lt;info&gt;</red>"))
             }
         }
 

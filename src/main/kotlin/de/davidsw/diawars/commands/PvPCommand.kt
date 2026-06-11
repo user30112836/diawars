@@ -2,6 +2,7 @@ package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.PvPManager
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -19,7 +20,7 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         args: Array<out String>
     ): Boolean {
         if (sender !is Player) {
-            sender.sendMessage("§cDieser Befehl kann nur von Spielern ausgeführt werden!")
+            sender.sendMessage(mm("<red>Dieser Befehl kann nur von Spielern ausgeführt werden!</red>"))
             return true
         }
 
@@ -53,97 +54,96 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
         when (result) {
             PvPManager.ToggleResult.ENABLING -> {
-                player.sendMessage("")
-                player.sendMessage("§7§m                                    ")
-                player.sendMessage("")
-                player.sendMessage("§a§lPvP-AKTIVIERUNG")
-                player.sendMessage("")
-                player.sendMessage("§7Dein PvP wird in §e5 Minuten §7aktiviert.")
-                player.sendMessage("§7Du kannst dann wieder angreifen und")
-                player.sendMessage("§7angegriffen werden.")
-                player.sendMessage("")
-                player.sendMessage("§7Abbrechen: §e/pvp cancel")
-                player.sendMessage("")
-                player.sendMessage("§7§m                                    ")
+                val message = mm("""                    
+                    <green><bold>PvP-AKTIVIERUNG</bold></green>
+                    
+                    <gray>Dein PvP wird in <yellow>5 Minuten</yellow> aktiviert</gray>
+                    <gray>Du kannst dann wieder angreifen und angegriffen werden</gray>
+                    
+                    <gray>Abbrechen: </gray><yellow>/pvp cancel</yellow>
+                """.trimIndent())
+                player.sendMessage(message)
             }
 
             PvPManager.ToggleResult.DISABLING -> {
-                player.sendMessage("")
-                player.sendMessage("§7§m                                    ")
-                player.sendMessage("")
-                player.sendMessage("§c§lPvP-DEAKTIVIERUNG")
-                player.sendMessage("")
-                player.sendMessage("§7Dein PvP wird in §e5 Minuten §7deaktiviert.")
-                player.sendMessage("§7Du kannst dann nicht mehr angreifen")
-                player.sendMessage("§7oder angegriffen werden.")
-                player.sendMessage("")
-                player.sendMessage("§7Abbrechen: §e/pvp cancel")
-                player.sendMessage("")
-                player.sendMessage("§7§m                                    ")
+                val message = mm("""
+                    <red><bold>PvP-DEAKTIVIERUNG</bold></red>
+                    
+                    <gray>Dein PvP wird in <yellow>5 Minuten</yellow> deaktiviert</gray>
+                    <gray>Du kannst dann nicht mehr angreifen oder angegriffen werden</gray>
+                    
+                    <gray>Abbrechen: </gray><yellow>/pvp cancel</yellow>
+                """.trimIndent())
+                player.sendMessage(message)
             }
 
             PvPManager.ToggleResult.ALREADY_PENDING -> {
                 val remaining = store.getRemainingTime(player.uniqueId)
                 val minutes = remaining / 60
                 val seconds = remaining % 60
-                player.sendMessage("§cDu hast bereits eine wartende PvP-Änderung!")
-                player.sendMessage("§7Verbleibende Zeit: §e${minutes}m ${seconds}s")
-                player.sendMessage("§7Abbrechen: §e/pvp cancel")
+                val duration = buildString {
+                    if (minutes.toInt() != 0) append(" ${minutes}m")
+                    if (seconds.toInt() != 0) append(" ${seconds}s")
+                }
+                val message = mm("""
+                    <red>Du hast bereits eine wartende PvP-Änderung!</red>
+                    
+                    <gray>Verbleibende Zeit:</gray><yellow>$duration</yellow>
+                    <gray>Abbrechen: </gray><yellow>/pvp cancel</yellow>
+                """.trimIndent())
+                player.sendMessage(message)
             }
         }
     }
 
     private fun handleCancel(player: Player) {
         if (manager.cancelToggle(player.uniqueId)) {
-            player.sendMessage("")
-            player.sendMessage("§7§m                                    ")
-            player.sendMessage("")
-            player.sendMessage("§a§lPvP-ÄNDERUNG ABGEBROCHEN")
-            player.sendMessage("")
-            player.sendMessage("§7Deine wartende PvP-Änderung wurde")
-            player.sendMessage("§7erfolgreich abgebrochen.")
-            player.sendMessage("")
-            player.sendMessage("§7§m                                    ")
+            val message = mm("""
+                <green><bold>PvP-ÄNDERUNG ABGEBROCHEN</bold></green>
+                
+                <gray>Deine wartende PvP-Änderung wurde erfolgreich abgebrochen</gray>
+            """.trimIndent())
+            player.sendMessage(message)
         } else {
-            player.sendMessage("§cDu hast keine wartende PvP-Änderung!")
+            player.sendMessage(mm("<red>Du hast keine wartende PvP-Änderung!</red>"))
         }
     }
 
     private fun handleStatus(player: Player) {
         val currentStatus = store.isPvPEnabled(player.uniqueId)
-        val statusText = if (currentStatus) "§a§lAKTIVIERT" else "§c§lDEAKTIVIERT"
-        val statusSymbol = if (currentStatus) "§a✔" else "§c✖"
-
-        player.sendMessage("")
-        player.sendMessage("§7§m                                    ")
-        player.sendMessage("")
-        player.sendMessage("§e§lDEIN PvP-STATUS")
-        player.sendMessage("")
-        player.sendMessage("§7Aktueller Status: $statusSymbol $statusText")
+        val statusText = if (currentStatus) "<green>✔ <bold>AKTIVIERT</bold></green>" else "<red>✖ <bold>DEAKTIVIERT</bold></red>"
+        var toggleText = ""
 
         if (store.hasPendingToggle(player.uniqueId)) {
             val remaining = store.getRemainingTime(player.uniqueId)
             val minutes = remaining / 60
             val seconds = remaining % 60
-            player.sendMessage("")
-            player.sendMessage("§7⏱ Wartende Änderung: §e${minutes}m ${seconds}s")
+            val duration = buildString {
+                if (minutes.toInt() != 0) append(" ${minutes}m")
+                if (seconds.toInt() != 0) append(" ${seconds}s")
+            }
+            toggleText = "<gray>⏱ Wartende Änderung:</gray><yellow>$duration</yellow>"
         }
 
-        player.sendMessage("")
-        player.sendMessage("§7§m                                    ")
+        val message = mm("""
+            <yellow><bold>DEIN PvP-Status</bold></yellow>
+            
+            <gray>Aktueller Status: </gray>$statusText
+            $toggleText
+        """.trimIndent())
+        player.sendMessage(message)
     }
 
     private fun sendHelp(player: Player) {
-        player.sendMessage("")
-        player.sendMessage("§7§m                                    ")
-        player.sendMessage("§e§lPvP-BEFEHLE")
-        player.sendMessage("")
-        player.sendMessage("§e/pvp §7- PvP an/ausschalten")
-        player.sendMessage("§e/pvp status §7- Status anzeigen")
-        player.sendMessage("§e/pvp cancel §7- Änderung abbrechen")
-        player.sendMessage("§e/pvp toggle §7- PvP an/ausschalten")
-        player.sendMessage("")
-        player.sendMessage("§7§m                                    ")
+        val message = mm("""
+            <yellow><bold>PvP-BEFEHLE</bold></yellow>
+            
+            <yellow>/pvp</yellow><gray> - PvP an/ausschalten</gray>
+            <yellow>/pvp status</yellow><gray> - Status anzeigen</gray>
+            <yellow>/pvp cancel</yellow><gray> - Änderung abbrechen</gray>
+            <yellow>/pvp toggle</yellow><gray> - PvP an/ausschalten</gray>
+        """.trimIndent())
+        player.sendMessage(message)
     }
 
     override fun onTabComplete(

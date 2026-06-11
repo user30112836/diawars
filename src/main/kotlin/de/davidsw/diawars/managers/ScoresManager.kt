@@ -1,7 +1,9 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.entity.Player
+import net.kyori.adventure.text.format.NamedTextColor
 
 class ScoresManager(private val plugin: Diawars) {
     fun handleInfo(sender: Player) {
@@ -10,9 +12,9 @@ class ScoresManager(private val plugin: Diawars) {
         val limit = plugin.config.getInt("diamond-limit", 32)
         val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(sender.uniqueId)
         val playerColor = when {
-            playerDiamonds > limit -> "§c" // red
-            playerDiamonds == limit -> "§e" // yellow
-            else -> "§b" // aqua
+            playerDiamonds > limit -> NamedTextColor.RED
+            playerDiamonds == limit -> NamedTextColor.YELLOW
+            else -> NamedTextColor.AQUA
         }
 
         val team = plugin.teamManager.getPlayerTeam(sender.uniqueId) ?: return
@@ -29,20 +31,23 @@ class ScoresManager(private val plugin: Diawars) {
         val opponentsOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(opponents)
         val opponentsOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(opponents)
 
-        sender.sendMessage("§6=== Punkte ===")
-        sender.sendMessage("§7Deine Diamanten: $playerColor$playerDiamonds / $limit")
-        sender.sendMessage("$teamColor=== $teamLabel ===")
-        sender.sendMessage("§7Team Diamanten: §b$teamDiamonds")
-        sender.sendMessage("§7Online Team Diamanten: §b$teamOnlineDiamonds")
-        sender.sendMessage("§7Offline Team Diamanten: §b$teamOfflineDiamonds")
-        sender.sendMessage("$opponentsColor=== $opponentsLabel ===")
-        sender.sendMessage("§7Team Diamanten: §b$opponentsDiamonds")
-        sender.sendMessage("§7Online Team Diamanten: §b$opponentsOnlineDiamonds")
-        sender.sendMessage("§7Offline Team Diamanten: §b$opponentsOfflineDiamonds")
+        val message = mm("""
+            <gold>=== Punkte ===</gold>
+            <gray>Deine Diamanten: <$playerColor>$playerDiamonds / $limit</$playerColor>
+            <$teamColor>=== $teamLabel ===</$teamColor>
+            <gray>Team Diamanten: <aqua>$teamDiamonds</aqua>
+            <gray>Online Team Diamanten: <aqua>$teamOnlineDiamonds</aqua>
+            <gray>Offline Team Diamanten: <aqua>$teamOfflineDiamonds</aqua>
+            <$opponentsColor>=== $opponentsLabel ===</$opponentsColor>
+            <gray>Team Diamanten: <aqua>$opponentsDiamonds</aqua>
+            <gray>Online Team Diamanten: <aqua>$opponentsOnlineDiamonds</aqua>
+            <gray>Offline Team Diamanten: <aqua>$opponentsOfflineDiamonds</aqua>
+        """.trimIndent())
+        sender.sendMessage(message)
     }
 
     private fun teamColor(team: Team) = when (team) {
-        Team.TEAM_A -> "§a" // green
-        Team.TEAM_B -> "§9" // blue
+        Team.TEAM_A -> NamedTextColor.GREEN
+        Team.TEAM_B -> NamedTextColor.BLUE
     }
 }

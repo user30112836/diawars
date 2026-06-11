@@ -1,12 +1,17 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import io.papermc.paper.scoreboard.numbers.NumberFormat
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import org.bukkit.scoreboard.Criteria
 import java.util.UUID
 
 class DiamondScoreboardManager(private val plugin: Diawars) {
@@ -45,18 +50,18 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
 
         val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
         val playerColor = when (pvpEnabled) {
-            true -> "§4" // dark_red
-            false -> "§2" // dark_green
+            true -> NamedTextColor.DARK_RED
+            false -> NamedTextColor.DARK_GREEN
         }
 
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return
         val teamColor = when (team) {
-            Team.TEAM_A -> "§a" // green
-            Team.TEAM_B -> "§9" // blue
+            Team.TEAM_A -> NamedTextColor.GREEN
+            Team.TEAM_B -> NamedTextColor.BLUE
         }
         val teamLabel = team.displayName
 
-        player.setPlayerListName("$teamColor[$teamLabel] $playerColor${player.name} §b$playerDiamonds")
+        player.playerListName(mm("<$teamColor>[$teamLabel]</$teamColor> <$playerColor>${player.name}</$playerColor> <aqua>$playerDiamonds</aqua>"))
     }
 
     private fun updateSidebar(player: Player) {
@@ -89,7 +94,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         ownZone: Boolean,
     ) {
         val scoreboard: Scoreboard = Bukkit.getScoreboardManager().newScoreboard
-        val objective: Objective = scoreboard.registerNewObjective("diawars", "dummy", "§6§lDiawars")
+        val objective: Objective = scoreboard.registerNewObjective("diawars", Criteria.DUMMY, mm("<gold><bold>Diawars</bold></gold>"))
         objective.displaySlot = DisplaySlot.SIDEBAR
         objective.numberFormat(NumberFormat.blank())
 
@@ -99,31 +104,33 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val teamColor = teamColor(team)
 
         val playerColor = when {
-            playerDiamonds > limit -> "§c" // red
-            playerDiamonds == limit -> "§e" // yellow
-            else -> "§b" // aqua
+            playerDiamonds > limit -> NamedTextColor.RED
+            playerDiamonds == limit -> NamedTextColor.YELLOW
+            else -> NamedTextColor.AQUA
         }
 
         val opponentsLabel = opponents.displayName
         val opponentsColor = teamColor(opponents)
 
+        val mm = miniMessage()
         val lines = listOf(
-            " ",
-            "§fTeam",
-            "  $teamColor$teamLabel §7| §b$teamDiamonds",
-            "  $opponentsColor$opponentsLabel §7| §b$opponentsDiamonds",
-            " ",
-            "§fDeine Diamanten",
-            "  $playerColor$playerDiamonds / $limit",
-            " ",
+            mm.deserialize(" "),
+            mm.deserialize("<white>Team</white>"),
+            mm.deserialize("  <$teamColor>$teamLabel</$teamColor> <gray>|</gray> <aqua>$teamDiamonds</aqua>"),
+            mm.deserialize("  <$opponentsColor>$opponentsLabel</$opponentsColor> <gray>|</gray> <aqua>$opponentsDiamonds</aqua>"),
+            mm.deserialize(" "),
+            mm.deserialize("<white>Deine Diamanten</white>"),
+            mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>"),
+            mm.deserialize(" "),
             if (ownZone) {
-                "§2 Heimatzone"
+                mm.deserialize("<dark_green> Heimatzone</dark_green>")
             } else {
-                "§4 Gegnerzone"
+                mm.deserialize("<dark_red> Gegnerzone</dark_red>")
             },
         )
 
-        lines.forEachIndexed { index, text ->
+        lines.forEachIndexed { index, component ->
+            val text = LegacyComponentSerializer.legacySection().serialize(component)
             objective.getScore(text).score = lines.size - index
         }
 
@@ -131,8 +138,8 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
     }
 
     private fun teamColor(team: Team) = when (team) {
-        Team.TEAM_A -> "§a" // green
-        Team.TEAM_B -> "§9" // blue
+        Team.TEAM_A -> NamedTextColor.GREEN
+        Team.TEAM_B -> NamedTextColor.BLUE
     }
 
     fun clearPlayer(player: Player) {

@@ -13,7 +13,7 @@ class MenuListener(private val plugin: Diawars): Listener {
     @EventHandler(priority = EventPriority.HIGH)
     fun onInventoryClick(event: InventoryClickEvent) {
         val player = event.whoClicked as Player
-        val title = event.view.title
+        val title = event.view.title()
 
         when (title) {
             MenuManager.TITLE_MAIN -> {
@@ -33,7 +33,7 @@ class MenuListener(private val plugin: Diawars): Listener {
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryClose(event: InventoryCloseEvent) {
-        if (event.view.title == MenuManager.TITLE_BORDER || event.view.title == MenuManager.TITLE_MAIN) {
+        if (event.view.title() == MenuManager.TITLE_BORDER || event.view.title() == MenuManager.TITLE_MAIN) {
             plugin.menuManager.stopUpdater(event.player as Player)
             plugin.menuManager.emptyHistory(event.player as Player)
         }

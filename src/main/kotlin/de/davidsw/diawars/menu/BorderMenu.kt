@@ -3,6 +3,7 @@ package de.davidsw.diawars.menu
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.MenuUtils.item
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -27,8 +28,10 @@ class BorderMenu(private val plugin: Diawars) {
         // On/Off toggle
         inv.setItem(SLOT_BORDER_TOGGLE, item(
             material = if (pref.enabled) Material.LIME_WOOL else Material.RED_WOOL,
-            name     = if (pref.enabled) "§c§lBorder deaktivieren" else "§a§lBorder aktivieren",
-            lore     = listOf("§7Aktuell: ${if (pref.enabled) "§aAn" else "§cAus"}"),
+            name     = mm(if (pref.enabled) "<red><bold>Border deaktivieren</bold></red>" else "<green><bold>Border aktivieren</bold></green>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: </gray>${if (pref.enabled) "<green>An</green>" else "<red>Aus</red>"}")
+            ),
         ))
 
         // Particle type cycle
@@ -37,13 +40,13 @@ class BorderMenu(private val plugin: Diawars) {
         val nextParticle = PARTICLE_TYPES[(particleIdx + 1) % PARTICLE_TYPES.size]
         inv.setItem(SLOT_BORDER_PARTICLE, item(
             material = Material.BLAZE_POWDER,
-            name     = "§e§lPartikel-Typ",
+            name     = mm("<yellow><bold>Partikel-Typ</bold></yellow>"),
             lore     = listOf(
-                "§8◄ §7$prevParticle",
-                "§f▶ ${pref.particleType}",
-                "§8  $nextParticle §7►",
-                "",
-                "§eKlicken zum Wechseln",
+                mm("<dark_gray>◄</dark_gray> <gray>$prevParticle</gray>"),
+                mm("<white>▶ ${pref.particleType}</white>"),
+                mm("<dark_gray>  $nextParticle </dark_gray><gray>►</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Wechseln</yellow>"),
             ),
         ))
 
@@ -54,39 +57,39 @@ class BorderMenu(private val plugin: Diawars) {
         val nextColor  = NAMED_COLORS[(colorIdx + 1) % NAMED_COLORS.size]
         inv.setItem(SLOT_BORDER_COLOR, item(
             material = Material.FIREWORK_STAR,
-            name     = "§d§lBorder-Farbe",
+            name     = mm("<light_purple><bold>Border-Farbe</bold></light_purple>"),
             lore     = listOf(
-                "§8◄ §7$prevColor",
-                "§f▶ $colorName",
-                "§8  $nextColor §7►",
-                "",
-                "§dKlicken zum Wechseln",
+                mm("<dark_gray>◄</dark_gray> <gray>$prevColor</gray>"),
+                mm("<white>▶ $colorName<white>"),
+                mm("<dark_gray>  $nextColor </dark_gray><gray>►</gray>"),
+                mm(""),
+                mm("<light_purple>Klicken zum Wechseln</light_purple>"),
             ),
         ))
 
         // Render distance controls
         inv.setItem(SLOT_BORDER_DIST_DEC, item(
             material = Material.RED_STAINED_GLASS_PANE,
-            name     = "§c§l◄ -8 Blöcke",
+            name     = mm("<red><bold>◄ -8 Blöcke</bold></red>"),
             lore     = listOf(
-                "§7Aktuell: ${pref.renderDistance} Blöcke",
-                "§8Minimum: 8 Blöcke"
+                mm("<gray>Aktuell: ${pref.renderDistance} Blöcke</gray>"),
+                mm("<dark_gray>Minimum: 8 Blöcke</dark_gray>"),
             ),
         ))
         inv.setItem(SLOT_BORDER_DIST_INC, item(
             material = Material.GREEN_STAINED_GLASS_PANE,
-            name     = "§a§l+8 Blöcke ►",
+            name     = mm("<green><bold>+8 Blöcke ►</bold></green>"),
             lore     = listOf(
-                "§7Aktuell: ${pref.renderDistance} Blöcke",
-                "§8Maximum: 64 Blöcke"
+                mm("<gray>Aktuell: ${pref.renderDistance} Blöcke</gray>"),
+                mm("<dark_gray>Maximum: 64 Blöcke</dark_gray>"),
             ),
         ))
 
         // Reset
         inv.setItem(SLOT_BORDER_RESET, item(
             material = Material.ANVIL,
-            name     = "§c§lAuf Standard zurücksetzen",
-            lore     = listOf("§8Setzt alle Border-Einstellungen zurück"),
+            name     = mm("<red><bold>Auf Standard zurücksetzen</bold></red>"),
+            lore     = listOf(mm("<dark_gray>Setzt alle Border-Einstellungen zurück</dark_gray>")),
         ))
     }
 

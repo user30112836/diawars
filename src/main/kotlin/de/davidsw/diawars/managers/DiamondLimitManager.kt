@@ -3,6 +3,8 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.DiamondCounter
 import de.tr7zw.nbtapi.NBT
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Display
@@ -78,7 +80,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
         item.isGlowing = true
 
         val textDisplay = item.location.world.spawn(item.location.clone().add(0.0, 0.6, 0.0), TextDisplay::class.java) { display ->
-            display.text = formatTimer(getTicksLived(item))
+            display.text(formatTimer(getTicksLived(item)))
             display.isShadowed = true
             display.isVisibleByDefault = true
             display.billboard = display.billboard
@@ -91,17 +93,17 @@ class DiamondLimitManager(private val plugin: Diawars) {
         trackedDiamonds[item.uniqueId] = DiamondData(item, textDisplay)
     }
 
-    private fun formatTimer(age: Int): String {
+    private fun formatTimer(age: Int): Component {
         val ticks = 6000 - age
         val secondsLeft = (ticks / 20).coerceAtLeast(0)
         val minutes = secondsLeft / 60
         val seconds = secondsLeft % 60
         val color = when {
-            ticks > plugin.config.getInt("dia-timer.yellow", 3000) -> "§a" // green
-            ticks > plugin.config.getInt("dia-timer.red", 1200) -> "§e" // yellow
-            else -> "§c" // red
+            ticks > plugin.config.getInt("dia-timer.yellow", 3000) -> NamedTextColor.GREEN // green
+            ticks > plugin.config.getInt("dia-timer.red", 1200) -> NamedTextColor.YELLOW // yellow
+            else -> NamedTextColor.RED // red
         }
-        return "${color}⏱ ${"%d:%02d".format(minutes, seconds)}"
+        return Component.text("⏱ ${"%d:%02d".format(minutes, seconds)}", color)
     }
 
     fun startTrackingTask() {
@@ -129,7 +131,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
 
                     val itemLoc = item.location.clone().add(0.0, 0.6, 0.0)
                     data.textDisplay.teleport(itemLoc)
-                    data.textDisplay.text = formatTimer(ticksLived)
+                    data.textDisplay.text(formatTimer(ticksLived))
                 }
                 toRemove.forEach { trackedDiamonds.remove(it) }
             }

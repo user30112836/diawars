@@ -1,29 +1,27 @@
 package de.davidsw.diawars.util
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.ChatColor
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
-import org.bukkit.profile.PlayerProfile
-import org.bukkit.profile.PlayerTextures
-import java.net.URL
+import java.net.URI
 import java.util.UUID
 
 object MenuUtils {
     fun item(
         material: Material,
-        name: String,
-        lore: List<String>,
+        name: Component = Component.text(""),
+        lore: List<Component> = emptyList(),
         glow: Boolean = false,
     ): ItemStack {
         val stack = ItemStack(material)
         val meta  = stack.itemMeta!!
 
-        meta.setDisplayName(name)
-        meta.lore = lore.map { ChatColor.translateAlternateColorCodes('§', it) }
+        meta.displayName(name)
+        meta.lore(lore)
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS, ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
         if (material == Material.GRAY_STAINED_GLASS_PANE) {
             meta.isHideTooltip = true
@@ -37,18 +35,16 @@ object MenuUtils {
         return stack
     }
 
-    fun skullFromUrl(textureUrl: String, name: String, lore: List<String>): ItemStack {
+    fun skullFromUrl(textureUrl: String, name: Component = Component.text(""), lore: List<Component> = emptyList()): ItemStack {
         val stack = ItemStack(Material.PLAYER_HEAD)
         val meta  = stack.itemMeta as SkullMeta
+        val profile = Bukkit.createProfile(UUID.randomUUID())
 
-        val profile: PlayerProfile = Bukkit.createPlayerProfile(UUID.randomUUID())
-        val textures: PlayerTextures = profile.textures
-        textures.skin = URL(textureUrl)
-        profile.setTextures(textures)
+        profile.textures.skin = URI.create(textureUrl).toURL()
 
-        meta.ownerProfile = profile
-        meta.setDisplayName(name)
-        meta.lore = lore
+        meta.playerProfile = profile
+        meta.displayName(name)
+        meta.lore(lore)
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
 
         stack.itemMeta = meta
