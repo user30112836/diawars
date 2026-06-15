@@ -17,7 +17,7 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
-        val limit = plugin.config.getInt("diamond-limit", 32)
+        val limit = if (plugin.pvpManager.isInFight(player.uniqueId)) 0 else plugin.config.getInt("diamond-limit", 32)
         plugin.diamondLimitManager.enforceLimit(player, limit)
         plugin.store.playerDiamondStore.snapshot(player)
     }
