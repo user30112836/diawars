@@ -13,6 +13,7 @@ import org.bukkit.inventory.Inventory
 class MainMenu(private val plugin: Diawars) {
     companion object {
         private const val SLOT_PVP_TOGGLE   = 20
+        private const val SLOT_SELF_KILL    = 22
         private const val SLOT_BORDER       = 29
         private const val SLOT_SCORES       = 31
         private const val SLOT_ZONE_INFO    = 33
@@ -45,6 +46,20 @@ class MainMenu(private val plugin: Diawars) {
                     glow = false,
                 ))
             }
+        }
+
+        // Self-kill
+        if (!plugin.pvpManager.isInFight(player.uniqueId)) {
+            inv.setItem(SLOT_SELF_KILL, item(
+                material = Material.BONE,
+                name = mm("<dark_red><bold>Self-kill</bold></dark_red>"),
+                lore = listOf(
+                    mm("<gray>Hier kannst du dich selbst killen wenn du feststeckst</gray>"),
+                    mm("<gray>Du verlierst alle Diamanten in deinem Inventar</gray>"),
+                    mm("<gray>Diese Option steht in einem Kampf nicht zur verfügung</gray>"),
+                ),
+                glow = false,
+            ))
         }
 
         // Border settings
@@ -98,6 +113,8 @@ class MainMenu(private val plugin: Diawars) {
                     else -> populateMainMenu(inv, player)
                 }
             }
+
+            SLOT_SELF_KILL -> if (!plugin.pvpManager.isInFight(player.uniqueId)) player.health = 0.0
 
             SLOT_BORDER -> plugin.menuManager.openBorderMenu(player)
 

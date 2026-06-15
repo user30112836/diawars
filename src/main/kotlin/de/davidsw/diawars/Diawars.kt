@@ -3,6 +3,7 @@ package de.davidsw.diawars
 import de.davidsw.diawars.commands.MenuCommand
 import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ScoresCommand
+import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
@@ -97,6 +98,7 @@ class Diawars : JavaPlugin() {
         getCommand("pvp")?.setExecutor(PvPCommand(this))
         getCommand("scores")?.setExecutor(ScoresCommand(this))
         getCommand("menu")?.setExecutor(MenuCommand(this))
+        getCommand("selfkill")?.setExecutor(SelfKillCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

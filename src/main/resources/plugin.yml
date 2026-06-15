@@ -13,14 +13,18 @@ commands:
     permission: diawars.use
   pvp:
     description: Schaltet PvP an oder aus (5 Minuten Wartezeit)
-    usage: /<command> (<status|cancel|toggle>)
+    usage: /<command> [<status|cancel|toggle>]
     permission: diawars.use
   scores:
     description: Anzeige des Punktestands
-    usage: /<command>
+    usage: /<command> <info>
     permission: diawars.use
   menu:
     description: Hauptmenü des Plugins
+    usage: /<command>
+    permission: diawars.use
+  selfkill:
+    description: Self-kill Befehl
     usage: /<command>
     permission: diawars.use
 
