@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
 import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
+import kotlin.math.floor
 
 class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
     private val manager = plugin.pvpManager
@@ -90,6 +91,19 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     
                     <gray>Verbleibende Zeit:</gray><yellow>$duration</yellow>
                     <gray>Abbrechen: </gray><yellow>/pvp cancel</yellow>
+                """.trimIndent())
+                player.sendMessage(message)
+            }
+
+            PvPManager.ToggleResult.IN_FIGHT -> {
+                val remaining = plugin.pvpManager.fightTimeRemaining(player.uniqueId)
+                val minutes = floor(remaining.toDouble() / 60).toInt()
+                val seconds = remaining % 60
+                val duration = if (minutes != 0) "${minutes}:${if (seconds < 10) "0${seconds}" else seconds.toString()}" else seconds.toString()
+                val message = mm("""
+                    <red>Du kannst den PvPStatus nicht während eines Kampfes ändern!</red>
+                    
+                    <gray>Verbleibende Zeit:</gray><yellow>$duration</yellow>
                 """.trimIndent())
                 player.sendMessage(message)
             }

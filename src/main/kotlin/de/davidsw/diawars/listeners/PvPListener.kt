@@ -13,10 +13,11 @@ import org.bukkit.inventory.ItemStack
 
 class PvPListener(private val plugin: Diawars): Listener {
     private val store = plugin.store.pvpStatusStore
+    private val manager = plugin.pvpManager
 
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
-        plugin.pvpManager.startActionbar(event.player)
+        manager.startActionbar(event.player)
     }
 
     @EventHandler
@@ -26,14 +27,17 @@ class PvPListener(private val plugin: Diawars): Listener {
         val attackerPvPEnabled = store.isPvPEnabled(attacker.uniqueId)
         val victimPvPEnabled = store.isPvPEnabled(victim.uniqueId)
 
-        if (!attackerPvPEnabled || !victimPvPEnabled) {
+        if (attackerPvPEnabled && victimPvPEnabled) {
+            manager.storeFight(victim)
+            manager.storeFight(attacker)
+        } else {
             event.isCancelled = true
         }
     }
 
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        plugin.pvpManager.cleanupPlayer(event.player.uniqueId)
+        manager.cleanupPlayer(event.player.uniqueId)
         plugin.diamondScoreboardManager.clearPlayer(event.player)
     }
 

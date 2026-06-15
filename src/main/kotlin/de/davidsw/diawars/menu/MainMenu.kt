@@ -33,16 +33,18 @@ class MainMenu(private val plugin: Diawars) {
                 glow = false,
             ))
         } else {
-            inv.setItem(SLOT_PVP_TOGGLE, item(
-                material = if (pvpEnabled) Material.RED_WOOL else Material.GREEN_WOOL,
-                name = mm(if (pvpEnabled) "<red><bold>PvP deaktivieren</bold></red>" else "<green><bold>PvP aktivieren</bold></green>"),
-                lore = listOf(
-                    mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
-                    mm("<gray>Klicken zum Umschalten</gray>"),
-                    mm("<gray>(5 Min. Verzögerung)</gray"),
-                ),
-                glow = false,
-            ))
+            if (!plugin.pvpManager.isInFight(player.uniqueId)) {
+                inv.setItem(SLOT_PVP_TOGGLE, item(
+                    material = if (pvpEnabled) Material.RED_WOOL else Material.GREEN_WOOL,
+                    name = mm(if (pvpEnabled) "<red><bold>PvP deaktivieren</bold></red>" else "<green><bold>PvP aktivieren</bold></green>"),
+                    lore = listOf(
+                        mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
+                        mm("<gray>Klicken zum Umschalten</gray>"),
+                        mm("<gray>(5 Min. Verzögerung)</gray"),
+                    ),
+                    glow = false,
+                ))
+            }
         }
 
         // Border settings
@@ -90,10 +92,11 @@ class MainMenu(private val plugin: Diawars) {
         when (slot) {
             SLOT_PVP_TOGGLE -> {
                 val result = plugin.pvpManager.togglePvP(player.uniqueId)
-                if (result == PvPManager.ToggleResult.ALREADY_PENDING) {
-                    plugin.pvpManager.cancelToggle(player.uniqueId)
+                when (result) {
+                    PvPManager.ToggleResult.ALREADY_PENDING -> plugin.pvpManager.cancelToggle(player.uniqueId)
+                    PvPManager.ToggleResult.IN_FIGHT -> {}
+                    else -> populateMainMenu(inv, player)
                 }
-                populateMainMenu(inv, player)
             }
 
             SLOT_BORDER -> plugin.menuManager.openBorderMenu(player)

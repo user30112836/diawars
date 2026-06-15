@@ -24,6 +24,11 @@ Features:
     -> All Players from the other team
 - Self-kill via command or menu
     -> Not during fights
+- Remove every diamond
+    -> Chests
+    -> Ores
+    -> Mob-Drops
+- Drop all dias when logout during fight
 
 Admin Command:
 - pvpStatusToggle

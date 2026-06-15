@@ -3,6 +3,7 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
+import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.entity.Player
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -12,13 +13,38 @@ import kotlin.math.floor
 
 class PvPManager(private val plugin: Diawars) {
     private val store = plugin.store.pvpStatusStore
-    private val toggleDelaySeconds = 300L
+    private val toggleDelaySeconds = 5 * 60L
+    private val fightTime = 2 * 60 * 20
     private val actionbarTasks = ConcurrentHashMap<UUID, Int>()
     private val toggleTasks = ConcurrentHashMap<UUID, Int>()
+    private val lastFight = ConcurrentHashMap<UUID, Int>()
+
+    fun isInFight(playerId: UUID): Boolean {
+        val lastFightTime = lastFight.getOrDefault(playerId, -fightTime)
+        return lastFightTime - getCurrentTick() < -fightTime
+    }
+
+    fun fightTimeRemaining(playerId: UUID): Int {
+        return fightTime - (lastFight.getOrDefault(playerId, -fightTime)) - getCurrentTick()
+    }
+
+    fun storeFight(player: Player) {
+        lastFight[player.uniqueId] = getCurrentTick()
+        if (store.hasPendingToggle(player.uniqueId)) {
+            cancelToggle(player.uniqueId)
+            val message = mm("""
+                <red>Dein PvP Status wird nicht mehr geändert, da du dich in einem Kampf befindest!</red>
+            """.trimIndent())
+            player.sendMessage(message)
+        }
+    }
 
     fun togglePvP(playerId: UUID): ToggleResult {
         if (store.hasPendingToggle(playerId)) {
             return ToggleResult.ALREADY_PENDING
+        }
+        if (isInFight(playerId)) {
+            return ToggleResult.IN_FIGHT
         }
 
         val currentStatus = store.isPvPEnabled(playerId)
@@ -70,7 +96,18 @@ class PvPManager(private val plugin: Diawars) {
                 }
             } else {
                 if (store.isPvPEnabled(player.uniqueId)) {
-                    player.sendActionBar(mm("<green>PvP aktiviert</green>"))
+                    if (isInFight(player.uniqueId)) {
+                        val timeLeft = fightTimeRemaining(player.uniqueId)
+                        val minutes = floor(timeLeft.toDouble() / 60).toInt()
+                        val seconds = (timeLeft % 60)
+                        val timeText = if (minutes != 0) "${minutes}:${if (seconds < 10) "0${seconds}" else seconds.toString()}" else seconds.toString()
+                        player.sendActionBar(mm("""
+                            <yellow>Du bist in einem Kampf für ${timeText}</yellow>
+                            <red><bold>Nicht ausloggen!</bold></red>
+                        """.trimMargin()))
+                    } else {
+                        player.sendActionBar(mm("<green>PvP aktiviert</green>"))
+                    }
                 } else {
                     player.sendActionBar(mm("<red>PvP deaktiviert</red>"))
                 }
@@ -100,6 +137,6 @@ class PvPManager(private val plugin: Diawars) {
     }
 
     enum class ToggleResult {
-        ALREADY_PENDING, ENABLING, DISABLING
+        ALREADY_PENDING, ENABLING, DISABLING, IN_FIGHT
     }
 }
