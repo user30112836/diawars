@@ -20,12 +20,13 @@ class PvPManager(private val plugin: Diawars) {
     private val lastFight = ConcurrentHashMap<UUID, Int>()
 
     fun isInFight(playerId: UUID): Boolean {
-        val lastFightTime = lastFight.getOrDefault(playerId, -fightTime)
-        return lastFightTime - getCurrentTick() < -fightTime
+        val lastFightTime = lastFight[playerId] ?: return false
+        return getCurrentTick() - lastFightTime < fightTime
     }
 
     fun fightTimeRemaining(playerId: UUID): Int {
-        return fightTime - (lastFight.getOrDefault(playerId, -fightTime)) - getCurrentTick()
+        val lastFightTime = lastFight[playerId] ?: return 0
+        return (fightTime - getCurrentTick() + lastFightTime).coerceAtLeast(0)
     }
 
     fun storeFight(player: Player) {
@@ -101,10 +102,7 @@ class PvPManager(private val plugin: Diawars) {
                         val minutes = floor(timeLeft.toDouble() / 60).toInt()
                         val seconds = (timeLeft % 60)
                         val timeText = if (minutes != 0) "${minutes}:${if (seconds < 10) "0${seconds}" else seconds.toString()}" else seconds.toString()
-                        player.sendActionBar(mm("""
-                            <yellow>Du bist in einem Kampf für ${timeText}</yellow>
-                            <red><bold>Nicht ausloggen!</bold></red>
-                        """.trimMargin()))
+                        player.sendActionBar(mm("<yellow>Du bist in einem Kampf für ${timeText}</yellow><red><bold>Nicht ausloggen!</bold></red>"))
                     } else {
                         player.sendActionBar(mm("<green>PvP aktiviert</green>"))
                     }
