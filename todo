@@ -27,6 +27,7 @@ Features:
     -> Chests
     -> Ores
     -> Mob-Drops
+- Access to Shulker through command/inv
 
 Admin Command:
 - pvpStatusToggle
