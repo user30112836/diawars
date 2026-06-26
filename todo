@@ -1,10 +1,11 @@
 Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
-- Border-Particles don't show up with particles on minimal or specific resource packs
 - TeamZones command does not show the names from the config (hardcoded)
-- Fight Status does not work
 - PvP logic is reversed (Might be fixed)
+
+Improvements:
+--- Empty ---
 
 Features:
 - pvpStatusToggle
@@ -14,12 +15,12 @@ Features:
     -> Leaderboard for players
     -> Making the sidebar togglable
     -> Making the components of the sidebar configurable
-- Additional Dimensions Events
+- Additional Dimensions Events (major)
 - GUI
     -> Better Buttons for backward and forward
     -> Integrating the particle density and amount settings
 - Glow for diamonds in inventory
-- Diamond vaults
+- Diamond vaults (major)
     -> Multiple small areas where you can place diamonds
     -> Only selected players from own team can place in specific vaults
     -> All Players from the other team
@@ -27,6 +28,11 @@ Features:
     -> Chests
     -> Ores
     -> Mob-Drops
+- Welcome Message on first join
+    -> Recommend the player to increase his particles
+    -> Short introduction to the plugin (/help and /menu)
+- Manual via a /manual command (major)
+- AFK timer which grays out the name on the tab list
 
 Admin Command:
 - pvpStatusToggle
@@ -41,6 +47,5 @@ Admin Command:
 
 Multiplayer-Tests:
 - Are personal configs getting deleted when offline?
-
-Ideas:
-- Combat logging (Lose Dias on logout during fights)
+- Is the PvPStatus working correctly?
+- Are fights getting detected properly?

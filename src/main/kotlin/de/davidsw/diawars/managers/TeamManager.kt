@@ -1,7 +1,6 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import org.bukkit.Bukkit
 import java.util.UUID
 
 enum class Team(val configKey: String, val displayName: String) {
@@ -21,21 +20,25 @@ class TeamManager(private val plugin: Diawars) {
         loadTeamsFromConfig()
     }
 
+    private fun loadTeamFromConfig(team: Team) {
+        plugin.config.getStringList("teams.${team.configKey}").forEach { uuidString ->
+            try {
+                val uuid = UUID.fromString(uuidString)
+                if (uuid in playerTeams) {
+                    plugin.logger.warning("$uuidString exists in multiple teams, current team: $team")
+                }
+                playerTeams[uuid] = team
+            } catch (_: IllegalArgumentException) {
+                plugin.logger.warning("Invalid UUID in config for ${team.configKey}: $uuidString")
+            }
+        }
+    }
+
     fun loadTeamsFromConfig() {
         playerTeams.clear()
 
-        val teamAPlayers = plugin.config.getStringList("teams.${Team.TEAM_A.configKey}")
-        val teamBPlayers = plugin.config.getStringList("teams.${Team.TEAM_B.configKey}")
-
-        teamAPlayers.forEach { playerName ->
-            val player = Bukkit.getOfflinePlayer(playerName)
-            playerTeams[player.uniqueId] = Team.TEAM_A
-        }
-
-        teamBPlayers.forEach { playerName ->
-            val player = Bukkit.getOfflinePlayer(playerName)
-            playerTeams[player.uniqueId] = Team.TEAM_B
-        }
+        loadTeamFromConfig(Team.TEAM_A)
+        loadTeamFromConfig(Team.TEAM_B)
 
         plugin.logger.info("Loaded teams: ${playerTeams.values}")
     }
