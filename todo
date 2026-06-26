@@ -1,6 +1,7 @@
 Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
+- Border-Particles don't show up with particles on minimal or specific resource packs
 - TeamZones command does not show the names from the config (hardcoded)
 - PvP logic is reversed (Might be fixed)
 
@@ -33,6 +34,7 @@ Features:
     -> Short introduction to the plugin (/help and /menu)
 - Manual via a /manual command (major)
 - AFK timer which grays out the name on the tab list
+- Access to Shulker through command/inv
 
 Admin Command:
 - pvpStatusToggle
