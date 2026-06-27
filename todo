@@ -1,7 +1,6 @@
 Bugs:
 - GUI does not update correctly
 - Border does not align correctly (It's fine on default settings)
-- Border-Particles don't show up with particles on minimal or specific resource packs
 - TeamZones command does not show the names from the config (hardcoded)
 - PvP logic is reversed (Might be fixed)
 
@@ -17,6 +16,14 @@ Features:
     -> Making the sidebar togglable
     -> Making the components of the sidebar configurable
 - Additional Dimensions Events (major)
+    -> Command to join events
+    -> Every event has its own dimension
+    -> Players can create own events
+        --> Prices from server
+        --> Diamonds for creator
+        --> Creative while creating
+        --> Events get submitted and have to be confirmed by admin
+    -> Separate Inventory
 - GUI
     -> Better Buttons for backward and forward
     -> Integrating the particle density and amount settings
@@ -27,7 +34,6 @@ Features:
     -> All Players from the other team
 - Remove every diamond
     -> Chests
-    -> Ores
     -> Mob-Drops
 - Welcome Message on first join
     -> Recommend the player to increase his particles
