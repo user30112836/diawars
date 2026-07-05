@@ -8,7 +8,6 @@ Improvements:
 --- Empty ---
 
 Events:
-- Deactivate Border in event worlds
 - Fix the &lt; and &gt; signs in messages
 - Show start and end times for events
 - Make the events depend on real time not server time
@@ -18,7 +17,7 @@ Events:
     -> World type
     -> Player gamemode
     -> World daytime
-    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops
+    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops, spawn_...
     -> Rewards
     -> Effects
     -> Inventory

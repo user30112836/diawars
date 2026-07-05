@@ -31,6 +31,7 @@ class BorderManager(private val plugin: Diawars) {
 
     private fun displayBorderForOnlinePlayers() {
         for (player in plugin.server.onlinePlayers) {
+            if (!plugin.zoneManager.isZoneWorld(player.world)) continue
             val pref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
             if (pref.enabled) {
                 displayBorderNearPlayer(player, pref)
