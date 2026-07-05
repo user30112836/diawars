@@ -7,6 +7,24 @@ Bugs:
 Improvements:
 --- Empty ---
 
+Events:
+- Make event names unique
+- Deactivate Border in event worlds
+- Fix the &lt; and &gt; signs in messages
+- Show start and end times for events
+- Make the events depend on real time not server time
+- Create message for ending events
+- Integrate the events into the menu
+- Make things configurable when setting up events
+    -> World type
+    -> Player gamemode
+    -> World daytime
+    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops
+    -> Rewards
+    -> Effects
+    -> Inventory
+- Reward for accepted events
+
 Features:
 - pvpStatusToggle
     -> Making the delay for pvpStatusToggle configurable
@@ -16,8 +34,6 @@ Features:
     -> Making the sidebar togglable
     -> Making the components of the sidebar configurable
 - Additional Dimensions Events (major)
-    -> Command to join events
-    -> Every event has its own dimension
     -> Players can create own events
         --> Prices from server
         --> Diamonds for creator

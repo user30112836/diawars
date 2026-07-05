@@ -1,5 +1,5 @@
 name: Diawars
-version: '1.2-beta'
+version: '2.0-beta'
 main: de.davidsw.diawars.Diawars
 api-version: '1.21'
 author: DavidSW
@@ -26,6 +26,10 @@ commands:
   selfkill:
     description: Self-kill Befehl
     usage: /<command>
+    permission: diawars.use
+  event:
+    description: Event-System des Plugins
+    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject>
     permission: diawars.use
 
 permissions:
