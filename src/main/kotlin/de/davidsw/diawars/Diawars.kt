@@ -97,6 +97,7 @@ class Diawars : JavaPlugin() {
         diamondLimitManager.trackExistingDiamonds()
         diamondScoreboardManager.start()
         pvpManager.reactivateTasks()
+        eventManager.reactivateSchedules()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)

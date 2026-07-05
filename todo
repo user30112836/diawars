@@ -18,7 +18,7 @@ Events:
     -> World type
     -> Player gamemode
     -> World daytime
-    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops
+    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops, spawn_...
     -> Rewards
     -> Effects
     -> Inventory

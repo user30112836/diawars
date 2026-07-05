@@ -30,6 +30,7 @@ class EventManager(private val plugin: Diawars) {
     private val states get() = plugin.store.playerStateStore
 
     fun getSession(playerId: UUID): Session? = sessions[playerId]
+    fun isEventWorld(worldName: String): Boolean = store.getByWorld(worldName) != null
 
     // ------------------------------------------------------------------
     // Creation / building

@@ -122,10 +122,14 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
             mm.deserialize("<white>Deine Diamanten</white>"),
             mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>"),
             mm.deserialize(" "),
-            if (ownZone) {
-                mm.deserialize("<dark_green> Heimatzone</dark_green>")
+            if (plugin.zoneManager.isZoneWorld(player.world)) {
+                if (ownZone) {
+                    mm.deserialize("<dark_green> Heimatzone</dark_green>")
+                } else {
+                    mm.deserialize("<dark_red> Gegnerzone</dark_red>")
+                }
             } else {
-                mm.deserialize("<dark_red> Gegnerzone</dark_red>")
+                mm.deserialize("<gold> Neutrale Zone</gold>")
             },
         )
 
