@@ -46,9 +46,14 @@ class EventManager(private val plugin: Diawars) {
             return Result.Error("<red>Du hast bereits ein Event in Bearbeitung oder zur Prüfung eingereicht!</red>")
         }
 
-        val id = store.generateId(name)
-        val worldName = "event_$id"
+        lateinit var id: String
+        try {
+            id = store.generateId(name)
+        } catch (e: Error) {
+            return Result.Error("<red>${e.message}</red>")
+        }
 
+        val worldName = "event_$id"
         val world = WorldCreator(worldName).generateStructures(false).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht erstellt werden!</red>")
 

@@ -43,14 +43,9 @@ class EventStore(private val plugin: Diawars) {
     fun getByWorld(worldName: String): GameEvent? = cache.values.firstOrNull { it.worldName == worldName }
 
     fun generateId(name: String): String {
-        val base = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { "event" }
-        var candidate = base
-        var suffix = 1
-        while (cache.containsKey(candidate)) {
-            candidate = "${base}_$suffix"
-            suffix++
-        }
-        return candidate
+        val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { throw Error("Das Event braucht einen Namen!") }
+        if (cache.containsKey(id)) throw Error("Der Name des Events ist bereits vergeben!")
+        return id
     }
 
     fun addEvent(event: GameEvent) {

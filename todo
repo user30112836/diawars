@@ -8,7 +8,6 @@ Improvements:
 --- Empty ---
 
 Events:
-- Make event names unique
 - Deactivate Border in event worlds
 - Fix the &lt; and &gt; signs in messages
 - Show start and end times for events
