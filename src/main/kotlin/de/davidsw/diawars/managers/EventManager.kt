@@ -4,7 +4,11 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit
+import org.bukkit.Bukkit.broadcast
+import org.bukkit.Bukkit.getPlayer
+import org.bukkit.Bukkit.getWorld
+import org.bukkit.Bukkit.getWorldContainer
+import org.bukkit.Bukkit.unloadWorld
 import org.bukkit.GameMode
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
@@ -84,7 +88,7 @@ class EventManager(private val plugin: Diawars) {
         val event = store.getByCreator(player.uniqueId).firstOrNull { it.state == EventState.BUILDING }
             ?: return Result.Error("<red>Du hast kein Event in Bearbeitung!</red>")
 
-        val world = Bukkit.getWorld(event.worldName)
+        val world = getWorld(event.worldName)
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
@@ -148,7 +152,7 @@ class EventManager(private val plugin: Diawars) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
         }
 
-        val world = Bukkit.getWorld(event.worldName)
+        val world = getWorld(event.worldName)
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
@@ -178,11 +182,16 @@ class EventManager(private val plugin: Diawars) {
 
         scheduleTransitions(event)
 
-        Bukkit.getPlayer(event.creator)?.sendMessage(
+        val rewardAmount = plugin.config.getInt("event.accept-reward-diamonds", 10)
+        if (rewardAmount > 0) {
+            plugin.rewardManager.grantDiamondReward(event.creator, rewardAmount)
+        }
+
+        getPlayer(event.creator)?.sendMessage(
             mm("<green>Dein Event <gold>${event.name}</gold> wurde angenommen und startet in <yellow>$startDelayMinutes Minute(n)</yellow>!</green>")
         )
 
-        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start in $startDelayMinutes Minute(n), Dauer $durationMinutes Minute(n).</green>")
+        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start in $startDelayMinutes Minute(n), Dauer $durationMinutes Minute(n). Belohnung: ${rewardAmount} Diamant(en).</green>")
     }
 
     fun rejectEvent(admin: Player, id: String): Result {
@@ -194,7 +203,7 @@ class EventManager(private val plugin: Diawars) {
         event.state = EventState.REJECTED
         store.save()
 
-        Bukkit.getPlayer(event.creator)?.sendMessage(
+        getPlayer(event.creator)?.sendMessage(
             mm("<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt. Mit <yellow>/event resume</yellow> kannst du weiterbauen und es erneut einreichen.</red>")
         )
 
@@ -236,7 +245,7 @@ class EventManager(private val plugin: Diawars) {
         event.state = EventState.ACTIVE
         store.save()
 
-        Bukkit.broadcast(mm("<gold><bold>Das Event <yellow>${event.name}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
+        broadcast(mm("<gold><bold>Das Event <yellow>${event.name}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
     }
 
     fun endEvent(id: String) {
@@ -248,12 +257,12 @@ class EventManager(private val plugin: Diawars) {
         store.save()
 
         sessions.filter { it.value.eventId == id }.keys.toList().forEach { uuid ->
-            val player = Bukkit.getPlayer(uuid) ?: return@forEach
+            val player = getPlayer(uuid) ?: return@forEach
             leaveWorld(player)
             player.sendMessage(mm("<gray>Das Event <gold>${event.name}</gold> ist zu Ende gegangen.</gray>"))
         }
 
-        Bukkit.getWorld(event.worldName)?.let { Bukkit.unloadWorld(it, true) }
+        getWorld(event.worldName)?.let { unloadWorld(it, true) }
     }
 
     // ------------------------------------------------------------------
@@ -269,7 +278,7 @@ class EventManager(private val plugin: Diawars) {
             return Result.Error("<red>Dieses Event ist derzeit nicht aktiv!</red>")
         }
 
-        val world = Bukkit.getWorld(event.worldName)
+        val world = getWorld(event.worldName)
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
@@ -304,8 +313,8 @@ class EventManager(private val plugin: Diawars) {
     // ------------------------------------------------------------------
 
     private fun deleteEventWorld(event: GameEvent) {
-        Bukkit.getWorld(event.worldName)?.let { Bukkit.unloadWorld(it, false) }
-        val folder = File(Bukkit.getWorldContainer(), event.worldName)
+        getWorld(event.worldName)?.let { unloadWorld(it, false) }
+        val folder = File(getWorldContainer(), event.worldName)
         if (folder.exists()) {
             folder.deleteRecursively()
         }

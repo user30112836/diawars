@@ -12,6 +12,7 @@ import de.davidsw.diawars.listeners.EventListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PvPListener
+import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
 import de.davidsw.diawars.managers.BorderManager
 import de.davidsw.diawars.managers.ContainerExplosionManager
@@ -22,6 +23,7 @@ import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
+import de.davidsw.diawars.managers.RewardManager
 import de.davidsw.diawars.managers.ScoresManager
 import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.ZoneManager
@@ -31,6 +33,7 @@ import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
+import de.davidsw.diawars.stores.RewardStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRule
 import org.bukkit.plugin.java.JavaPlugin
@@ -46,6 +49,7 @@ data class Store(
     var pvpStatusStore: PvPStatusStore,
     var eventStore: EventStore,
     var playerStateStore: PlayerStateStore,
+    var rewardStore: RewardStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -61,6 +65,7 @@ class Diawars : JavaPlugin() {
     lateinit var menuManager: MenuManager
     lateinit var scoresManager: ScoresManager
     lateinit var eventManager: EventManager
+    lateinit var rewardManager: RewardManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -74,6 +79,7 @@ class Diawars : JavaPlugin() {
             pvpStatusStore = PvPStatusStore(this),
             eventStore = EventStore(this),
             playerStateStore = PlayerStateStore(this),
+            rewardStore = RewardStore(this),
         )
 
         messageManager = MessageManager(this)
@@ -87,6 +93,7 @@ class Diawars : JavaPlugin() {
         menuManager = MenuManager(this)
         scoresManager = ScoresManager(this)
         eventManager = EventManager(this)
+        rewardManager = RewardManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -106,6 +113,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(WorldProtectionListener(this), this)
         server.pluginManager.registerEvents(MenuListener(this), this)
         server.pluginManager.registerEvents(EventListener(this), this)
+        server.pluginManager.registerEvents(RewardListener(this), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
