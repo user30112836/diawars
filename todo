@@ -1,19 +1,20 @@
 Bugs:
-- GUI does not update correctly
-- Border does not align correctly (It's fine on default settings)
-- TeamZones command does not show the names from the config (hardcoded)
-- PvP logic is reversed (Might be fixed)
-- Inventory in event worlds does not get saved
+- 1 PvP logic is reversed (Might be fixed)
+- 2 Inventory in event worlds does not get saved
+- 3 GUI does not update correctly
+- 4 Border does not align correctly (It's fine on default settings)
+- 5 TeamZones command does not show the names from the config (hardcoded)
 
 Improvements:
 --- Empty ---
 
 Events:
-- Fix the &lt; and &gt; signs in messages
-- Show start and end times for events
-- Create message for ending events
-- Integrate the events into the menu
-- Make things configurable when setting up events
+- 7 Create message for ending events
+- 8 Show start and end times for events
+- 9 Separate ender chest for events
+- 10 Making pending also get checked when inventory changes
+- 11 Integrate the events into the menu
+- 12 Make things configurable when setting up events
     -> World type
     -> Player gamemode
     -> World daytime
@@ -21,53 +22,44 @@ Events:
     -> Rewards
     -> Effects
     -> Inventory
-- Separate ender chest for events
-- Making pending also get checked when inventory changes
 
 Features:
-- Rewards for simple playing (not for AFK)
-- pvpStatusToggle
+- 17 Glow for diamonds in inventory
+- 18 Welcome Message on first join
+    -> Recommend the player to increase his particles
+    -> Short introduction to the plugin (/help and /menu)
+- 19 pvpStatusToggle
     -> Making the delay for pvpStatusToggle configurable
     -> Editing the pvpStatusToggle messages
-- DiamondScoreboard
+- 20 AFK timer which grays out the name on the tab list
+- 21 Access to Shulker through command/inv
+- 22 DiamondScoreboard
     -> Leaderboard for players
     -> Making the sidebar togglable
     -> Making the components of the sidebar configurable
-- Additional Dimensions Events (major)
-    -> Players can create own events
-        --> Prices from server
-        --> Diamonds for creator
-        --> Creative while creating
-        --> Events get submitted and have to be confirmed by admin
-    -> Separate Inventory
-- GUI
+- 23 GUI
     -> Better Buttons for backward and forward
     -> Integrating the particle density and amount settings
-- Glow for diamonds in inventory
-- Diamond vaults (major)
+- 24 Rewards for simple playing (not for AFK)
+- 25 Remove every diamond
+    -> Chests
+    -> Mob-Drops
+- 26 Diamond vaults (major)
     -> Multiple small areas where you can place diamonds
     -> Only selected players from own team can place in specific vaults
     -> All Players from the other team
-- Remove every diamond
-    -> Chests
-    -> Mob-Drops
-- Welcome Message on first join
-    -> Recommend the player to increase his particles
-    -> Short introduction to the plugin (/help and /menu)
-- Manual via a /manual command (major)
-- AFK timer which grays out the name on the tab list
-- Access to Shulker through command/inv
+- 28 Manual via a /manual command (major)
 
 Admin Command:
-- pvpStatusToggle
+- 13 Setting for limits
+    -> Setting the diamond limit
+    -> Setting bonus diamond amount
+- 14 pvpStatusToggle
     -> Instant toggle of pvpStatus
     -> Toggle of pvpStatus for other players
     -> Toggle of pvpStatus for all players
-- Setting for limits
-    -> Setting the diamond limit
-    -> Setting bonus diamond amount
-- Inspecting inv of players
-- Editing player teams
+- 15 Inspecting inv of players
+- 16 Editing player teams
 
 Multiplayer-Tests:
 - Are personal configs getting deleted when offline?

@@ -164,19 +164,19 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
     private fun sendHelp(player: Player) {
         val lines = mutableListOf(
             "<gold>=== Event-Befehle ===</gold>",
-            "<yellow>/event create &lt;name&gt;</yellow><gray> - Neues Event erstellen</gray>",
+            "<yellow>/event create <name></yellow><gray> - Neues Event erstellen</gray>",
             "<yellow>/event resume</yellow><gray> - Weiterbauen an deinem Event</gray>",
             "<yellow>/event submit</yellow><gray> - Event zur Prüfung einreichen</gray>",
             "<yellow>/event cancel</yellow><gray> - Event abbrechen und löschen</gray>",
-            "<yellow>/event join &lt;id&gt;</yellow><gray> - Aktivem Event beitreten</gray>",
+            "<yellow>/event join <id></yellow><gray> - Aktivem Event beitreten</gray>",
             "<yellow>/event leave</yellow><gray> - Event verlassen</gray>",
-            "<yellow>/event list &lt;pending|accepted|active&gt;</yellow><gray> - Events auflisten</gray>",
+            "<yellow>/event list <pending|accepted|active></yellow><gray> - Events auflisten</gray>",
         )
         if (player.hasPermission("diawars.admin")) {
-            lines += "<yellow>/event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>"
-            lines += "<yellow>/event accept &lt;id&gt; &lt;start&gt; &lt;ende&gt;</yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>"
-            lines += "<yellow>/event reject &lt;id&gt;</yellow><gray> - Event ablehnen</gray>"
-            lines += "<yellow>/event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten an Spieler vergeben</gray>"
+            lines += "<yellow>/event review <id></yellow><gray> - Eingereichtes Event prüfen</gray>"
+            lines += "<yellow>/event accept <id> <start> <ende></yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>"
+            lines += "<yellow>/event reject <id></yellow><gray> - Event ablehnen</gray>"
+            lines += "<yellow>/event reward <spieler> <anzahl></yellow><gray> - Diamanten an Spieler vergeben</gray>"
         }
         player.sendMessage(mm(lines.joinToString("\n")))
     }
