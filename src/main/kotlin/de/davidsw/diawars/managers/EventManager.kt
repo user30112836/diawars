@@ -3,6 +3,7 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
+import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.broadcast
 import org.bukkit.Bukkit.getOfflinePlayer
@@ -166,22 +167,19 @@ class EventManager(private val plugin: Diawars) {
         return Result.Success("<green>Du prüfst nun das Event <gold>${event.name}</gold>. Mit <yellow>/event leave</yellow> beendest du die Prüfung.</green>")
     }
 
-    fun acceptEvent(admin: Player, id: String, startDelayMinutes: Long, durationMinutes: Long): Result {
+    fun acceptEvent(admin: Player, id: String, startEpoch: Long, endEpoch: Long): Result {
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.SUBMITTED) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
         }
-        if (startDelayMinutes < 0 || durationMinutes <= 0) {
-            return Result.Error("<red>Ungültiger Zeitraum!</red>")
-        }
-
         val now = System.currentTimeMillis() / 1000
-        event.startTime = now + startDelayMinutes * 60
-        event.endTime = event.startTime + durationMinutes * 60
+        if (endEpoch <=startEpoch) return Result.Error("<red>Das Ende muss nach dem Start liegen!</red>")
+        if (endEpoch <= now) return Result.Error("<red>Das Ende darf nicht in der Vergangenheit liegen!</red>")
+
+        event.startTime = startEpoch
+        event.endTime = endEpoch
         event.state = EventState.ACCEPTED
         store.save()
-
-        scheduleTransitions(event)
 
         val creator = getOfflinePlayer(event.creator)
         if (creator !is Player) return Result.Error("<red>Der Ersteller ist unbekannt!</red>")
@@ -191,11 +189,14 @@ class EventManager(private val plugin: Diawars) {
             plugin.rewardManager.grantDiamondReward(creator, rewardAmount)
         }
 
+        val startText = DateTimeParser.parseToString(startEpoch)
+        val endText = DateTimeParser.parseToString(endEpoch)
+
         getPlayer(event.creator)?.sendMessage(
-            mm("<green>Dein Event <gold>${event.name}</gold> wurde angenommen und startet in <yellow>$startDelayMinutes Minute(n)</yellow>!</green>")
+            mm("<green>Dein Event <gold>${event.name}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>")
         )
 
-        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start in $startDelayMinutes Minute(n), Dauer $durationMinutes Minute(n). Belohnung: ${rewardAmount} Diamant(en).</green>")
+        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: ${rewardAmount} Diamant(en).</green>")
     }
 
     fun rejectEvent(admin: Player, id: String): Result {
@@ -218,28 +219,41 @@ class EventManager(private val plugin: Diawars) {
     // Scheduling (start/end of the timeframe)
     // ------------------------------------------------------------------
 
-    fun scheduleTransitions(event: GameEvent) {
-        cancelScheduledTasks(event.id)
-        val now = System.currentTimeMillis() / 1000
-        val tasks = mutableListOf<Int>()
+    private var checkerTaskId: Int = -1
 
-        if (event.state == EventState.ACCEPTED) {
-            val ticksUntilStart = (event.startTime - now).coerceAtLeast(0) * 20L
-            tasks += plugin.server.scheduler.runTaskLater(plugin, Runnable {
-                activateEvent(event.id)
-            }, ticksUntilStart).taskId
-        }
-
-        val ticksUntilEnd = (event.endTime - now).coerceAtLeast(0) * 20L
-        tasks += plugin.server.scheduler.runTaskLater(plugin, Runnable {
-            endEvent(event.id)
-        }, ticksUntilEnd).taskId
-
-        scheduledTasks[event.id] = tasks
+    fun startEventChecker() {
+        stopEventChecker()
+        checkerTaskId = plugin.server.scheduler.runTaskTimer(plugin, Runnable {
+            checkEventTransitions()
+        }, 20L, 20L).taskId // check once per real second
     }
 
-    private fun cancelScheduledTasks(id: String) {
-        scheduledTasks.remove(id)?.forEach { plugin.server.scheduler.cancelTask(it) }
+    fun stopEventChecker() {
+        if (checkerTaskId != -1) {
+            plugin.server.scheduler.cancelTask(checkerTaskId)
+            checkerTaskId = -1
+        }
+    }
+
+    private fun checkEventTransitions() {
+        val now = System.currentTimeMillis() / 1000
+        for (event in store.getAll().toList()) {
+            when (event.state) {
+                EventState.ACCEPTED -> {
+                    if (event.endTime <= now) {
+                        endEvent(event.id)
+                    } else if (event.startTime <= now) {
+                        activateEvent(event.id)
+                    }
+                }
+                EventState.ACTIVE -> {
+                    if (event.endTime <= now) {
+                        endEvent(event.id)
+                    }
+                }
+                else -> {}
+            }
+        }
     }
 
     fun activateEvent(id: String) {
@@ -256,7 +270,6 @@ class EventManager(private val plugin: Diawars) {
         val event = store.getEvent(id) ?: return
         if (event.state == EventState.ENDED) return
 
-        cancelScheduledTasks(id)
         event.state = EventState.ENDED
         store.save()
 
@@ -339,22 +352,7 @@ class EventManager(private val plugin: Diawars) {
 
     /** Re-schedules pending start/end transitions after a plugin/server restart. */
     fun reactivateSchedules() {
-        for (event in store.getAll().toList()) {
-            when (event.state) {
-                EventState.ACCEPTED, EventState.ACTIVE -> {
-                    val now = System.currentTimeMillis() / 1000
-                    if (event.endTime in 1..now) {
-                        endEvent(event.id)
-                    } else {
-                        if (event.state == EventState.ACCEPTED && event.startTime in 1..now) {
-                            event.state = EventState.ACTIVE
-                        }
-                        scheduleTransitions(event)
-                    }
-                }
-                else -> {}
-            }
-        }
-        store.save()
+        startEventChecker()
+        checkEventTransitions()
     }
 }

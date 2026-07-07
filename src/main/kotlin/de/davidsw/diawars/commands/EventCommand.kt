@@ -3,6 +3,7 @@ package de.davidsw.diawars.commands
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.stores.EventState
+import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.Command
@@ -70,13 +71,13 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     sender.sendMessage(mm("<red>Verwendung: /event accept &lt;id&gt; &lt;start-in-minuten&gt; &lt;dauer-in-minuten&gt;</red>"))
                     return true
                 }
-                val start = args[2].toLongOrNull()
-                val duration = args[3].toLongOrNull()
-                if (start == null || duration == null) {
-                    sender.sendMessage(mm("<red>Start und Dauer müssen Zahlen (Minuten) sein!</red>"))
+                val startEpoch = DateTimeParser.parseToEpochSeconds(args[2])
+                val endEpoch = DateTimeParser.parseToEpochSeconds(args[3])
+                if (startEpoch == null || endEpoch == null) {
+                    sender.sendMessage(mm("<red>Ungültiges Datum/Uhrzeit! Format: ${DateTimeParser.FORMAT_HINT} (z.B. 10.07.2026-18:00)</red>"))
                     return true
                 }
-                respond(sender, plugin.eventManager.acceptEvent(sender, args[1], start, duration))
+                respond(sender, plugin.eventManager.acceptEvent(sender, args[1], startEpoch, endEpoch))
             }
 
             "reject" -> {
@@ -173,7 +174,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         )
         if (player.hasPermission("diawars.admin")) {
             lines += "<yellow>/event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>"
-            lines += "<yellow>/event accept &lt;id&gt; &lt;start&gt; &lt;dauer&gt;</yellow><gray> - Event annehmen (Minuten)</gray>"
+            lines += "<yellow>/event accept &lt;id&gt; &lt;start&gt; &lt;ende&gt;</yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>"
             lines += "<yellow>/event reject &lt;id&gt;</yellow><gray> - Event ablehnen</gray>"
             lines += "<yellow>/event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten an Spieler vergeben</gray>"
         }

@@ -11,7 +11,6 @@ Improvements:
 Events:
 - Fix the &lt; and &gt; signs in messages
 - Show start and end times for events
-- Make the events depend on real time not server time
 - Create message for ending events
 - Integrate the events into the menu
 - Make things configurable when setting up events
@@ -22,7 +21,6 @@ Events:
     -> Rewards
     -> Effects
     -> Inventory
-- Reward for accepted events
 - Separate ender chest for events
 - Making pending also get checked when inventory changes
 
