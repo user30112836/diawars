@@ -4,6 +4,7 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.MiniMessageHelper.mm
+import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -87,6 +88,29 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                 respond(sender, plugin.eventManager.rejectEvent(sender, args[1]))
             }
 
+            "reward" -> {
+                if (!requireAdmin(sender)) return true
+                if (args.size < 3) {
+                    sender.sendMessage(mm("<red>Verwendung: /event reward &lt;spieler&gt; &lt;anzahl&gt;</red>"))
+                    return true
+                }
+                val amount = args[2].toIntOrNull()
+                if (amount == null || amount <= 0) {
+                    sender.sendMessage(mm("<red>Die Anzahl der Diamanten muss positiv sein!</red>"))
+                    return true
+                }
+                val target = getOfflinePlayer(args[1])
+                if (!target.hasPlayedBefore() && !target.isOnline) {
+                    sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+                    return true
+                }
+
+                plugin.rewardManager.grantDiamondReward(target.uniqueId, amount)
+
+                val targetName = target.name ?: args[1]
+                sender.sendMessage(mm("<green>✓ <gold>$amount Diamant(en)</gold> wurden an <gold>$targetName</gold> vergeben!</green>"))
+            }
+
             else -> sendHelp(sender)
         }
 
@@ -151,6 +175,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             lines += "<yellow>/event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>"
             lines += "<yellow>/event accept &lt;id&gt; &lt;start&gt; &lt;dauer&gt;</yellow><gray> - Event annehmen (Minuten)</gray>"
             lines += "<yellow>/event reject &lt;id&gt;</yellow><gray> - Event ablehnen</gray>"
+            lines += "<yellow>/event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten an Spieler vergeben</gray>"
         }
         player.sendMessage(mm(lines.joinToString("\n")))
     }
@@ -164,7 +189,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         if (args.size == 1) {
             val subs = mutableListOf("create", "resume", "submit", "cancel", "join", "leave", "list")
             if (sender.hasPermission("diawars.admin")) {
-                subs += listOf("review", "accept", "reject")
+                subs += listOf("review", "accept", "reject", "reward")
             }
             return subs.filter { it.startsWith(args[0].lowercase()) }
         }
@@ -178,6 +203,12 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     if (!sender.hasPermission("diawars.admin")) return emptyList()
                     return plugin.eventManager.listByState(EventState.SUBMITTED).map { it.id }
                         .filter { it.startsWith(args[1].lowercase()) }
+                }
+
+                "reward" -> {
+                    if (!sender.hasPermission("diawars.admin")) return emptyList()
+                    return plugin.server.onlinePlayers.map { it.name }
+                        .filter { it.startsWith(args[1], ignoreCase = true) }
                 }
 
                 "list" -> {

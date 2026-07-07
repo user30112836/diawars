@@ -29,7 +29,7 @@ commands:
     permission: diawars.use
   event:
     description: Event-System des Plugins
-    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject>
+    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject|reward>
     permission: diawars.use
 
 permissions:
