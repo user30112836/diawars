@@ -33,8 +33,8 @@ class MenuManager(private val plugin: Diawars) {
         }
         val inv = Bukkit.createInventory(null, 54, TITLE_MAIN)
         fillBorder(inv, player)
-        startUpdater({ plugin.menu.mainMenu.populateMainMenu(inv, player) }, player)
         player.openInventory(inv)
+        startUpdater({ plugin.menu.mainMenu.populateMainMenu(inv, player) }, player)
     }
 
     fun openBorderMenu(player: Player, memorize: Boolean = true) {
@@ -49,8 +49,8 @@ class MenuManager(private val plugin: Diawars) {
         }
         val inv = Bukkit.createInventory(null, 54, TITLE_BORDER)
         fillBorder(inv, player)
-        startUpdater({ plugin.menu.borderMenu.populateBorderMenu(inv, player) }, player)
         player.openInventory(inv)
+        startUpdater({ plugin.menu.borderMenu.populateBorderMenu(inv, player) }, player)
     }
 
     private fun startUpdater(func: () -> Unit, player: Player) {

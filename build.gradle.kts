@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "de.davidsw"
-version = "2.0-beta"
+version = "2.1-beta"
 
 repositories {
     mavenCentral()

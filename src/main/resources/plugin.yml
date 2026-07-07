@@ -1,5 +1,5 @@
 name: Diawars
-version: '2.0-beta'
+version: '2.1-beta'
 main: de.davidsw.diawars.Diawars
 api-version: '1.21'
 author: DavidSW
