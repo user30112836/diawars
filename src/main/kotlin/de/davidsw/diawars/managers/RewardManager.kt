@@ -2,17 +2,17 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit.getPlayer
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.util.UUID
 
 class RewardManager(private val plugin: Diawars) {
-    fun handlePlayerJoin(player: Player) {
-        val pendingReward = plugin.store.rewardStore.getPending(player.uniqueId)
+    val store = plugin.store.rewardStore
+    
+    fun checkPendingPlayer(player: Player) {
+        val pendingReward = store.getPending(player.uniqueId)
         if (pendingReward > 0) {
-            plugin.store.rewardStore.clearPending(player.uniqueId)
+            store.clearPending(player.uniqueId)
             grantDiamondReward(player, pendingReward)
         }
     }
@@ -21,7 +21,7 @@ class RewardManager(private val plugin: Diawars) {
         if (player.isOnline && !plugin.eventManager.isEventWorld(player.world.name)) {
             giveDiamonds(player, amount)
         } else {
-            plugin.store.rewardStore.addPending(player.uniqueId, amount)
+            store.addPending(player.uniqueId, amount)
         }
     }
 
@@ -33,7 +33,7 @@ class RewardManager(private val plugin: Diawars) {
             player.sendMessage(mm("<green>Du hast <gold>$given Diamant(en)</gold> erhalten!</green>"))
         }
         if (leftover > 0) {
-            plugin.store.rewardStore.addPending(player.uniqueId, leftover)
+            store.addPending(player.uniqueId, leftover)
             player.sendMessage(mm("<yellow>Dein Inventar war voll - <gold>$leftover Diamant(en)</gold> werden dir nachgeliefert, sobald Platz frei ist.</yellow>"))
         }
     }
