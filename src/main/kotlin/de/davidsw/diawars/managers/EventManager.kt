@@ -5,6 +5,7 @@ import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.broadcast
+import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.Bukkit.getPlayer
 import org.bukkit.Bukkit.getWorld
 import org.bukkit.Bukkit.getWorldContainer
@@ -182,9 +183,12 @@ class EventManager(private val plugin: Diawars) {
 
         scheduleTransitions(event)
 
+        val creator = getOfflinePlayer(event.creator)
+        if (creator !is Player) return Result.Error("<red>Der Ersteller ist unbekannt!</red>")
+
         val rewardAmount = plugin.config.getInt("event.accept-reward-diamonds", 10)
         if (rewardAmount > 0) {
-            plugin.rewardManager.grantDiamondReward(event.creator, rewardAmount)
+            plugin.rewardManager.grantDiamondReward(creator, rewardAmount)
         }
 
         getPlayer(event.creator)?.sendMessage(

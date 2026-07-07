@@ -13,16 +13,15 @@ class RewardManager(private val plugin: Diawars) {
         val pendingReward = plugin.store.rewardStore.getPending(player.uniqueId)
         if (pendingReward > 0) {
             plugin.store.rewardStore.clearPending(player.uniqueId)
-            giveDiamonds(player, pendingReward)
+            grantDiamondReward(player, pendingReward)
         }
     }
 
-    fun grantDiamondReward(playerId: UUID, amount: Int) {
-        val player = getPlayer(playerId)
-        if (player != null && player.isOnline) {
+    fun grantDiamondReward(player: Player, amount: Int) {
+        if (player.isOnline && !plugin.eventManager.isEventWorld(player.world.name)) {
             giveDiamonds(player, amount)
         } else {
-            plugin.store.rewardStore.addPending(playerId, amount)
+            plugin.store.rewardStore.addPending(player.uniqueId, amount)
         }
     }
 
