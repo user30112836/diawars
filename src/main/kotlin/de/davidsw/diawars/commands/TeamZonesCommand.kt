@@ -1,6 +1,7 @@
 package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.stores.BorderDensity
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -40,11 +41,13 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
             }
 
             "info" -> {
+                val teamA = Team.TEAM_A.displayName
+                val teamB = Team.TEAM_B.displayName
                 val lines = mutableListOf(
                     "<gold>=== TeamZones Info ===</gold>",
                     "<gray>Zonenteilung: X = 0</gray>",
-                    "<gray>Team A Zone: X > 0 (Westen)</gray>",
-                    "<gray>Team B Zone: X < 0 (Osten)</gray>"
+                    "<gray>$teamA Zone: X > 0 (Westen)</gray>",
+                    "<gray>$teamB Zone: X < 0 (Osten)</gray>"
                 )
 
                 if (sender is Player) {

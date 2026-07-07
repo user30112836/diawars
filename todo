@@ -2,7 +2,6 @@ Bugs:
 - 1 PvP logic is reversed (Might be fixed)
 - 2 Inventory in event worlds does not get saved
 - 4 Border does not align correctly (It's fine on default settings)
-- 5 TeamZones command does not show the names from the config (hardcoded)
 
 Improvements:
 --- Empty ---

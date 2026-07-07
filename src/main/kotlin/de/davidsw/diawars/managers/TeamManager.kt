@@ -3,7 +3,7 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import java.util.UUID
 
-enum class Team(val configKey: String, val displayName: String) {
+enum class Team(val configKey: String, var displayName: String) {
     TEAM_A("team-a", "Team A"),
     TEAM_B("team-b", "Team B");
 
@@ -21,7 +21,8 @@ class TeamManager(private val plugin: Diawars) {
     }
 
     private fun loadTeamFromConfig(team: Team) {
-        plugin.config.getStringList("teams.${team.configKey}").forEach { uuidString ->
+        team.displayName = plugin.config.getString("teams.${team.configKey}.display-name") ?: team.displayName
+        plugin.config.getStringList("teams.${team.configKey}.players").forEach { uuidString ->
             try {
                 val uuid = UUID.fromString(uuidString)
                 if (uuid in playerTeams) {

@@ -46,9 +46,7 @@ class BorderManager(private val plugin: Diawars) {
         val playerZ = playerLocation.blockZ
         val renderDistance = pref.renderDistance
 
-        if (abs(playerX) > renderDistance) {
-            return
-        }
+        if (abs(playerX) > renderDistance) return
 
         val particleType = plugin.store.borderPreferencesStore.parseParticleType(pref.particleType) ?: Particle.DUST
         val color = pref.color
