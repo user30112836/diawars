@@ -141,7 +141,10 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
         val lines = mutableListOf("<gold>=== Events (${state.name}) ===</gold>")
         events.forEach { event ->
-            lines += "<gray>- <yellow>${event.id}</yellow> <white>${event.name}</white></gray>"
+            val timeInfo = if (event.startTime > 0) {
+                " <dark_gray>(${DateTimeParser.parseToString(event.startTime)} - ${DateTimeParser.parseToString(event.endTime)})</dark_gray>"
+            } else ""
+            lines += "<gray>- <yellow>${event.id}</yellow> <white>${event.name}</white>$timeInfo</gray>"
         }
         sender.sendMessage(mm(lines.joinToString("\n")))
     }
