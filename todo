@@ -22,7 +22,6 @@ Events:
     -> Rewards
     -> Effects
     -> Inventory
-- Reward for accepted events
 - Separate ender chest for events
 - Making pending also get checked when inventory changes
 
