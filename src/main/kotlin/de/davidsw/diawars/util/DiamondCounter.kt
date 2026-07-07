@@ -8,10 +8,7 @@ import org.bukkit.inventory.meta.BlockStateMeta
 
 object DiamondCounter {
     fun countForPlayer(player: Player): Int {
-        return listOf(
-            player.inventory.contents.toList(),
-            player.enderChest.contents.toList(),
-        ).sumOf { items -> items.sumOf { item -> if (item != null) countInItem(item) else 0 } }
+        return player.inventory.contents.toList().sumOf { item -> if (item != null) countInItem(item) else 0 }
     }
 
     private fun countInItem(item: ItemStack): Int = when (item.type) {

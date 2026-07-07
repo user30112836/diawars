@@ -5,6 +5,7 @@ import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
+import org.bukkit.block.EnderChest
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -15,6 +16,7 @@ data class PlayerSavedState(
     val inventory: List<ItemStack?>,
     val armor: List<ItemStack?>,
     val offHand: ItemStack?,
+    val enderChest: List<ItemStack?>,
     val gameMode: GameMode,
     val worldName: String,
     val x: Double,
@@ -51,6 +53,7 @@ class PlayerStateStore(private val plugin: Diawars) {
             inventory = player.inventory.storageContents.toList(),
             armor = player.inventory.armorContents.toList(),
             offHand = player.inventory.itemInOffHand.clone(),
+            enderChest = player.enderChest.contents.toList(),
             gameMode = player.gameMode,
             worldName = loc.world?.name ?: plugin.server.worlds.first().name,
             x = loc.x, y = loc.y, z = loc.z,
@@ -72,6 +75,8 @@ class PlayerStateStore(private val plugin: Diawars) {
         player.inventory.storageContents = state.inventory.toTypedArray()
         player.inventory.armorContents = state.armor.toTypedArray()
         player.inventory.setItemInOffHand(state.offHand ?: ItemStack(Material.AIR))
+        player.enderChest.clear()
+        player.enderChest.contents = state.enderChest.toTypedArray()
         player.gameMode = state.gameMode
 
         val world = plugin.server.getWorld(state.worldName) ?: plugin.server.worlds.first()
@@ -99,6 +104,7 @@ class PlayerStateStore(private val plugin: Diawars) {
             config.set("$key.inventory", state.inventory)
             config.set("$key.armor", state.armor)
             config.set("$key.offhand", state.offHand)
+            config.set("$key.enderchest", state.enderChest)
             config.set("$key.gamemode", state.gameMode.name)
             config.set("$key.world", state.worldName)
             config.set("$key.x", state.x)
@@ -135,12 +141,15 @@ class PlayerStateStore(private val plugin: Diawars) {
                 @Suppress("UNCHECKED_CAST")
                 val inventory = (section.getList("inventory") as? List<ItemStack?>) ?: emptyList()
                 @Suppress("UNCHECKED_CAST")
+                val enderChest = section.getList("enderchest") as? List<ItemStack?> ?: emptyList()
+                @Suppress("UNCHECKED_CAST")
                 val armor = (section.getList("armor") as? List<ItemStack?>) ?: emptyList()
 
                 cache[uuid] = PlayerSavedState(
                     inventory = inventory,
                     armor = armor,
                     offHand = section.getItemStack("offhand"),
+                    enderChest = enderChest,
                     gameMode = GameMode.valueOf(section.getString("gamemode") ?: "SURVIVAL"),
                     worldName = section.getString("world") ?: plugin.server.worlds.first().name,
                     x = section.getDouble("x"),

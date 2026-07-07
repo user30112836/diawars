@@ -10,7 +10,6 @@ Improvements:
 
 Events:
 - 7 Create message for ending events
-- 9 Separate ender chest for events
 - 10 Making pending also get checked when inventory changes
 - 11 Integrate the events into the menu
 - 12 Make things configurable when setting up events

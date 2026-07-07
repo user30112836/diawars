@@ -79,6 +79,7 @@ class EventManager(private val plugin: Diawars) {
         player.teleport(world.spawnLocation)
         player.gameMode = GameMode.CREATIVE
         player.inventory.clear()
+        player.enderChest.clear()
 
         return Result.Success("<green>Event <gold>$name</gold> wurde erstellt! Du wurdest in die Event-Welt teleportiert.</green>")
     }
@@ -100,6 +101,7 @@ class EventManager(private val plugin: Diawars) {
         player.teleport(world.spawnLocation)
         player.gameMode = GameMode.CREATIVE
         player.inventory.clear()
+        player.enderChest.clear()
 
         return Result.Success("<green>Du bist zu deinem Event <gold>${event.name}</gold> zurückgekehrt.</green>")
     }
@@ -305,6 +307,7 @@ class EventManager(private val plugin: Diawars) {
         player.teleport(world.spawnLocation)
         player.gameMode = GameMode.SURVIVAL
         player.inventory.clear()
+        player.enderChest.clear()
 
         return Result.Success("<green>Du bist dem Event <gold>${event.name}</gold> beigetreten!</green>")
     }
