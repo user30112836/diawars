@@ -27,18 +27,18 @@ teams:
   # Team A (Westliche Zone, X > 0)
   team-a:
     display-name: "Team A"
-    player:
-      - "Spieler1"
-      - "Spieler2"
-      - "Spieler3"
+    players:
+      - "UUID1"
+      - "UUID2"
+      - "UUID3"
 
   # Team B (Östliche Zone, X < 0)
   team-b:
     display-name: "Team B"
     players:
-      - "Spieler4"
-      - "Spieler5"
-      - "Spieler6"
+      - "UUID4"
+      - "UUID5"
+      - "UUID6"
 
 dia-timer:
   yellow: 3000 # 2.5min
