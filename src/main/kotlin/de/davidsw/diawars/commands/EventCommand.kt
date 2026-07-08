@@ -151,7 +151,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
     private fun requireAdmin(sender: Player): Boolean {
         if (!sender.hasPermission("diawars.admin")) {
-            plugin.messageManager.sendNoPermission(sender)
+            sender.sendMessage("No Permission!")
             return false
         }
         return true

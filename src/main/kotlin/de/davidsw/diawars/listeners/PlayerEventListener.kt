@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Sound
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
@@ -35,10 +36,10 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
 
         if (plugin.zoneManager.hasCrossedBoundary(from, to)) {
             if (!plugin.zoneManager.isInPlayerZone(player, event.to)) {
-                plugin.messageManager.sendEnterGenericArea(player)
+                player.sendMessage(pmm("<yellow>Du betrittst jetzt den generischen Bereich!</yellow>"))
                 player.playSound(player, Sound.BLOCK_BEACON_DEACTIVATE, 1f, 1f)
             } else {
-                plugin.messageManager.sendReturnToZone(player)
+                player.sendMessage(pmm("<green>Du bist wieder in deiner Zone!</green>"))
                 player.playSound(player, Sound.BLOCK_BEACON_ACTIVATE, 1f, 1f)
             }
         }

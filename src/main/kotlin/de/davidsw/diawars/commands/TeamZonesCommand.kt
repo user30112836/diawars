@@ -28,7 +28,7 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
             "reload" -> {
                 if (!sender.hasPermission("teamzones.admin")) {
                     if (sender is Player) {
-                        plugin.messageManager.sendNoPermission(sender)
+                        sender.sendMessage("No Permission!")
                     } else {
                         sender.sendMessage("No Permission!")
                     }

@@ -53,9 +53,3 @@ event:
 
 afk:
   threshold-seconds: 300 # 5min
-
-messages:
-  prefix: "<dark_gray>[<gold>Server</gold>] </dark_gray>"
-  enter-generic-area: "<yellow>Du betrittst jetzt den gegnerischen Bereich!</yellow>"
-  no-build-permission: "<red>Du kannst hier nicht bauen oder abbauen!</red>"
-  return-to-zone: "<green>Du bist wieder in deiner Zone!</green>"

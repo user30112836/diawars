@@ -1,7 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.MiniMessageHelper.mm
+import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.Bukkit.getPlayer
 import org.bukkit.entity.Player
@@ -60,7 +60,7 @@ class AfkManager(private val plugin: Diawars) {
     private fun updateListName(player: Player, isAfk: Boolean) {
         plugin.diamondScoreboardManager.update()
         if (isAfk) {
-            player.sendMessage(mm("<dark_gray>Du bist jetzt als AFK markiert</dark_gray>"))
+            player.sendMessage(pmm("<dark_gray>Du bist jetzt als AFK markiert</dark_gray>"))
         }
     }
 }

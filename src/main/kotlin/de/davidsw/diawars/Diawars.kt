@@ -25,7 +25,6 @@ import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.MenuManager
-import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.RewardManager
@@ -59,7 +58,6 @@ data class Store(
 
 class Diawars : JavaPlugin() {
 
-    lateinit var messageManager: MessageManager
     lateinit var teamManager: TeamManager
     lateinit var zoneManager: ZoneManager
     lateinit var borderManager: BorderManager
@@ -89,7 +87,6 @@ class Diawars : JavaPlugin() {
             rewardStore = RewardStore(this),
         )
 
-        messageManager = MessageManager(this)
         teamManager = TeamManager(this)
         zoneManager = ZoneManager(this)
         borderManager = BorderManager(this)
