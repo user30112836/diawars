@@ -31,6 +31,10 @@ commands:
     description: Event-System des Plugins
     usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject|reward>
     permission: diawars.use
+  lobby:
+    description: Betritt oder verlässt die Lobby
+    usage: /<command>
+    permission: diawars.use
 
 permissions:
   diawars.use:

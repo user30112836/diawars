@@ -67,27 +67,31 @@ class PlayerStateStore(private val plugin: Diawars) {
         flushToDisk()
     }
 
-    fun restoreState(player: Player): Boolean {
+    fun restoreState(player: Player, minimal: Boolean = false): Boolean {
         val state = cache.remove(player.uniqueId) ?: return false
         flushToDisk()
 
-        player.inventory.clear()
-        player.inventory.storageContents = state.inventory.toTypedArray()
-        player.inventory.armorContents = state.armor.toTypedArray()
-        player.inventory.setItemInOffHand(state.offHand ?: ItemStack(Material.AIR))
-        player.enderChest.clear()
-        player.enderChest.contents = state.enderChest.toTypedArray()
-        player.gameMode = state.gameMode
+        if (!minimal) {
+            player.inventory.clear()
+            player.inventory.storageContents = state.inventory.toTypedArray()
+            player.inventory.armorContents = state.armor.toTypedArray()
+            player.inventory.setItemInOffHand(state.offHand ?: ItemStack(Material.AIR))
+            player.enderChest.clear()
+            player.enderChest.contents = state.enderChest.toTypedArray()
+            player.gameMode = state.gameMode
+        }
 
         val world = plugin.server.getWorld(state.worldName) ?: plugin.server.worlds.first()
         player.teleport(Location(world, state.x, state.y, state.z, state.yaw, state.pitch))
 
-        val maxHealth = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
-        player.health = state.health.coerceIn(0.0, maxHealth)
-        player.foodLevel = state.foodLevel
-        player.saturation = state.saturation
-        player.exp = state.exp
-        player.level = state.level
+        if (!minimal) {
+            val maxHealth = player.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+            player.health = state.health.coerceIn(0.0, maxHealth)
+            player.foodLevel = state.foodLevel
+            player.saturation = state.saturation
+            player.exp = state.exp
+            player.level = state.level
+        }
 
         return true
     }
