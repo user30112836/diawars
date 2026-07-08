@@ -51,5 +51,10 @@ diamonds-per-kill: 2
 event:
   accept-reward-diamonds: 5
 
+playtime-reward:
+  enabled: true
+  interval-minutes: 30
+  amount: 1
+
 afk:
   threshold-seconds: 300 # 5min

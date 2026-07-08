@@ -19,6 +19,8 @@ class AfkManager(private val plugin: Diawars) {
         lastActivity[playerId] = getCurrentTick()
         if (afkPlayers.remove(playerId)) {
             getPlayer(playerId)?.let { updateListName(it, false) }
+            val player = getPlayer(playerId) ?: return
+            plugin.rewardManager.startPlaytimeReward(player)
         }
     }
 
@@ -53,6 +55,7 @@ class AfkManager(private val plugin: Diawars) {
             if (isAfkNow && !wasAfk) {
                 afkPlayers.add(player.uniqueId)
                 updateListName(player, true)
+                plugin.rewardManager.stopPlaytimeReward(player)
             }
         }
     }
