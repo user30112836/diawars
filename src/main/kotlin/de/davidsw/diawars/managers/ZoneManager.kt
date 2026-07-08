@@ -12,6 +12,7 @@ class ZoneManager(private val plugin: Diawars) {
 
     fun isZoneWorld(world: World): Boolean {
         if (world.environment == World.Environment.THE_END) return false
+        if (plugin.lobbyManager.isLobbyWorld(world.name)) return false
         return !plugin.eventManager.isEventWorld(world.name)
     }
 

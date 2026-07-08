@@ -4,6 +4,15 @@
 # - Team A: negative X-Koordinaten (X > 0)
 # - Team B: positive X-Koordinaten (X < 0)
 
+lobby:
+  world: "lobby"
+  spawn-point:
+    x: 0
+    y: 0
+    z: 0
+    yaw: 0
+    pitch: 0
+
 border:
   enabled: true
   render-distance: 32

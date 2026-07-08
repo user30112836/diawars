@@ -1,6 +1,7 @@
 package de.davidsw.diawars
 
 import de.davidsw.diawars.commands.EventCommand
+import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
 import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ScoresCommand
@@ -10,6 +11,7 @@ import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
+import de.davidsw.diawars.listeners.LobbyListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PvPListener
@@ -20,6 +22,7 @@ import de.davidsw.diawars.managers.ContainerExplosionManager
 import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
@@ -67,6 +70,7 @@ class Diawars : JavaPlugin() {
     lateinit var scoresManager: ScoresManager
     lateinit var eventManager: EventManager
     lateinit var rewardManager: RewardManager
+    lateinit var lobbyManager: LobbyManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -95,6 +99,7 @@ class Diawars : JavaPlugin() {
         scoresManager = ScoresManager(this)
         eventManager = EventManager(this)
         rewardManager = RewardManager(this)
+        lobbyManager = LobbyManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -106,6 +111,7 @@ class Diawars : JavaPlugin() {
         diamondScoreboardManager.start()
         pvpManager.reactivateTasks()
         eventManager.reactivateSchedules()
+        lobbyManager.ensureWorldLoaded()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)
@@ -116,6 +122,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(EventListener(this), this)
         server.pluginManager.registerEvents(RewardListener(this), this)
         server.pluginManager.registerEvents(DiamondListener(this), this)
+        server.pluginManager.registerEvents(LobbyListener(this), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -123,6 +130,7 @@ class Diawars : JavaPlugin() {
         getCommand("menu")?.setExecutor(MenuCommand(this))
         getCommand("selfkill")?.setExecutor(SelfKillCommand(this))
         getCommand("event")?.setExecutor(EventCommand(this))
+        getCommand("lobby")?.setExecutor(LobbyCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()
