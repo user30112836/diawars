@@ -17,6 +17,7 @@ import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PvPListener
 import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
+import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
 import de.davidsw.diawars.managers.ContainerExplosionManager
 import de.davidsw.diawars.managers.DiamondLimitManager
@@ -71,6 +72,7 @@ class Diawars : JavaPlugin() {
     lateinit var eventManager: EventManager
     lateinit var rewardManager: RewardManager
     lateinit var lobbyManager: LobbyManager
+    lateinit var afkManager: AfkManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -100,6 +102,7 @@ class Diawars : JavaPlugin() {
         eventManager = EventManager(this)
         rewardManager = RewardManager(this)
         lobbyManager = LobbyManager(this)
+        afkManager = AfkManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -112,6 +115,7 @@ class Diawars : JavaPlugin() {
         pvpManager.reactivateTasks()
         eventManager.reactivateSchedules()
         lobbyManager.ensureWorldLoaded()
+        afkManager.start()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)

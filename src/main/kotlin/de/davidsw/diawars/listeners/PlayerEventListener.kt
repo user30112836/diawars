@@ -24,6 +24,7 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
+        plugin.afkManager.recordActivity(player.uniqueId)
 
         if (!plugin.teamManager.isPlayerInTeam(player.uniqueId)) {
             return
@@ -46,6 +47,7 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onInteraction(event: PlayerInteractEvent) {
         val player = event.player
+        plugin.afkManager.recordActivity(player.uniqueId)
 
         if (!plugin.teamManager.isPlayerInTeam(player.uniqueId) || plugin.zoneManager.isInOwnZone(player)) {
             return

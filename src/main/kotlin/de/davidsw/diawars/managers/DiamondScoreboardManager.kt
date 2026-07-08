@@ -47,11 +47,13 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
 
     private fun updateListName(player: Player) {
         val pvpEnabled = plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId)
+        val isAfk = plugin.afkManager.isAfk(player.uniqueId)
 
         val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
-        val playerColor = when (pvpEnabled) {
-            true -> NamedTextColor.DARK_RED
-            false -> NamedTextColor.DARK_GREEN
+        val playerColor = when {
+            isAfk -> NamedTextColor.GRAY
+            pvpEnabled -> NamedTextColor.DARK_RED
+            else -> NamedTextColor.DARK_GREEN
         }
 
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return

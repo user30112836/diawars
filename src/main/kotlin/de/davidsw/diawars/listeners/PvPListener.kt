@@ -37,6 +37,7 @@ class PvPListener(private val plugin: Diawars): Listener {
     fun onPlayerQuit(event: PlayerQuitEvent) {
         manager.cleanupPlayer(event.player.uniqueId)
         plugin.diamondScoreboardManager.clearPlayer(event.player)
+        plugin.afkManager.cleanupPlayer(event.player.uniqueId)
     }
 
     @EventHandler
