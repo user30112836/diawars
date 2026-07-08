@@ -19,7 +19,6 @@ Events:
     -> Inventory
 
 Features:
-- 17 Glow for diamonds in inventory
 - 18 Welcome Message on first join
     -> Recommend the player to increase his particles
     -> Short introduction to the plugin (/help and /menu)

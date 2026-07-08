@@ -8,6 +8,7 @@ import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
+import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.PlayerEventListener
@@ -110,10 +111,11 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(PvPListener(this), this)
         server.pluginManager.registerEvents(DiamondLimitListener(this), this)
         server.pluginManager.registerEvents(ContainerExplosionListener(this), this)
-        server.pluginManager.registerEvents(WorldProtectionListener(this), this)
+        server.pluginManager.registerEvents(WorldProtectionListener(), this)
         server.pluginManager.registerEvents(MenuListener(this), this)
         server.pluginManager.registerEvents(EventListener(this), this)
         server.pluginManager.registerEvents(RewardListener(this), this)
+        server.pluginManager.registerEvents(DiamondListener(this), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))

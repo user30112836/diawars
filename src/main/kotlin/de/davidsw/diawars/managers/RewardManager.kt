@@ -1,6 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.DiamondGlow
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -27,7 +28,8 @@ class RewardManager(private val plugin: Diawars) {
 
     private fun giveDiamonds(player: Player, amount: Int) {
         if (amount <= 0) return
-        val leftover = player.inventory.addItem(ItemStack(Material.DIAMOND, amount)).values.sumOf { it.amount }
+        val glowingStack = DiamondGlow.applyGlow(ItemStack(Material.DIAMOND, amount))
+        val leftover = player.inventory.addItem(glowingStack).values.sumOf { it.amount }
         val given = amount - leftover
         if (given > 0) {
             player.sendMessage(mm("<green>Du hast <gold>$given Diamant(en)</gold> erhalten!</green>"))

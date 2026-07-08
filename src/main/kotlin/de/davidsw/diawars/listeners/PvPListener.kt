@@ -1,7 +1,6 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
-import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -9,7 +8,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.inventory.ItemStack
 
 class PvPListener(private val plugin: Diawars): Listener {
     private val store = plugin.store.pvpStatusStore
@@ -46,6 +44,6 @@ class PvPListener(private val plugin: Diawars): Listener {
         val victim = event.entity
         val killer = victim.killer ?: return
         if (plugin.teamManager.arePlayersInSameTeam(killer.uniqueId, victim.uniqueId)) return
-        victim.location.world.dropItemNaturally(victim.location, ItemStack(Material.DIAMOND, plugin.config.getInt("diamonds-per-kill", 2)))
+        plugin.rewardManager.grantDiamondReward(killer, plugin.config.getInt("diamonds-per-kill", 2))
     }
 }

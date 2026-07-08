@@ -1,6 +1,5 @@
 package de.davidsw.diawars.listeners
 
-import de.davidsw.diawars.Diawars
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -8,7 +7,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockDropItemEvent
 import org.bukkit.event.world.LootGenerateEvent
 
-class WorldProtectionListener(private val plugin: Diawars): Listener {
+class WorldProtectionListener: Listener {
     private val diamondOreMaterials = setOf(
         Material.DIAMOND_ORE,
         Material.DEEPSLATE_DIAMOND_ORE,
