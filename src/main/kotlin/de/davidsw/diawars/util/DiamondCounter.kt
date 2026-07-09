@@ -11,10 +11,10 @@ object DiamondCounter {
         return player.inventory.contents.toList().sumOf { item -> if (item != null) countInItem(item) else 0 }
     }
 
-    private fun countInItem(item: ItemStack): Int = when (item.type) {
+    fun countInItem(item: ItemStack): Int = when (item.type) {
         Material.DIAMOND -> item.amount
         Material.DIAMOND_BLOCK -> item.amount * 9
-        in DiamondMaterials.SHULKER_BOXES -> {
+        in MaterialSets.SHULKER_BOXES -> {
             val shulker = (item.itemMeta as? BlockStateMeta)?.blockState as? ShulkerBox ?: return 0
             shulker.inventory.contents.sumOf { s -> if (s != null) countInItem(s) else 0 }
         }

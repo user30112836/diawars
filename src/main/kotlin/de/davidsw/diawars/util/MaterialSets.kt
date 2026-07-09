@@ -2,7 +2,7 @@ package de.davidsw.diawars.util
 
 import org.bukkit.Material
 
-object DiamondMaterials {
+object MaterialSets {
     val SHULKER_BOXES: Set<Material> = setOf(
         Material.SHULKER_BOX,
         Material.BLACK_SHULKER_BOX,

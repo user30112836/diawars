@@ -1,7 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.DiamondMaterials
+import de.davidsw.diawars.util.MaterialSets
 import org.bukkit.Material
 import org.bukkit.entity.Entity
 import org.bukkit.entity.HumanEntity
@@ -30,7 +30,7 @@ class ContainerExplosionManager(private val plugin: Diawars) {
     }
 
     fun explodeContainer(holder: BlockInventoryHolder) {
-        if (holder.block.type in DiamondMaterials.SHULKER_BOXES) {
+        if (holder.block.type in MaterialSets.SHULKER_BOXES) {
             explodeShulker(holder)
             return
         }
@@ -51,7 +51,7 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val inventory = player.openInventory.topInventory
 
         inventory.forEach { item ->
-            if (item?.type in DiamondMaterials.DIAMOND_ITEMS) {
+            if (item?.type in MaterialSets.DIAMOND_ITEMS) {
                 world.dropItemNaturally(loc, item ?: return@forEach)
                 item.amount = 0
             }
@@ -69,7 +69,7 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val world = loc.world
 
         holder.inventory.contents.forEach { item ->
-            if (item?.type in DiamondMaterials.DIAMOND_ITEMS) {
+            if (item?.type in MaterialSets.DIAMOND_ITEMS) {
                 world.dropItemNaturally(loc, item ?: return@forEach)
                 item.amount = 0
             }

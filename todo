@@ -25,7 +25,6 @@ Features:
 - 19 pvpStatusToggle
     -> Making the delay for pvpStatusToggle configurable
     -> Editing the pvpStatusToggle messages
-- 21 Access to Shulker through command/inv
 - 22 DiamondScoreboard
     -> Leaderboard for players
     -> Making the sidebar togglable

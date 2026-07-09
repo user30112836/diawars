@@ -18,6 +18,7 @@ class ContainerExplosionListener(private val plugin: Diawars): Listener {
 
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
+        plugin.shulkerAccessManager.handleClose(event)
         val inventory = event.inventory
         val holder = inventory.holder ?: return
         val hasDiamond = inventory.contents.any { it != null && it.type in diamondMaterials }

@@ -1,6 +1,7 @@
 package de.davidsw.diawars
 
 import de.davidsw.diawars.commands.EventCommand
+import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
 import de.davidsw.diawars.commands.PvPCommand
@@ -29,6 +30,7 @@ import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.RewardManager
 import de.davidsw.diawars.managers.ScoresManager
+import de.davidsw.diawars.managers.ShulkerAccessManager
 import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
@@ -71,6 +73,7 @@ class Diawars : JavaPlugin() {
     lateinit var rewardManager: RewardManager
     lateinit var lobbyManager: LobbyManager
     lateinit var afkManager: AfkManager
+    lateinit var shulkerAccessManager: ShulkerAccessManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -100,6 +103,7 @@ class Diawars : JavaPlugin() {
         rewardManager = RewardManager(this)
         lobbyManager = LobbyManager(this)
         afkManager = AfkManager(this)
+        shulkerAccessManager = ShulkerAccessManager()
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -132,6 +136,7 @@ class Diawars : JavaPlugin() {
         getCommand("selfkill")?.setExecutor(SelfKillCommand(this))
         getCommand("event")?.setExecutor(EventCommand(this))
         getCommand("lobby")?.setExecutor(LobbyCommand(this))
+        getCommand("inv")?.setExecutor(InvCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

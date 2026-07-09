@@ -35,6 +35,10 @@ commands:
     description: Betritt oder verlässt die Lobby
     usage: /<command>
     permission: diawars.use
+  inv:
+    description: Öffnet eine gehaltene Shulker-Box oder Enderkiste
+    usage: /<command>
+    permission: diawars.use
 
 permissions:
   diawars.use:
