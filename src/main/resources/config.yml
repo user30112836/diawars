@@ -23,6 +23,10 @@ border:
     horizontal: 2 # (1=dense, 8=parse)
     vertical: 3 # (1=dense, 8=parse)
 
+pvp-toggle:
+  default-enabled: true
+  delay-seconds: 300
+
 teams:
   # Team A (Westliche Zone, X > 0)
   team-a:

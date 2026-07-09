@@ -22,7 +22,7 @@ data class PvPStatus(
 class PvPStatusStore(private val plugin: Diawars) {
     private val storeFile = File(plugin.dataFolder, "pvp_status.yml")
     private val cache = mutableMapOf<UUID, PvPStatus>()
-    private val toggleDelaySeconds = 300L
+    private val toggleDelaySeconds get() = plugin.config.getInt("pvp-toggle.delay-seconds", 300)
 
     init {
         load()
@@ -47,14 +47,14 @@ class PvPStatusStore(private val plugin: Diawars) {
     fun getRemainingTime(playerId: UUID): Long {
         val startTime = cache[playerId]?.toggleStartTime ?: return 0
         val elapsed = (getCurrentTick() - startTime) / 20
-        return (toggleDelaySeconds - elapsed).coerceAtLeast(0)
+        return (toggleDelaySeconds.toLong() - elapsed).coerceAtLeast(0)
     }
 
     fun setRemainingTimeTicks(playerId: UUID, ticks: Int) {
         cache[playerId] = PvPStatus(
             pvpEnabled = cache[playerId]?.pvpEnabled ?: true,
             toggleActive = true,
-            toggleStartTime = (getCurrentTick() - (toggleDelaySeconds - ticks)).toInt(),
+            toggleStartTime = (getCurrentTick() - (toggleDelaySeconds - ticks)),
             toggleDestination = cache[playerId]?.toggleDestination ?: true,
             oldTimeRemaining = 0,
         )
@@ -109,7 +109,7 @@ class PvPStatusStore(private val plugin: Diawars) {
                 val uuid = UUID.fromString(key)
                 val section = yaml.getConfigurationSection(key) ?: continue
                 cache[uuid] = PvPStatus(
-                    section.getBoolean("enabled", true),
+                    section.getBoolean("enabled", plugin.config.getBoolean("pvp-toggle.default-enabled", true)),
                     section.getBoolean("toggle", false),
                     section.getInt("startTime", 0),
                     section.getBoolean("destination", true),
@@ -133,7 +133,7 @@ class PvPStatusStore(private val plugin: Diawars) {
             config.set("$key.startTime", status.toggleStartTime)
             config.set("$key.destination", status.toggleDestination)
             if (shutdown) {
-                config.set("$key.old-time", (toggleDelaySeconds - (getCurrentTick() - status.toggleStartTime)).toInt())
+                config.set("$key.old-time", (toggleDelaySeconds - (getCurrentTick() - status.toggleStartTime)))
             }
         }
 

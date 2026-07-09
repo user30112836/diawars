@@ -22,9 +22,6 @@ Features:
 - 18 Welcome Message on first join
     -> Recommend the player to increase his particles
     -> Short introduction to the plugin (/help and /menu)
-- 19 pvpStatusToggle
-    -> Making the delay for pvpStatusToggle configurable
-    -> Editing the pvpStatusToggle messages
 - 22 DiamondScoreboard
     -> Making the components of the sidebar configurable
 - 23 GUI

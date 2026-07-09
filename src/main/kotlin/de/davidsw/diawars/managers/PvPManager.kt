@@ -13,7 +13,6 @@ import kotlin.math.floor
 
 class PvPManager(private val plugin: Diawars) {
     private val store = plugin.store.pvpStatusStore
-    private val toggleDelaySeconds = 5 * 60L
     private val fightTime = 2 * 60 * 20
     private val actionbarTasks = ConcurrentHashMap<UUID, Int>()
     private val toggleTasks = ConcurrentHashMap<UUID, Int>()
@@ -53,7 +52,7 @@ class PvPManager(private val plugin: Diawars) {
 
         val taskId = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             store.applyPvPStatus(playerId, targetStatus)
-        }, toggleDelaySeconds * 20L).taskId
+        }, plugin.config.getInt("pvp-toggle.delay-seconds", 300) * 20L).taskId
         toggleTasks[playerId] = taskId
 
         store.applyToggle(playerId, targetStatus)
