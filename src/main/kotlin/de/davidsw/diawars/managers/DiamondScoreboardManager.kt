@@ -1,12 +1,14 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.stores.ScoreboardComponent
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import io.papermc.paper.scoreboard.numbers.NumberFormat
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -23,6 +25,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val teamDiamonds: Int,
         val opponentsDiamonds: Int,
         val ownZone: Boolean,
+        val components: Set<ScoreboardComponent>,
     )
     private val lastState = mutableMapOf<UUID, BoardState>()
 
@@ -68,7 +71,9 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
     }
 
     private fun updateSidebar(player: Player) {
-        if (!plugin.store.scoreboardPreferencesStore.isSidebarEnabled(player.uniqueId)) {
+        val pref = plugin.store.scoreboardPreferencesStore.getPreference(player.uniqueId)
+
+        if (!pref.sidebarEnabled) {
             if (lastState.containsKey(player.uniqueId)) {
                 player.scoreboard = getScoreboardManager().mainScoreboard
                 lastState.remove(player.uniqueId)
@@ -83,13 +88,13 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents)
         val ownZone = plugin.zoneManager.isInOwnZone(player)
 
-        val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone)
+        val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone, pref.enabledComponents)
         if (lastState[player.uniqueId] != newState) {
             renderSidebar(
                 player, playerDiamonds,
                 team, teamDiamonds,
                 opponents, opponentsDiamonds,
-                ownZone
+                ownZone, pref.enabledComponents,
             )
             lastState[player.uniqueId] = newState
         }
@@ -103,6 +108,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         opponents: Team,
         opponentsDiamonds: Int,
         ownZone: Boolean,
+        components: Set<ScoreboardComponent>,
     ) {
         val scoreboard: Scoreboard = getScoreboardManager().newScoreboard
         val objective: Objective = scoreboard.registerNewObjective("diawars", Criteria.DUMMY, mm("<gold><bold>Diawars</bold></gold>"))
@@ -124,16 +130,29 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val opponentsColor = teamColor(opponents)
 
         val mm = miniMessage()
-        val lines = listOf(
-            mm.deserialize(" "),
-            mm.deserialize("<white>Team</white>"),
-            mm.deserialize("  <$teamColor>$teamLabel</$teamColor> <gray>|</gray> <aqua>$teamDiamonds</aqua>"),
-            mm.deserialize("  <$opponentsColor>$opponentsLabel</$opponentsColor> <gray>|</gray> <aqua>$opponentsDiamonds</aqua>"),
-            mm.deserialize(" "),
-            mm.deserialize("<white>Deine Diamanten</white>"),
-            mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>"),
-            mm.deserialize(" "),
-            if (plugin.zoneManager.isZoneWorld(player.world)) {
+        val showTeam = ScoreboardComponent.TEAM_DIAMONDS in components
+        val showOpponents = ScoreboardComponent.OPPONENTS_DIAMONDS in components
+        val showPlayer = ScoreboardComponent.PLAYER_DIAMONDS in components
+        val showZone = ScoreboardComponent.ZONE_STATUS in components
+
+        val lines = mutableListOf<Component>()
+        lines += mm.deserialize(" ")
+
+        if (showTeam || showOpponents) {
+            lines += mm.deserialize("<white>Team</white>")
+            if (showTeam) lines += mm.deserialize("  <$teamColor>$teamLabel</$teamColor> <gray>|</gray> <aqua>$teamDiamonds</aqua>")
+            if (showOpponents) lines += mm.deserialize("  <$opponentsColor>$opponentsLabel</$opponentsColor> <gray>|</gray> <aqua>$opponentsDiamonds</aqua>")
+            lines += mm.deserialize(" ")
+        }
+
+        if (showPlayer) {
+            lines += mm.deserialize("<white>Deine Diamanten</white>")
+            lines += mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>")
+            lines += mm.deserialize(" ")
+        }
+
+        if (showZone) {
+            lines += if (plugin.zoneManager.isZoneWorld(player.world)) {
                 if (ownZone) {
                     mm.deserialize("<dark_green> Heimatzone</dark_green>")
                 } else {
@@ -141,8 +160,8 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
                 }
             } else {
                 mm.deserialize("<gold> Neutrale Zone</gold>")
-            },
-        )
+            }
+        }
 
         lines.forEachIndexed { index, component ->
             val text = LegacyComponentSerializer.legacySection().serialize(component)

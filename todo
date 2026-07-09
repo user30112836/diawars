@@ -26,8 +26,6 @@ Events:
     -> Inventory
 
 Features:
-- 22 DiamondScoreboard
-    -> Making the components of the sidebar configurable
 - 23 GUI
     -> Better Buttons for backward and forward
     -> Integrating the particle density and amount settings

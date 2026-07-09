@@ -19,6 +19,7 @@ class MenuManager(private val plugin: Diawars) {
     companion object {
         val TITLE_MAIN = mm("<green>Diawars</green>")
         val TITLE_BORDER = mm("<green>Border-Einstellungen</green>")
+        val TITLE_SCOREBOARD = mm("<green>Sidebar-Einstellungen</green>")
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
@@ -51,6 +52,22 @@ class MenuManager(private val plugin: Diawars) {
         fillBorder(inv, player)
         player.openInventory(inv)
         startUpdater({ plugin.menu.borderMenu.populateBorderMenu(inv, player) }, player)
+    }
+
+    fun openScoreboardMenu(player: Player, memorize: Boolean = true) {
+        menuInvSwap[player.uniqueId] = true
+        if (memorize) {
+            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
+            val playerPosition = position[player.uniqueId] ?: -1
+            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
+            playerHistory.add(TITLE_SCOREBOARD)
+            history[player.uniqueId] = playerHistory
+            position[player.uniqueId] = playerPosition + 1
+        }
+        val inv = Bukkit.createInventory(null, 54, TITLE_SCOREBOARD)
+        fillBorder(inv, player)
+        player.openInventory(inv)
+        startUpdater({ plugin.menu.scoreboardMenu.populateScoreboardMenu(inv, player) }, player)
     }
 
     private fun startUpdater(func: () -> Unit, player: Player) {
@@ -94,6 +111,7 @@ class MenuManager(private val plugin: Diawars) {
         when (previousInventory) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
+            TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
         }
     }
 
@@ -111,6 +129,7 @@ class MenuManager(private val plugin: Diawars) {
         when (nextInventory) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
+            TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
         }
     }
 

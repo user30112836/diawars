@@ -28,12 +28,19 @@ class MenuListener(private val plugin: Diawars): Listener {
                 if (slot !in 0..53) return
                 if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.borderMenu.handleBorderClick(event.whoClicked as Player, slot, event.inventory)
             }
+            MenuManager.TITLE_SCOREBOARD -> {
+                event.isCancelled = true
+                val slot = event.rawSlot
+                if (slot !in 0..53) return
+                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.scoreboardMenu.handleScoreboardClick(event.whoClicked as Player, slot, event.inventory)
+            }
         }
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryClose(event: InventoryCloseEvent) {
-        if (event.view.title() == MenuManager.TITLE_BORDER || event.view.title() == MenuManager.TITLE_MAIN) {
+        val title = event.view.title()
+        if (title == MenuManager.TITLE_BORDER || title == MenuManager.TITLE_MAIN || title == MenuManager.TITLE_SCOREBOARD) {
             plugin.menuManager.stopUpdater(event.player as Player)
             plugin.menuManager.emptyHistory(event.player as Player)
         }

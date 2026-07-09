@@ -14,6 +14,7 @@ class MainMenu(private val plugin: Diawars) {
     companion object {
         private const val SLOT_PVP_TOGGLE   = 20
         private const val SLOT_SELF_KILL    = 22
+        private const val SLOT_SCOREBOARD   = 24
         private const val SLOT_BORDER       = 29
         private const val SLOT_SCORES       = 31
         private const val SLOT_ZONE_INFO    = 33
@@ -91,6 +92,20 @@ class MainMenu(private val plugin: Diawars) {
             glow = playerDia > 0,
         ))
 
+        // Scoreboard settings
+        val scoreboardPref = plugin.store.scoreboardPreferencesStore.getPreference(player.uniqueId)
+        inv.setItem(SLOT_SCOREBOARD, item(
+            material = Material.OAK_SIGN,
+            name     = mm("<aqua><bold>Sidebar-Einstellungen</bold></aqua>"),
+            lore     = listOf(
+                mm("<gray>Status: </gray>${if (scoreboardPref.sidebarEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
+                mm("<gray>Angezeigte Komponenten: </gray><white>${scoreboardPref.enabledComponents.size}/4</white>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
+
         // Zone info
         inv.setItem(SLOT_ZONE_INFO, item(
             material = Material.COMPASS,
@@ -117,6 +132,8 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_SELF_KILL -> if (!plugin.pvpManager.isInFight(player.uniqueId)) player.health = 0.0
 
             SLOT_BORDER -> plugin.menuManager.openBorderMenu(player)
+
+            SLOT_SCOREBOARD -> plugin.menuManager.openScoreboardMenu(player)
 
             SLOT_SCORES -> {
                 player.closeInventory()

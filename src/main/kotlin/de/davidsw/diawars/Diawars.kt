@@ -35,6 +35,7 @@ import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.MainMenu
+import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.PlayerStateStore
@@ -48,6 +49,7 @@ import org.bukkit.plugin.java.JavaPlugin
 data class Menu(
     var mainMenu: MainMenu,
     var borderMenu: BorderMenu,
+    var scoreboardMenu: ScoreboardMenu,
 )
 
 data class Store(
@@ -111,6 +113,7 @@ class Diawars : JavaPlugin() {
         menu = Menu(
             mainMenu = MainMenu(this),
             borderMenu = BorderMenu(this),
+            scoreboardMenu = ScoreboardMenu(this),
         )
 
         diamondLimitManager.startTrackingTask()
