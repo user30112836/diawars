@@ -40,6 +40,7 @@ import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
+import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRule
 import org.bukkit.plugin.java.JavaPlugin
@@ -56,6 +57,7 @@ data class Store(
     var eventStore: EventStore,
     var playerStateStore: PlayerStateStore,
     var rewardStore: RewardStore,
+    var scoreboardPreferencesStore: ScoreboardPreferencesStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -88,6 +90,7 @@ class Diawars : JavaPlugin() {
             eventStore = EventStore(this),
             playerStateStore = PlayerStateStore(this),
             rewardStore = RewardStore(this),
+            scoreboardPreferencesStore = ScoreboardPreferencesStore(this),
         )
 
         teamManager = TeamManager(this)

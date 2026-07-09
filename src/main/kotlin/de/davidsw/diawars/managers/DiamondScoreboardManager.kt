@@ -2,7 +2,6 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
@@ -11,6 +10,8 @@ import io.papermc.paper.scoreboard.numbers.NumberFormat
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
+import org.bukkit.Bukkit.getOnlinePlayers
+import org.bukkit.Bukkit.getScoreboardManager
 import org.bukkit.scoreboard.Criteria
 import java.util.UUID
 
@@ -38,7 +39,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
     }
 
     fun update() {
-        for (player in Bukkit.getOnlinePlayers()) {
+        for (player in getOnlinePlayers()) {
             plugin.store.playerDiamondStore.snapshotIfChanged(player)
             updateListName(player)
             updateSidebar(player)
@@ -67,6 +68,14 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
     }
 
     private fun updateSidebar(player: Player) {
+        if (!plugin.store.scoreboardPreferencesStore.isSidebarEnabled(player.uniqueId)) {
+            if (lastState.containsKey(player.uniqueId)) {
+                player.scoreboard = getScoreboardManager().mainScoreboard
+                lastState.remove(player.uniqueId)
+            }
+            return
+        }
+
         val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return
         val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team)
@@ -95,7 +104,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         opponentsDiamonds: Int,
         ownZone: Boolean,
     ) {
-        val scoreboard: Scoreboard = Bukkit.getScoreboardManager().newScoreboard
+        val scoreboard: Scoreboard = getScoreboardManager().newScoreboard
         val objective: Objective = scoreboard.registerNewObjective("diawars", Criteria.DUMMY, mm("<gold><bold>Diawars</bold></gold>"))
         objective.displaySlot = DisplaySlot.SIDEBAR
         objective.numberFormat(NumberFormat.blank())
@@ -150,6 +159,6 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
 
     fun clearPlayer(player: Player) {
         lastState.remove(player.uniqueId)
-        player.scoreboard = Bukkit.getScoreboardManager().mainScoreboard
+        player.scoreboard = getScoreboardManager().mainScoreboard
     }
 }

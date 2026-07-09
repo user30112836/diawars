@@ -19,6 +19,11 @@ class ScoresCommand(private val plugin: Diawars): CommandExecutor, TabCompleter 
 
         when (args[0]) {
             "info" -> plugin.scoresManager.handleInfo(sender)
+            "sidebar" -> {
+                val current = plugin.store.scoreboardPreferencesStore.isSidebarEnabled(sender.uniqueId)
+                plugin.store.scoreboardPreferencesStore.setSidebarEnabled(sender.uniqueId, !current)
+                sender.sendMessage(mm(if (!current) "<green>✓ Sidebar wurde aktiviert!</green>" else "<red>✗ Sidebar wurde deaktiviert!</red>"))
+            }
             else -> {
                 sender.sendMessage(mm("<red>Unbekannter Befehl! Verwendung: /scores &lt;info&gt;</red>"))
             }
@@ -34,7 +39,7 @@ class ScoresCommand(private val plugin: Diawars): CommandExecutor, TabCompleter 
         args: Array<out String>
     ): List<String?> {
         if (args.size == 1) {
-            return listOf("info")
+            return listOf("info", "sidebar")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 

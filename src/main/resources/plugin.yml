@@ -17,7 +17,7 @@ commands:
     permission: diawars.use
   scores:
     description: Anzeige des Punktestands
-    usage: /<command> <info>
+    usage: /<command> <info|sidebar>
     permission: diawars.use
   menu:
     description: Hauptmenü des Plugins
