@@ -20,26 +20,11 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
         args: Array<out String>
     ): Boolean {
         if (args.isEmpty()) {
-            sender.sendMessage(mm("<gray>Verwendung: /teamzones &lt;reload|info|border&gt;</gray>"))
+            sender.sendMessage(mm("<gray>Verwendung: /teamzones &lt;|info|border&gt;</gray>"))
             return true
         }
 
         when (args[0].lowercase()) {
-            "reload" -> {
-                if (!sender.hasPermission("teamzones.admin")) {
-                    if (sender is Player) {
-                        sender.sendMessage("No Permission!")
-                    } else {
-                        sender.sendMessage("No Permission!")
-                    }
-                    return true
-                }
-
-                plugin.reloadPlugin()
-
-                sender.sendMessage("Plugin got reloaded")
-            }
-
             "info" -> {
                 val teamA = Team.TEAM_A.displayName
                 val teamB = Team.TEAM_B.displayName
@@ -256,9 +241,6 @@ class TeamZonesCommand(private val plugin: Diawars): CommandExecutor, TabComplet
     ): List<String?> {
         if (args.size == 1) {
             val subcommands = mutableListOf("info", "border")
-            if (sender.hasPermission("teamzones.admin")) {
-                subcommands.add("reload")
-            }
             return subcommands.filter { it.startsWith(args[0].lowercase()) }
         }
 

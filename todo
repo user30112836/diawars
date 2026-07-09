@@ -6,6 +6,13 @@ Bugs:
 Improvements:
 --- Empty ---
 
+Lobby:
+- Make the player spawn there on first join
+- When the player first leaves the lobby he should spawn in his zone
+- When a player hasn't left the lobby yet they should receive a welcome message
+    -> Recommend the player to increase his particles to see the border properly
+    -> Short introduction to the plugin and a reference to the manual
+
 Events:
 - 7 Create message for ending events
 - 11 Integrate the events into the menu
@@ -19,9 +26,6 @@ Events:
     -> Inventory
 
 Features:
-- 18 Welcome Message on first join
-    -> Recommend the player to increase his particles
-    -> Short introduction to the plugin (/help and /menu)
 - 22 DiamondScoreboard
     -> Making the components of the sidebar configurable
 - 23 GUI
@@ -34,15 +38,11 @@ Features:
 - 28 Manual via a /manual command (major)
 
 Admin Command:
-- 13 Setting for limits
-    -> Setting the diamond limit
-    -> Setting bonus diamond amount
 - 14 pvpStatusToggle
     -> Instant toggle of pvpStatus
     -> Toggle of pvpStatus for other players
     -> Toggle of pvpStatus for all players
 - 15 Inspecting inv of players
-- 16 Editing player teams
 
 Multiplayer-Tests:
 - Are personal configs getting deleted when offline?

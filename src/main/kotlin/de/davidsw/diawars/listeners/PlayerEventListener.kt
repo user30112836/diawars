@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Sound
 import org.bukkit.event.Event
@@ -14,7 +15,7 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
         if (!plugin.teamManager.isPlayerInTeam(event.player.uniqueId) && !event.player.isOp) {
-            event.player.kickPlayer("Du bist kein Teammitglied!")
+            event.player.kick(mm("<red>Du bist kein Teammitglied!</red> <yellow>Melde dich bei einem Admin um einem Team beizutreten.</yellow>"))
             return
         }
         plugin.server.scheduler.runTaskLater(plugin, Runnable {

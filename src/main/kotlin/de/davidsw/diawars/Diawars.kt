@@ -158,11 +158,4 @@ class Diawars : JavaPlugin() {
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
     }
-
-    fun reloadPlugin() {
-        reloadConfig()
-        teamManager.loadTeamsFromConfig()
-        diamondScoreboardManager.start()
-        logger.info("The Diawars-Plugin got reloaded!")
-    }
 }

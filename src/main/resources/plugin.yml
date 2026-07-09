@@ -8,8 +8,8 @@ depend: [NBTAPI]
 
 commands:
   teamzones:
-    description: Hauptbefehl des Plugins
-    usage: /<command> <reload|info|border>
+    description: Befehl für die Border
+    usage: /<command> <info|border>
     permission: diawars.use
   pvp:
     description: Schaltet PvP an oder aus (5 Minuten Wartezeit)
