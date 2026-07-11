@@ -44,7 +44,7 @@ import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import org.bukkit.Bukkit.getWorlds
-import org.bukkit.GameRule
+import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
 
 data class Menu(
@@ -153,7 +153,7 @@ class Diawars : JavaPlugin() {
 
         val worlds = getWorlds()
         for (world in worlds) {
-            world.setGameRule(GameRule.KEEP_INVENTORY, true)
+            world.setGameRule(GameRules.KEEP_INVENTORY, true)
         }
 
         logger.info("The Diawars-Plugin got activated!")

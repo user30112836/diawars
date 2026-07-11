@@ -38,8 +38,9 @@ class MenuListener(private val plugin: Diawars): Listener {
                 event.isCancelled = true
                 val slot = event.rawSlot
                 if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.eventMenu.handleEventClick(event.whoClicked as Player, slot, event.inventory)
+                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.eventMenu.handleEventClick(event.whoClicked as Player, slot)
             }
+            else -> {}
         }
     }
 

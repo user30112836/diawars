@@ -129,6 +129,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
+            else -> {}
         }
     }
 
@@ -148,6 +149,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
+            else -> {}
         }
     }
 

@@ -1,7 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
-import org.bukkit.GameRule
+import org.bukkit.GameRules
 import org.bukkit.Material
 import org.bukkit.entity.Item
 import org.bukkit.event.EventHandler
@@ -69,7 +69,7 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
 
     @EventHandler
     fun onPlayerDeath(event: PlayerDeathEvent) {
-        if (!(event.player.world.getGameRuleValue(GameRule.KEEP_INVENTORY) ?: false)) return
+        if (!(event.player.world.getGameRuleValue(GameRules.KEEP_INVENTORY))) return
         val player = event.entity
         plugin.diamondLimitManager.dropAll(player)
         plugin.store.playerDiamondStore.saveCount(player, 0)

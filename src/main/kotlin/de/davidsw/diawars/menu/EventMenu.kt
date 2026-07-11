@@ -272,7 +272,7 @@ class EventMenu(private val plugin: Diawars) {
         }
     }
 
-    fun handleEventClick(player: Player, slot: Int, inv: Inventory) {
+    fun handleEventClick(player: Player, slot: Int) {
         when (slot) {
             SLOT_CREATE -> {
                 val ownEvents = plugin.store.eventStore.getByCreator(player.uniqueId)
