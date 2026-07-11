@@ -15,7 +15,6 @@ Lobby:
 
 Events:
 - 7 Create message for ending events
-- 11 Integrate the events into the menu
 - 12 Make things configurable when setting up events
     -> World type
     -> Player gamemode

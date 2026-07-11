@@ -18,14 +18,14 @@ class InvCommand(private val plugin: Diawars): CommandExecutor {
 
         val item = sender.inventory.itemInMainHand
 
-        when {
-            item.type in MaterialSets.SHULKER_BOXES -> {
+        when (item.type) {
+            in MaterialSets.SHULKER_BOXES -> {
                 if (!plugin.shulkerAccessManager.openHeldShulker(sender)) {
                     sender.sendMessage(mm("<red>Diese Shulker-Box konnte nicht geöffnet werden!</red>"))
                 }
             }
 
-            item.type == Material.ENDER_CHEST -> {
+            Material.ENDER_CHEST -> {
                 plugin.shulkerAccessManager.openHeldEnderChest(sender)
             }
 

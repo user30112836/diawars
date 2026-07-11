@@ -34,6 +34,7 @@ import de.davidsw.diawars.managers.ShulkerAccessManager
 import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
+import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.MainMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
@@ -50,6 +51,7 @@ data class Menu(
     var mainMenu: MainMenu,
     var borderMenu: BorderMenu,
     var scoreboardMenu: ScoreboardMenu,
+    var eventMenu: EventMenu,
 )
 
 data class Store(
@@ -114,6 +116,7 @@ class Diawars : JavaPlugin() {
             mainMenu = MainMenu(this),
             borderMenu = BorderMenu(this),
             scoreboardMenu = ScoreboardMenu(this),
+            eventMenu = EventMenu(this),
         )
 
         diamondLimitManager.startTrackingTask()

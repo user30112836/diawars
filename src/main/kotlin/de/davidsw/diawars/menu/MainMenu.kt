@@ -1,6 +1,7 @@
 package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -18,6 +19,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_BORDER       = 29
         private const val SLOT_SCORES       = 31
         private const val SLOT_ZONE_INFO    = 33
+        private const val SLOT_EVENTS       = 40
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -116,6 +118,25 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Events
+        val eventSession = plugin.eventManager.getSession(player.uniqueId)
+        val sessionText = when (eventSession?.mode) {
+            EventManager.SessionMode.BUILD -> "<yellow>Baue an einem Event</yellow>"
+            EventManager.SessionMode.REVIEW -> "<light_purple>Prüfst ein Event</light_purple>"
+            EventManager.SessionMode.PLAY -> "<green>Nimmst an einem Event teil</green>"
+            null -> "<gray>Kein aktives Event</gray>"
+        }
+        inv.setItem(SLOT_EVENTS, item(
+            material = Material.BEACON,
+            name = mm("<gold><bold>Events</bold></gold>"),
+            lore = listOf(
+                mm("<gray>Status: </gray>$sessionText"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -151,6 +172,8 @@ class MainMenu(private val plugin: Diawars) {
                     player.sendMessage(mm("<gray>Du bist in keinem Team</gray>"))
                 }
             }
+
+            SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
         }
     }
 

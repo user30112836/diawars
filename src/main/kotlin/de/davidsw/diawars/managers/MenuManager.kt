@@ -19,6 +19,7 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_MAIN = mm("<green>Diawars</green>")
         val TITLE_BORDER = mm("<green>Border-Einstellungen</green>")
         val TITLE_SCOREBOARD = mm("<green>Sidebar-Einstellungen</green>")
+        val TITLE_EVENT = mm("<green>Events</green>")
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
@@ -69,6 +70,22 @@ class MenuManager(private val plugin: Diawars) {
         startUpdater({ plugin.menu.scoreboardMenu.populateScoreboardMenu(inv, player) }, player)
     }
 
+    fun openEventMenu(player: Player, memorize: Boolean = true) {
+        menuInvSwap[player.uniqueId] = true
+        if (memorize) {
+            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
+            val playerPosition = position[player.uniqueId] ?: -1
+            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
+            playerHistory.add(TITLE_EVENT)
+            history[player.uniqueId] = playerHistory
+            position[player.uniqueId] = playerPosition + 1
+        }
+        val inv = Bukkit.createInventory(null, 54, TITLE_EVENT)
+        fillBorder(inv, player)
+        player.openInventory(inv)
+        startUpdater({ plugin.menu.eventMenu.populateEventMenu(inv, player) }, player)
+    }
+
     private fun startUpdater(func: () -> Unit, player: Player) {
         stopUpdater(player)
         func()
@@ -111,6 +128,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
+            TITLE_EVENT -> openEventMenu(player, false)
         }
     }
 
@@ -129,6 +147,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
+            TITLE_EVENT -> openEventMenu(player, false)
         }
     }
 
