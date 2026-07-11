@@ -1,5 +1,6 @@
 package de.davidsw.diawars.util
 
+import com.destroystokyo.paper.profile.ProfileProperty
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -7,7 +8,6 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
-import java.net.URI
 import java.util.UUID
 
 object MenuUtils {
@@ -35,12 +35,14 @@ object MenuUtils {
         return stack
     }
 
-    fun skullFromUrl(textureUrl: String, name: Component = Component.text(""), lore: List<Component> = emptyList()): ItemStack {
+    private val NAV_HEAD_UUID = UUID.fromString("6c39cbf9-8256-4c5c-8fdb-976deb2ca0da")
+
+    fun skullFromValue(value: String, name: Component = Component.text(""), lore: List<Component> = emptyList()): ItemStack {
         val stack = ItemStack(Material.PLAYER_HEAD)
         val meta  = stack.itemMeta as SkullMeta
-        val profile = Bukkit.createProfile(UUID.randomUUID())
+        val profile = Bukkit.createProfile(NAV_HEAD_UUID)
 
-        profile.textures.skin = URI.create(textureUrl).toURL()
+        profile.setProperty(ProfileProperty("textures", value))
 
         meta.playerProfile = profile
         meta.displayName(name)

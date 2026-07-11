@@ -1,8 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.MenuUtils.item
-import de.davidsw.diawars.util.MenuUtils.skullFromUrl
+import de.davidsw.diawars.util.MenuUtils
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -134,7 +133,7 @@ class MenuManager(private val plugin: Diawars) {
     }
 
     private fun fillBorder(inv: Inventory, player: Player) {
-        val pane = item(Material.GRAY_STAINED_GLASS_PANE)
+        val pane = MenuUtils.item(Material.GRAY_STAINED_GLASS_PANE)
         for (i in 0 until 9) inv.setItem(i, pane)
         for (i in 45 until 54) inv.setItem(i, pane)
         for (i in listOf(9, 18, 27, 36)) inv.setItem(i, pane)
@@ -143,18 +142,18 @@ class MenuManager(private val plugin: Diawars) {
         val playerHistory = history[player.uniqueId] ?: return
         val playerPosition = position[player.uniqueId] ?: return
         if (playerPosition > 0) {
-            inv.setItem(48, skullFromUrl(
-                textureUrl = "http://textures.minecraft.net/texture/ca553ee38d14ee2e3526219215448e3466df8ee7c2199494944f42d74776",
+            inv.setItem(48, MenuUtils.skullFromValue(
+                value = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTg5NGRhNjk1OTY1NDhjNzRkOTY0ZTk5YjdhNGM5MjE3NjEwZjFhMjdjOTkxZGZhNDRkYWE1ZGE3NzFkODI1In19fQ==",
                 name = mm("<gray><bold>← Zurück</bold></gray>"),
             ))
         }
-        inv.setItem(49, item(
+        inv.setItem(49, MenuUtils.item(
             material = Material.STRUCTURE_VOID,
             name = mm("<gray><bold>Schließen</bold></gray>"),
         ))
         if (playerHistory.size > playerPosition + 1) {
-            inv.setItem(50, skullFromUrl(
-                textureUrl = "http://textures.minecraft.net/texture/ca553ee38d14ee2e3526219215448e3466df8ee7c2199494944f42d74776",
+            inv.setItem(50, MenuUtils.skullFromValue(
+                value = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzc0NTNhYzJkN2E0MmE5MzY3NGZiZjYyY2FmMzMxYzcxNDNkY2JiY2M0ZjJiYWJiYzJmNjViOTUxNzQyMTQifX19",
                 name = mm("<gray><bold>Weiter →</bold></gray>"),
             ))
         }
