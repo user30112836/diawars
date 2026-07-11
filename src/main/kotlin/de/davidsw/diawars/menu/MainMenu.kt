@@ -3,6 +3,7 @@ package de.davidsw.diawars.menu
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.PvPManager
+import de.davidsw.diawars.util.MaterialSets
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import net.kyori.adventure.text.Component
@@ -19,6 +20,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_BORDER       = 29
         private const val SLOT_SCORES       = 31
         private const val SLOT_ZONE_INFO    = 33
+        private const val SLOT_INV          = 38
         private const val SLOT_EVENTS       = 40
     }
 
@@ -137,6 +139,24 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Inventory access (held shulker box / ender chest)
+        val heldItem = player.inventory.itemInMainHand
+        val canOpenInv = heldItem.type in MaterialSets.SHULKER_BOXES || heldItem.type == Material.ENDER_CHEST
+        inv.setItem(SLOT_INV, item(
+            material = if (canOpenInv) heldItem.type else Material.CHEST,
+            name = mm(if (canOpenInv) "<yellow><bold>Inventar öffnen</bold></yellow>" else "<gray><bold>Inventar öffnen</bold></gray>"),
+            lore = if (canOpenInv) listOf(
+                mm("<gray>Öffnet die gehaltene Shulker-Box</gray>"),
+                mm("<gray>oder Enderkiste</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ) else listOf(
+                mm("<gray>Halte eine Shulker-Box oder</gray>"),
+                mm("<gray>eine Enderkiste in der Hand</gray>"),
+            ),
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -174,6 +194,27 @@ class MainMenu(private val plugin: Diawars) {
             }
 
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
+
+            SLOT_INV -> {
+                val item = player.inventory.itemInMainHand
+                when {
+                    item.type in MaterialSets.SHULKER_BOXES -> {
+                        player.closeInventory()
+                        if (!plugin.shulkerAccessManager.openHeldShulker(player)) {
+                            player.sendMessage(mm("<red>Diese Shulker-Box konnte nicht geöffnet werden!</red>"))
+                        }
+                    }
+
+                    item.type == Material.ENDER_CHEST -> {
+                        player.closeInventory()
+                        plugin.shulkerAccessManager.openHeldEnderChest(player)
+                    }
+
+                    else -> {
+                        player.sendMessage(mm("<red>Du musst eine Shulker-Box oder eine Enderkiste in der Hand haben!</red>"))
+                    }
+                }
+            }
         }
     }
 
