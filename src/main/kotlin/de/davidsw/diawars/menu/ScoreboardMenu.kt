@@ -11,10 +11,10 @@ import org.bukkit.inventory.Inventory
 class ScoreboardMenu(private val plugin: Diawars) {
     companion object {
         private const val SLOT_SIDEBAR_TOGGLE   = 20
-        private const val SLOT_TEAM_DIAMONDS    = 22
-        private const val SLOT_OPPONENTS_DIAMONDS = 23
-        private const val SLOT_PLAYER_DIAMONDS  = 24
-        private const val SLOT_ZONE_STATUS      = 31
+        private const val SLOT_TEAM_DIAMONDS    = 21
+        private const val SLOT_OPPONENTS_DIAMONDS = 22
+        private const val SLOT_PLAYER_DIAMONDS  = 23
+        private const val SLOT_ZONE_STATUS      = 24
         private const val SLOT_RESET            = 40
 
         private val COMPONENT_SLOTS = mapOf(

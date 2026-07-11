@@ -22,6 +22,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_ZONE_INFO    = 33
         private const val SLOT_INV          = 38
         private const val SLOT_EVENTS       = 40
+        private const val SLOT_LOBBY        = 42
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -157,6 +158,31 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Lobby toggle
+        val inEventSession = plugin.eventManager.getSession(player.uniqueId) != null
+        val inLobby = plugin.lobbyManager.isInLobby(player.uniqueId)
+        inv.setItem(SLOT_LOBBY, item(
+            material = when {
+                inEventSession -> Material.BARRIER
+                inLobby -> Material.RED_BED
+                else -> Material.LIME_BED
+            },
+            name = mm(when {
+                inEventSession -> "<gray><bold>Lobby</bold></gray>"
+                inLobby -> "<red><bold>Lobby verlassen</bold></red>"
+                else -> "<green><bold>Lobby betreten</bold></green>"
+            }),
+            lore = if (inEventSession) listOf(
+                mm("<gray>Verlasse zuerst dein Event</gray>"),
+                mm("<gray>um die Lobby zu betreten</gray>"),
+            ) else listOf(
+                mm("<gray>Status: </gray>${if (inLobby) "<green>In der Lobby</green>" else "<red>Nicht in der Lobby</red>"}"),
+                mm(""),
+                mm("<yellow>Klicken zum ${if (inLobby) "Verlassen" else "Betreten"}</yellow>"),
+            ),
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -212,6 +238,24 @@ class MainMenu(private val plugin: Diawars) {
 
                     else -> {
                         player.sendMessage(mm("<red>Du musst eine Shulker-Box oder eine Enderkiste in der Hand haben!</red>"))
+                    }
+                }
+            }
+
+            SLOT_LOBBY -> {
+                if (plugin.eventManager.getSession(player.uniqueId) != null) return
+
+                if (plugin.lobbyManager.isInLobby(player.uniqueId)) {
+                    if (plugin.lobbyManager.leaveLobby(player)) {
+                        player.closeInventory()
+                        player.sendMessage(mm("<green>Du hast die Lobby verlassen.</green>"))
+                    }
+                } else {
+                    if (plugin.lobbyManager.sendToLobby(player)) {
+                        player.closeInventory()
+                        player.sendMessage(mm("<green>Willkommen in der Lobby!</green>"))
+                    } else {
+                        player.sendMessage(mm("<red>Die Lobby konnte nicht geladen werden!</red>"))
                     }
                 }
             }
