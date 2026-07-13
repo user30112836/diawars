@@ -83,9 +83,9 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
 
         val playerDiamonds = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return
-        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team)
+        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team) + plugin.store.vaultStore.getVaultCount(team)
         val opponents = team.opponent()
-        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents)
+        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents) + plugin.store.vaultStore.getVaultCount(opponents)
         val ownZone = plugin.zoneManager.isInOwnZone(player)
 
         val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone, pref.enabledComponents)

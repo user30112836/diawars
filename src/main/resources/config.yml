@@ -62,3 +62,15 @@ playtime-reward:
 
 afk:
   threshold-seconds: 300 # 5min
+
+vaults:
+  team-a-vault-1:
+    world: "world"
+    team: "team-a"
+    corner1: { x: 10, y: 60, z: 10 }
+    corner2: { x: 20, y: 65, z: 20 }
+  team-b-vault-1:
+    world: "world"
+    team: "team-b"
+    corner1: { x: -20, y: 60, z: -20 }
+    corner2: { x: -10, y: 65, z: -10 }

@@ -1,0 +1,74 @@
+package de.davidsw.diawars.managers
+
+import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MaterialSets.VAULT_UNDERGROUND
+import org.bukkit.Location
+import org.bukkit.Material
+
+data class VaultRegion(
+    val id: String,
+    val team: Team,
+    val minX: Int, val minY: Int, val minZ: Int,
+    val maxX: Int, val maxY: Int, val maxZ: Int,
+) {
+    fun contains(location: Location): Boolean {
+        val x = location.blockX
+        val y = location.blockY
+        val z = location.blockZ
+        return x in minX..maxX && y in minY..maxY && z in minZ..maxZ
+    }
+}
+
+class VaultManager(private val plugin: Diawars) {
+    private var regions: List<VaultRegion> = emptyList()
+
+    init {
+        loadFromConfig()
+    }
+
+    fun loadFromConfig() {
+        val list = mutableListOf<VaultRegion>()
+        val section = plugin.config.getConfigurationSection("vaults")
+
+        if (section != null) {
+            for (id in section.getKeys(false)) {
+                try {
+                    val vaultSection = section.getConfigurationSection(id) ?: continue
+                    val teamKey = vaultSection.getString("team") ?: continue
+                    val team = Team.entries.firstOrNull { it.configKey == teamKey }
+                        ?: run {
+                            plugin.logger.warning("Vault '$id' has unknown team '$teamKey'")
+                            continue
+                        }
+                    val c1 = vaultSection.getConfigurationSection("corner1") ?: continue
+                    val c2 = vaultSection.getConfigurationSection("corner2") ?: continue
+
+                    val x1 = c1.getInt("x"); val y1 = c1.getInt("y"); val z1 = c1.getInt("z")
+                    val x2 = c2.getInt("x"); val y2 = c2.getInt("y"); val z2 = c2.getInt("z")
+
+                    list += VaultRegion(
+                        id = id,
+                        team = team,
+                        minX = minOf(x1, x2), maxX = maxOf(x1, x2),
+                        minY = minOf(y1, y2), maxY = maxOf(y1, y2),
+                        minZ = minOf(z1, z2), maxZ = maxOf(z1, z2),
+                    )
+                } catch (e: Exception) {
+                    plugin.logger.warning("Could not load vault '$id': ${e.message}")
+                }
+            }
+        }
+
+        regions = list
+        plugin.logger.info("Loaded ${regions.size} vault region(s).")
+    }
+
+    fun getVaultAt(location: Location): VaultRegion? = regions.firstOrNull { it.contains(location) }
+
+    fun isValidPlacementSpot(location: Location): VaultRegion? {
+        val vault = getVaultAt(location) ?: return null
+        val below = location.clone().add(0.0, -1.0, 0.0).block
+        if (!VAULT_UNDERGROUND.contains(below.type)) return null
+        return vault
+    }
+}

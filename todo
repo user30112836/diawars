@@ -2,9 +2,21 @@ Bugs:
 - 1 PvP logic is reversed (Might be fixed)
 - 2 Inventory in event worlds does not get saved
 - 4 Border does not align correctly (It's fine on default settings)
+- Diamond blocks outside of vaults should not drop any diamonds
+- Diamonds under the limit lose their glow when leaving the server
 
 Improvements:
 --- Empty ---
+
+Vaults:
+- Specific error when trying to place diamond blocks on to of a vault
+- Numeration of vaults
+- Only selected players from own team can place in specific vaults
+    -> Player can claim vault with /vault claim
+    -> Player can invite players with /vault invite <player>
+    -> Player can ban players with /vault ban <player>
+    -> Every Player can only claim one vault
+- All Players from the other teams can steal from vaults
 
 Lobby:
 - Make the player spawn there on first join
@@ -14,6 +26,7 @@ Lobby:
     -> Short introduction to the plugin and a reference to the manual
 
 Events:
+- Players should not be able to join event worlds when they exceed the diamond limit
 - 12 Make things configurable when setting up events
     -> World type
     -> Player gamemode
@@ -26,10 +39,6 @@ Events:
 Features:
 - 23 GUI
     -> Integrating the particle density and amount settings
-- 26 Diamond vaults (major)
-    -> Multiple small areas where you can place diamonds
-    -> Only selected players from own team can place in specific vaults
-    -> All Players from the other team
 - 28 Manual via a /manual command (major)
 
 Admin Command:

@@ -20,14 +20,16 @@ class ScoresManager(private val plugin: Diawars) {
         val team = plugin.teamManager.getPlayerTeam(sender.uniqueId) ?: return
         val teamLabel = team.displayName
         val teamColor = teamColor(team)
-        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team)
+        val teamVaultDiamonds = plugin.store.vaultStore.getVaultCount(team)
+        val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team) + teamVaultDiamonds
         val teamOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(team)
         val teamOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(team)
 
         val opponents = team.opponent()
         val opponentsLabel = opponents.displayName
         val opponentsColor = teamColor(opponents)
-        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents)
+        val opponentsVaultDiamonds = plugin.store.vaultStore.getVaultCount(opponents)
+        val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents) + opponentsVaultDiamonds
         val opponentsOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(opponents)
         val opponentsOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(opponents)
 
@@ -38,10 +40,12 @@ class ScoresManager(private val plugin: Diawars) {
             <gray>Team Diamanten: <aqua>$teamDiamonds</aqua>
             <gray>Online Team Diamanten: <aqua>$teamOnlineDiamonds</aqua>
             <gray>Offline Team Diamanten: <aqua>$teamOfflineDiamonds</aqua>
+            <gray>Vault Diamanten: <aqua>$teamVaultDiamonds</aqua>
             <$opponentsColor>=== $opponentsLabel ===</$opponentsColor>
             <gray>Team Diamanten: <aqua>$opponentsDiamonds</aqua>
             <gray>Online Team Diamanten: <aqua>$opponentsOnlineDiamonds</aqua>
             <gray>Offline Team Diamanten: <aqua>$opponentsOfflineDiamonds</aqua>
+            <gray>Vault Diamanten: <aqua>$opponentsVaultDiamonds</aqua>
         """.trimIndent())
         sender.sendMessage(message)
     }

@@ -32,4 +32,9 @@ object MaterialSets {
         Material.DIAMOND_ORE,
         Material.DEEPSLATE_DIAMOND_ORE,
     )
+
+    val VAULT_UNDERGROUND: Set<Material> = setOf(
+        Material.BEDROCK,
+        Material.DIAMOND_BLOCK,
+    )
 }

@@ -18,6 +18,7 @@ import de.davidsw.diawars.listeners.MessageListener
 import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PvPListener
 import de.davidsw.diawars.listeners.RewardListener
+import de.davidsw.diawars.listeners.VaultListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
 import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
@@ -34,6 +35,7 @@ import de.davidsw.diawars.managers.RewardManager
 import de.davidsw.diawars.managers.ScoresManager
 import de.davidsw.diawars.managers.ShulkerAccessManager
 import de.davidsw.diawars.managers.TeamManager
+import de.davidsw.diawars.managers.VaultManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.EventMenu
@@ -46,6 +48,7 @@ import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
+import de.davidsw.diawars.stores.VaultStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
@@ -66,6 +69,7 @@ data class Store(
     var rewardStore: RewardStore,
     var scoreboardPreferencesStore: ScoreboardPreferencesStore,
     var messageStore: MessageStore,
+    var vaultStore: VaultStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -85,6 +89,7 @@ class Diawars : JavaPlugin() {
     lateinit var afkManager: AfkManager
     lateinit var shulkerAccessManager: ShulkerAccessManager
     lateinit var messageManager: MessageManager
+    lateinit var vaultManager: VaultManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -101,6 +106,7 @@ class Diawars : JavaPlugin() {
             rewardStore = RewardStore(this),
             scoreboardPreferencesStore = ScoreboardPreferencesStore(this),
             messageStore = MessageStore(this),
+            vaultStore = VaultStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -118,6 +124,7 @@ class Diawars : JavaPlugin() {
         afkManager = AfkManager(this)
         shulkerAccessManager = ShulkerAccessManager()
         messageManager = MessageManager(this)
+        vaultManager = VaultManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -145,6 +152,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(DiamondListener(this), this)
         server.pluginManager.registerEvents(LobbyListener(this), this)
         server.pluginManager.registerEvents(MessageListener(this), this)
+        server.pluginManager.registerEvents(VaultListener(this), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
