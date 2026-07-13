@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.2.build.+")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
     compileOnly("de.tr7zw:item-nbt-api-plugin:2.15.7")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
@@ -28,7 +28,7 @@ tasks {
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("26.2")
+        minecraftVersion("26.1.2")
     }
 }
 

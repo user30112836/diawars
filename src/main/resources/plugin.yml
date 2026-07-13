@@ -1,7 +1,7 @@
 name: Diawars
 version: '2.3-beta'
 main: de.davidsw.diawars.Diawars
-api-version: '26.2'
+api-version: '26.1'
 author: DavidSW
 
 depend: [NBTAPI]
