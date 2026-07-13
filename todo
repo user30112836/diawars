@@ -14,7 +14,6 @@ Lobby:
     -> Short introduction to the plugin and a reference to the manual
 
 Events:
-- 7 Create message for ending events
 - 12 Make things configurable when setting up events
     -> World type
     -> Player gamemode

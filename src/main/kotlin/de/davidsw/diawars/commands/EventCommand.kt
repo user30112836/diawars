@@ -101,12 +101,12 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     return true
                 }
                 val target = getOfflinePlayer(args[1])
-                if ((!target.hasPlayedBefore() && !target.isOnline) || target !is Player) {
+                if ((!target.hasPlayedBefore() && !target.isOnline)) {
                     sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
                     return true
                 }
 
-                plugin.rewardManager.grantDiamondReward(target, amount)
+                plugin.rewardManager.grantDiamondReward(target.uniqueId, amount)
 
                 val targetName = target.name
                 sender.sendMessage(mm("<green>✓ <gold>$amount Diamant(en)</gold> wurden an <gold>$targetName</gold> vergeben!</green>"))
