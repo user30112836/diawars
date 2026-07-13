@@ -33,10 +33,6 @@ Features:
 - 28 Manual via a /manual command (major)
 
 Admin Command:
-- 14 pvpStatusToggle
-    -> Instant toggle of pvpStatus
-    -> Toggle of pvpStatus for other players
-    -> Toggle of pvpStatus for all players
 - 15 Inspecting inv of players
 
 Multiplayer-Tests:
