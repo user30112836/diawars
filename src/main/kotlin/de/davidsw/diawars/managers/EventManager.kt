@@ -199,7 +199,7 @@ class EventManager(private val plugin: Diawars) {
             "<green>Dein Event <gold>${event.name}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>"
         )
 
-        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: ${rewardAmount} Diamant(en).</green>")
+        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: $rewardAmount Diamant(en).</green>")
     }
 
     fun rejectEvent(id: String): Result {

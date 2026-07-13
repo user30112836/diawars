@@ -79,6 +79,11 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         if (targetArg.equals("all", ignoreCase = true)) {
             var count = 0
             plugin.server.onlinePlayers.forEach { player ->
+                plugin.messageManager.sendOrQueue(
+                    player,
+                    "<yellow>Dein PvP Status wurde von einem Admin geändert!</yellow>",
+                    true
+                )
                 manager.cancelToggle(player.uniqueId)
                 store.applyPvPStatus(player.uniqueId, status)
                 count++
@@ -93,6 +98,11 @@ class PvPCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             return
         }
 
+        plugin.messageManager.sendOrQueue(
+            player,
+            "<yellow>Dein PvP Status wurde von einem Admin geändert!</yellow>",
+            true
+        )
         manager.cancelToggle(target.uniqueId)
         store.applyPvPStatus(target.uniqueId, status)
         player.sendMessage(mm("<green>✓ PvP von <gold>${target.name}</gold> wurde ${if (status) "aktiviert" else "deaktiviert"}!</green>"))
