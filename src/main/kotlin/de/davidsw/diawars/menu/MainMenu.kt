@@ -92,7 +92,7 @@ class MainMenu(private val plugin: Diawars) {
             name = mm("<aqua><bold>Diamanten</bold></aqua>"),
             lore = listOf(
                 mm("<gray>Deine: <aqua>$playerDia</aqua></gray>"),
-                mm(if (team != null) "<gray>${team.displayName}: </gray><aqua>$$teamDia</aqua>" else "<dark_gray>Kein Team</dark_gray>"),
+                mm(if (team != null) "<gray>${team.displayName}: </gray><aqua>$teamDia</aqua>" else "<dark_gray>Kein Team</dark_gray>"),
             ),
             glow = playerDia > 0,
         ))
