@@ -77,7 +77,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     sender.sendMessage(mm("<red>Ungültiges Datum/Uhrzeit! Format: ${DateTimeParser.FORMAT_HINT} (z.B. 10.07.2026-18:00)</red>"))
                     return true
                 }
-                respond(sender, plugin.eventManager.acceptEvent(sender, args[1], startEpoch, endEpoch))
+                respond(sender, plugin.eventManager.acceptEvent(args[1], startEpoch, endEpoch))
             }
 
             "reject" -> {
@@ -86,7 +86,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     sender.sendMessage(mm("<red>Verwendung: /event reject &lt;id&gt;</red>"))
                     return true
                 }
-                respond(sender, plugin.eventManager.rejectEvent(sender, args[1]))
+                respond(sender, plugin.eventManager.rejectEvent(args[1]))
             }
 
             "reward" -> {

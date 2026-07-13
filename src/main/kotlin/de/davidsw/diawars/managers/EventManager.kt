@@ -169,7 +169,7 @@ class EventManager(private val plugin: Diawars) {
         return Result.Success("<green>Du prüfst nun das Event <gold>${event.name}</gold>. Mit <yellow>/event leave</yellow> beendest du die Prüfung.</green>")
     }
 
-    fun acceptEvent(admin: Player, id: String, startEpoch: Long, endEpoch: Long): Result {
+    fun acceptEvent(id: String, startEpoch: Long, endEpoch: Long): Result {
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.SUBMITTED) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
@@ -194,14 +194,15 @@ class EventManager(private val plugin: Diawars) {
         val startText = DateTimeParser.parseToString(startEpoch)
         val endText = DateTimeParser.parseToString(endEpoch)
 
-        getPlayer(event.creator)?.sendMessage(
-            mm("<green>Dein Event <gold>${event.name}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>")
+        plugin.messageManager.sendOrQueue(
+            event.creator,
+            "<green>Dein Event <gold>${event.name}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>"
         )
 
         return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: ${rewardAmount} Diamant(en).</green>")
     }
 
-    fun rejectEvent(admin: Player, id: String): Result {
+    fun rejectEvent(id: String): Result {
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.SUBMITTED) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
@@ -210,8 +211,9 @@ class EventManager(private val plugin: Diawars) {
         event.state = EventState.REJECTED
         store.save()
 
-        getPlayer(event.creator)?.sendMessage(
-            mm("<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt. Mit <yellow>/event resume</yellow> kannst du weiterbauen und es erneut einreichen.</red>")
+        plugin.messageManager.sendOrQueue(
+            event.creator,
+            "<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt. Mit <yellow>/event resume</yellow> kannst du weiterbauen und es erneut einreichen.</red>"
         )
 
         return Result.Success("<yellow>Event <gold>${event.name}</gold> wurde abgelehnt.</yellow>")
@@ -276,9 +278,13 @@ class EventManager(private val plugin: Diawars) {
         store.save()
 
         sessions.filter { it.value.eventId == id }.keys.toList().forEach { uuid ->
-            val player = getPlayer(uuid) ?: return@forEach
-            leaveWorld(player)
-            player.sendMessage(mm("<gray>Das Event <gold>${event.name}</gold> ist zu Ende gegangen.</gray>"))
+            val player = getPlayer(uuid)
+            if (player != null) {
+                leaveWorld(player)
+            } else {
+                sessions.remove(uuid)
+            }
+            plugin.messageManager.sendOrQueue(uuid, "<gray>Das Event <gold>${event.name}</gold> ist zu Ende.</gray>")
         }
 
         getWorld(event.worldName)?.let { unloadWorld(it, true) }
