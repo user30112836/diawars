@@ -40,6 +40,7 @@ Features:
 - 23 GUI
     -> Integrating the particle density and amount settings
 - 28 Manual via a /manual command (major)
+- Log every interaction with diamonds
 
 Admin Command:
 - 15 Inspecting inv of players
