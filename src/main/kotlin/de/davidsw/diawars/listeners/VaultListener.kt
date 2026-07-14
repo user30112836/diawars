@@ -39,8 +39,9 @@ class VaultListener(private val plugin: Diawars): Listener {
         if (event.block.type != Material.DIAMOND_BLOCK) return
         val vault = plugin.vaultManager.getVaultAt(event.block.location) ?: return
         val player = event.player
+        val playerTeam = plugin.teamManager.getPlayerTeam(player.uniqueId)
 
-        if (!plugin.store.vaultClaimStore.canPlace(vault.id, player.uniqueId)) {
+        if (playerTeam == vault.team && !plugin.store.vaultClaimStore.canPlace(vault.id, player.uniqueId)) {
             event.isCancelled = true
             player.sendMessage(mm("<red>Du darfst dieses Vault nicht bearbeiten!</red>"))
             return

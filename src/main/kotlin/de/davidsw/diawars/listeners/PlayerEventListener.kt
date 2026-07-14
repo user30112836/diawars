@@ -3,7 +3,9 @@ package de.davidsw.diawars.listeners
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.MiniMessageHelper.pmm
+import org.bukkit.Material
 import org.bukkit.Sound
+import org.bukkit.entity.Player
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -55,7 +57,19 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
             return
         }
 
+        if (isEnemyVaultSteal(player, event)) return
+
         event.setUseInteractedBlock(Event.Result.DENY)
         event.setUseItemInHand(Event.Result.ALLOW)
+    }
+
+    private fun isEnemyVaultSteal(player: Player, event: PlayerInteractEvent): Boolean {
+        val block = event.clickedBlock ?: return false
+        if (block.type != Material.DIAMOND_BLOCK) return false
+
+        val vault = plugin.vaultManager.getVaultAt(block.location) ?: return false
+        val playerTeam = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return false
+
+        return vault.team != playerTeam
     }
 }

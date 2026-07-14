@@ -9,7 +9,6 @@ Improvements:
 Vaults:
 - Every vault should get its own store
 - Through the /vault and /scores commands you should get detailed information about the vaults
-- All Players from the other teams can steal from vaults
 
 Lobby:
 - Make the player spawn there on first join
