@@ -149,7 +149,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(PvPListener(this), this)
         server.pluginManager.registerEvents(DiamondLimitListener(this), this)
         server.pluginManager.registerEvents(ContainerExplosionListener(this), this)
-        server.pluginManager.registerEvents(WorldProtectionListener(), this)
+        server.pluginManager.registerEvents(WorldProtectionListener(this), this)
         server.pluginManager.registerEvents(MenuListener(this), this)
         server.pluginManager.registerEvents(EventListener(this), this)
         server.pluginManager.registerEvents(RewardListener(this), this)

@@ -2,14 +2,14 @@ Bugs:
 - 1 PvP logic is reversed (Might be fixed)
 - 2 Inventory in event worlds does not get saved
 - 4 Border does not align correctly (It's fine on default settings)
-- Diamond blocks outside of vaults should not drop any diamonds
 - Diamonds under the limit lose their glow when leaving the server
 
 Improvements:
 --- Empty ---
 
 Vaults:
-- Specific error when trying to place diamond blocks on to of a vault
+- Every vault should get its own store
+- Through the /vault and /scores commands you should get detailed information about the vaults
 - All Players from the other teams can steal from vaults
 
 Lobby:
