@@ -8,6 +8,7 @@ import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
+import de.davidsw.diawars.commands.VaultCommand
 import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
@@ -48,7 +49,8 @@ import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
-import de.davidsw.diawars.stores.VaultStore
+import de.davidsw.diawars.stores.VaultClaimStore
+import de.davidsw.diawars.stores.VaultDiamondStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
@@ -69,7 +71,8 @@ data class Store(
     var rewardStore: RewardStore,
     var scoreboardPreferencesStore: ScoreboardPreferencesStore,
     var messageStore: MessageStore,
-    var vaultStore: VaultStore,
+    var vaultDiamondStore: VaultDiamondStore,
+    var vaultClaimStore: VaultClaimStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -106,7 +109,8 @@ class Diawars : JavaPlugin() {
             rewardStore = RewardStore(this),
             scoreboardPreferencesStore = ScoreboardPreferencesStore(this),
             messageStore = MessageStore(this),
-            vaultStore = VaultStore(this),
+            vaultDiamondStore = VaultDiamondStore(this),
+            vaultClaimStore = VaultClaimStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -162,6 +166,7 @@ class Diawars : JavaPlugin() {
         getCommand("event")?.setExecutor(EventCommand(this))
         getCommand("lobby")?.setExecutor(LobbyCommand(this))
         getCommand("inv")?.setExecutor(InvCommand(this))
+        getCommand("vault")?.setExecutor(VaultCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

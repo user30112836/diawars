@@ -63,6 +63,9 @@ playtime-reward:
 afk:
   threshold-seconds: 300 # 5min
 
+vault:
+  claim-distance: 5
+
 vaults:
   team-a-vault-1:
     world: "world"

@@ -5,7 +5,7 @@ import de.davidsw.diawars.managers.Team
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 
-class VaultStore(private val plugin: Diawars) {
+class VaultDiamondStore(private val plugin: Diawars) {
     private val storeFile = File(plugin.dataFolder, "vault_diamonds.yml")
     private val cache = mutableMapOf<Team, Int>()
 

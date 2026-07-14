@@ -7,11 +7,14 @@ import org.bukkit.Material
 
 data class VaultRegion(
     val id: String,
+    val world: String,
     val team: Team,
     val minX: Int, val minY: Int, val minZ: Int,
     val maxX: Int, val maxY: Int, val maxZ: Int,
 ) {
     fun contains(location: Location): Boolean {
+        val world = location.world ?: return false
+        if (world.name != this.world) return false
         val x = location.blockX
         val y = location.blockY
         val z = location.blockZ
@@ -34,6 +37,7 @@ class VaultManager(private val plugin: Diawars) {
             for (id in section.getKeys(false)) {
                 try {
                     val vaultSection = section.getConfigurationSection(id) ?: continue
+                    val world = vaultSection.getString("world") ?: "world"
                     val teamKey = vaultSection.getString("team") ?: continue
                     val team = Team.entries.firstOrNull { it.configKey == teamKey }
                         ?: run {
@@ -48,6 +52,7 @@ class VaultManager(private val plugin: Diawars) {
 
                     list += VaultRegion(
                         id = id,
+                        world = world,
                         team = team,
                         minX = minOf(x1, x2), maxX = maxOf(x1, x2),
                         minY = minOf(y1, y2), maxY = maxOf(y1, y2),
@@ -70,5 +75,22 @@ class VaultManager(private val plugin: Diawars) {
         val below = location.clone().add(0.0, -1.0, 0.0).block
         if (!VAULT_UNDERGROUND.contains(below.type)) return null
         return vault
+    }
+
+    fun getVaultById(id: String): VaultRegion? = regions.firstOrNull { it.id == id }
+
+    fun findNearbyVault(location: Location): VaultRegion? {
+        val maxDistance = plugin.config.getDouble("vault.claim-distance", 5.0)
+        val world = location.world?.name ?: return null
+        return regions
+            .filter { it.world == world }
+            .firstOrNull { distanceToRegion(it, location) <= maxDistance }
+    }
+
+    private fun distanceToRegion(region: VaultRegion, location: Location): Double {
+        val x = location.x.coerceIn(region.minX.toDouble(), region.maxX + 1.0)
+        val y = location.y.coerceIn(region.minY.toDouble(), region.maxY + 1.0)
+        val z = location.z.coerceIn(region.minZ.toDouble(), region.maxZ + 1.0)
+        return location.distance(Location(location.world, x, y, z))
     }
 }

@@ -10,12 +10,6 @@ Improvements:
 
 Vaults:
 - Specific error when trying to place diamond blocks on to of a vault
-- Numeration of vaults
-- Only selected players from own team can place in specific vaults
-    -> Player can claim vault with /vault claim
-    -> Player can invite players with /vault invite <player>
-    -> Player can ban players with /vault ban <player>
-    -> Every Player can only claim one vault
 - All Players from the other teams can steal from vaults
 
 Lobby:

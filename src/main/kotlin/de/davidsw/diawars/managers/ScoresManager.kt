@@ -20,7 +20,7 @@ class ScoresManager(private val plugin: Diawars) {
         val team = plugin.teamManager.getPlayerTeam(sender.uniqueId) ?: return
         val teamLabel = team.displayName
         val teamColor = teamColor(team)
-        val teamVaultDiamonds = plugin.store.vaultStore.getVaultCount(team)
+        val teamVaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(team)
         val teamDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(team) + teamVaultDiamonds
         val teamOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(team)
         val teamOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(team)
@@ -28,7 +28,7 @@ class ScoresManager(private val plugin: Diawars) {
         val opponents = team.opponent()
         val opponentsLabel = opponents.displayName
         val opponentsColor = teamColor(opponents)
-        val opponentsVaultDiamonds = plugin.store.vaultStore.getVaultCount(opponents)
+        val opponentsVaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(opponents)
         val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents) + opponentsVaultDiamonds
         val opponentsOnlineDiamonds = plugin.store.playerDiamondStore.getOnlineTeamCount(opponents)
         val opponentsOfflineDiamonds = plugin.store.playerDiamondStore.getOfflineTeamCount(opponents)

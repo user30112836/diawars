@@ -39,6 +39,10 @@ commands:
     description: Öffnet eine gehaltene Shulker-Box oder Enderkiste
     usage: /<command>
     permission: diawars.use
+  vault:
+    description: Vault-Beanspruchung und Verwaltung
+    usage: /<command> <claim|unclaim|invite|ban|info>
+    permission: diawars.use
 
 permissions:
   diawars.use:
