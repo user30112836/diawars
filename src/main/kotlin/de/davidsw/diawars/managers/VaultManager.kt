@@ -10,7 +10,7 @@ data class VaultRegion(
     val world: String,
     val team: Team,
     val minX: Int, val minY: Int, val minZ: Int,
-    val maxX: Int, val maxY: Int, val maxZ: Int,
+    val maxX: Int, val maxZ: Int,
 ) {
     fun contains(location: Location): Boolean {
         val world = location.world ?: return false
@@ -18,7 +18,7 @@ data class VaultRegion(
         val x = location.blockX
         val y = location.blockY
         val z = location.blockZ
-        return x in minX..maxX && y in minY..maxY && z in minZ..maxZ
+        return x in minX..maxX && y >= minY && z in minZ..maxZ
     }
 }
 
@@ -55,7 +55,7 @@ class VaultManager(private val plugin: Diawars) {
                         world = world,
                         team = team,
                         minX = minOf(x1, x2), maxX = maxOf(x1, x2),
-                        minY = minOf(y1, y2), maxY = maxOf(y1, y2),
+                        minY = minOf(y1, y2),
                         minZ = minOf(z1, z2), maxZ = maxOf(z1, z2),
                     )
                 } catch (e: Exception) {
@@ -89,7 +89,7 @@ class VaultManager(private val plugin: Diawars) {
 
     private fun distanceToRegion(region: VaultRegion, location: Location): Double {
         val x = location.x.coerceIn(region.minX.toDouble(), region.maxX + 1.0)
-        val y = location.y.coerceIn(region.minY.toDouble(), region.maxY + 1.0)
+        val y = location.y.coerceIn(region.minY.toDouble(), Double.POSITIVE_INFINITY)
         val z = location.z.coerceIn(region.minZ.toDouble(), region.maxZ + 1.0)
         return location.distance(Location(location.world, x, y, z))
     }
