@@ -6,6 +6,7 @@ import org.bukkit.Location
 
 data class VaultRegion(
     val id: String,
+    val displayName: String,
     val world: String,
     val team: Team,
     val minX: Int, val minY: Int, val minZ: Int,
@@ -43,6 +44,7 @@ class VaultManager(private val plugin: Diawars) {
                             plugin.logger.warning("Vault '$id' has unknown team '$teamKey'")
                             continue
                         }
+                    val displayName = vaultSection.getString("display-name") ?: id
                     val c1 = vaultSection.getConfigurationSection("corner1") ?: continue
                     val c2 = vaultSection.getConfigurationSection("corner2") ?: continue
 
@@ -51,6 +53,7 @@ class VaultManager(private val plugin: Diawars) {
 
                     list += VaultRegion(
                         id = id,
+                        displayName = displayName,
                         world = world,
                         team = team,
                         minX = minOf(x1, x2), maxX = maxOf(x1, x2),

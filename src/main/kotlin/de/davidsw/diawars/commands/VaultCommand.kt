@@ -71,7 +71,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
 
         claims.claim(vault.id, player.uniqueId)
-        player.sendMessage(mm("<green>✓ Du hast das Vault <gold>${vault.id}</gold> beansprucht!</green>"))
+        player.sendMessage(mm("<green>✓ Du hast das Vault <gold>${vault.displayName}</gold> beansprucht!</green>"))
     }
 
     private fun handleUnclaim(player: Player) {
@@ -81,8 +81,9 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             player.sendMessage(mm("<red>Du hast kein Vault beansprucht!</red>"))
             return
         }
+        val vaultName = plugin.vaultManager.getVaultById(claim.vaultId)?.displayName ?: claim.vaultId
         claims.unclaim(claim.vaultId)
-        player.sendMessage(mm("<yellow>Du hast dein Vault <gold>${claim.vaultId}</gold> freigegeben.</yellow>"))
+        player.sendMessage(mm("<yellow>Du hast dein Vault <gold>$vaultName</gold> freigegeben.</yellow>"))
     }
 
     private fun handleInvite(player: Player, args: Array<out String>) {
@@ -162,11 +163,12 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         val lines = mutableListOf("<gold>=== Deine Vaults ===</gold>")
 
         if (ownClaim != null) {
+            val vaultName = plugin.vaultManager.getVaultById(ownClaim.vaultId)?.displayName ?: ownClaim.vaultId
             val vaultDiamonds = diamonds.getVaultCount(ownClaim.vaultId)
             val invitedNames = ownClaim.invited.map { getOfflinePlayer(it).name ?: "Unbekannt" }
 
             lines += ""
-            lines += "<white>Dein Vault: <gold>${ownClaim.vaultId}</gold></white>"
+            lines += "<white>Dein Vault: <gold>$vaultName</gold></white>"
             lines += "<gray>Diamanten im Vault: <aqua>$vaultDiamonds</aqua></gray>"
             lines += if (invitedNames.isEmpty()) {
                 "<gray>Eingeladen: <dark_gray>Niemand</dark_gray></gray>"
@@ -179,9 +181,10 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             lines += ""
             lines += "<white>Eingeladen zu:</white>"
             invitedClaims.forEach { claim ->
+                val vaultName = plugin.vaultManager.getVaultById(claim.vaultId)?.displayName ?: claim.vaultId
                 val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
                 val vaultDiamonds = diamonds.getVaultCount(claim.vaultId)
-                lines += "<gray>- <gold>${claim.vaultId}</gold> <gray>(von <white>$ownerName</white>)</gray> <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
+                lines += "<gray>- <gold>$vaultName</gold> <gray>(von <white>$ownerName</white>)</gray> <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
             }
         }
 
@@ -213,7 +216,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     "<yellow>Frei</yellow>"
                 }
 
-                lines += "<$teamColor>${vault.id}</$teamColor> <gray>-</gray> $statusText <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
+                lines += "<$teamColor>${vault.displayName}</$teamColor> <gray>-</gray> $statusText <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
             }
 
         player.sendMessage(mm(lines.joinToString("\n")))
