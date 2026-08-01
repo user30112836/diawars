@@ -10,6 +10,7 @@ enum class ScoreboardComponent(val configKey: String, val label: String) {
     OPPONENTS_DIAMONDS("opponents-diamonds", "Gegner-Diamanten"),
     PLAYER_DIAMONDS("player-diamonds", "Deine Diamanten"),
     ZONE_STATUS("zone-status", "Zonen-Status"),
+    OWN_VAULT("own-vault", "Dein Vault"),
 }
 
 data class ScoreboardPreference(

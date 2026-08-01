@@ -9,7 +9,6 @@ Improvements:
 Vaults:
 - Separate the displayed names of the vaults from the ids
 - Through the /vault and /scores commands you should get detailed information about the vaults
-- Include diamonds in your vault to the sidebar
 
 Lobby:
 - Make the player spawn there on first join

@@ -10,11 +10,12 @@ import org.bukkit.inventory.Inventory
 
 class ScoreboardMenu(private val plugin: Diawars) {
     companion object {
-        private const val SLOT_SIDEBAR_TOGGLE   = 20
-        private const val SLOT_TEAM_DIAMONDS    = 21
-        private const val SLOT_OPPONENTS_DIAMONDS = 22
-        private const val SLOT_PLAYER_DIAMONDS  = 23
-        private const val SLOT_ZONE_STATUS      = 24
+        private const val SLOT_SIDEBAR_TOGGLE   = 22
+        private const val SLOT_TEAM_DIAMONDS    = 29
+        private const val SLOT_OPPONENTS_DIAMONDS = 30
+        private const val SLOT_PLAYER_DIAMONDS  = 31
+        private const val SLOT_ZONE_STATUS      = 32
+        private const val SLOT_OWN_VAULT        = 33
         private const val SLOT_RESET            = 40
 
         private val COMPONENT_SLOTS = mapOf(
@@ -22,6 +23,7 @@ class ScoreboardMenu(private val plugin: Diawars) {
             SLOT_OPPONENTS_DIAMONDS to ScoreboardComponent.OPPONENTS_DIAMONDS,
             SLOT_PLAYER_DIAMONDS to ScoreboardComponent.PLAYER_DIAMONDS,
             SLOT_ZONE_STATUS to ScoreboardComponent.ZONE_STATUS,
+            SLOT_OWN_VAULT to ScoreboardComponent.OWN_VAULT,
         )
 
         private val COMPONENT_MATERIAL = mapOf(
@@ -29,6 +31,7 @@ class ScoreboardMenu(private val plugin: Diawars) {
             ScoreboardComponent.OPPONENTS_DIAMONDS to Material.DIAMOND_BLOCK,
             ScoreboardComponent.PLAYER_DIAMONDS to Material.NETHER_STAR,
             ScoreboardComponent.ZONE_STATUS to Material.COMPASS,
+            ScoreboardComponent.OWN_VAULT to Material.ENDER_CHEST,
         )
     }
 

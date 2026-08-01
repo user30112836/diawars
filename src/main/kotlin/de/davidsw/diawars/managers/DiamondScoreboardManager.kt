@@ -25,6 +25,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val teamDiamonds: Int,
         val opponentsDiamonds: Int,
         val ownZone: Boolean,
+        val ownVaultDiamonds: Int?,
         val components: Set<ScoreboardComponent>,
     )
     private val lastState = mutableMapOf<UUID, BoardState>()
@@ -87,14 +88,16 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val opponents = team.opponent()
         val opponentsDiamonds = plugin.store.playerDiamondStore.getTotalTeamCount(opponents) + plugin.store.vaultDiamondStore.getTeamTotal(opponents)
         val ownZone = plugin.zoneManager.isInOwnZone(player)
+        val ownVaultId = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)?.vaultId
+        val ownVaultDiamonds = ownVaultId?.let { plugin.store.vaultDiamondStore.getVaultCount(it) }
 
-        val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone, pref.enabledComponents)
+        val newState = BoardState(playerDiamonds, teamDiamonds, opponentsDiamonds, ownZone, ownVaultDiamonds, pref.enabledComponents)
         if (lastState[player.uniqueId] != newState) {
             renderSidebar(
                 player, playerDiamonds,
                 team, teamDiamonds,
                 opponents, opponentsDiamonds,
-                ownZone, pref.enabledComponents,
+                ownZone, ownVaultDiamonds, pref.enabledComponents,
             )
             lastState[player.uniqueId] = newState
         }
@@ -108,6 +111,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         opponents: Team,
         opponentsDiamonds: Int,
         ownZone: Boolean,
+        ownVaultDiamonds: Int?,
         components: Set<ScoreboardComponent>,
     ) {
         val scoreboard: Scoreboard = getScoreboardManager().newScoreboard
@@ -134,6 +138,7 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val showOpponents = ScoreboardComponent.OPPONENTS_DIAMONDS in components
         val showPlayer = ScoreboardComponent.PLAYER_DIAMONDS in components
         val showZone = ScoreboardComponent.ZONE_STATUS in components
+        val showOwnVault = ScoreboardComponent.OWN_VAULT in components
 
         val lines = mutableListOf<Component>()
         lines += mm.deserialize(" ")
@@ -148,6 +153,12 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         if (showPlayer) {
             lines += mm.deserialize("<white>Deine Diamanten</white>")
             lines += mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>")
+            lines += mm.deserialize(" ")
+        }
+
+        if (showOwnVault && ownVaultDiamonds != null) {
+            lines += mm.deserialize("<white>Dein Vault</white>")
+            lines += mm.deserialize("  <aqua>$ownVaultDiamonds</aqua>")
             lines += mm.deserialize(" ")
         }
 
