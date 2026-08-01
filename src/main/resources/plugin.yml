@@ -41,7 +41,7 @@ commands:
     permission: diawars.use
   vault:
     description: Vault-Beanspruchung und Verwaltung
-    usage: /<command> <claim|unclaim|invite|ban|info>
+    usage: /<command> <claim|unclaim|invite|ban|info|list>
     permission: diawars.use
 
 permissions:

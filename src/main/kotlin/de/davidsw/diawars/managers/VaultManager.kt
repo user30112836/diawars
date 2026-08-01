@@ -68,6 +68,7 @@ class VaultManager(private val plugin: Diawars) {
         plugin.logger.info("Loaded ${regions.size} vault region(s).")
     }
 
+    fun getAllVaults(): List<VaultRegion> = regions
     fun getVaultAt(location: Location): VaultRegion? = regions.firstOrNull { it.contains(location) }
     fun getVaultsForTeam(team: Team): List<VaultRegion> = regions.filter { it.team == team }
 

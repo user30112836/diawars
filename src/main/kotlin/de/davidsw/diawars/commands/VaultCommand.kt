@@ -1,6 +1,7 @@
 package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Bukkit
@@ -34,6 +35,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             "invite" -> handleInvite(sender, args)
             "ban" -> handleBan(sender, args)
             "info" -> handleInfo(sender)
+            "list" -> handleList(sender)
             else -> sendHelp(sender)
         }
 
@@ -167,6 +169,42 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         player.sendMessage(mm(lines.joinToString("\n")))
     }
 
+    private fun handleList(player: Player) {
+        val vaults = plugin.vaultManager.getAllVaults()
+        if (vaults.isEmpty()) {
+            player.sendMessage(mm("<gray>Es sind keine Vaults konfiguriert.</gray>"))
+            return
+        }
+
+        val claims = plugin.store.vaultClaimStore
+        val diamonds = plugin.store.vaultDiamondStore
+
+        val lines = mutableListOf("<gold>=== Vaults ===</gold>")
+        vaults
+            .sortedWith(compareBy({ it.team.configKey }, { it.id }))
+            .forEach { vault ->
+                val teamColor = teamColor(vault.team)
+                val claim = claims.getClaim(vault.id)
+                val vaultDiamonds = diamonds.getVaultCount(vault.id)
+
+                val statusText = if (claim != null) {
+                    val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
+                    "<green>Beansprucht</green> <gray>von</gray> <white>$ownerName</white>"
+                } else {
+                    "<yellow>Frei</yellow>"
+                }
+
+                lines += "<$teamColor>${vault.id}</$teamColor> <gray>-</gray> $statusText <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
+            }
+
+        player.sendMessage(mm(lines.joinToString("\n")))
+    }
+
+    private fun teamColor(team: Team) = when (team) {
+        Team.TEAM_A -> "green"
+        Team.TEAM_B -> "blue"
+    }
+
     private fun sendHelp(player: Player) {
         val message = mm("""
             <yellow><bold>VAULT-BEFEHLE</bold></yellow>
@@ -176,6 +214,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             <yellow>/vault invite &lt;spieler&gt;</yellow><gray> - Teammitglied einladen</gray>
             <yellow>/vault ban &lt;spieler&gt;</yellow><gray> - Einladung entfernen</gray>
             <yellow>/vault info</yellow><gray> - Deinen Vault-Status anzeigen</gray>
+            <yellow>/vault list</yellow><gray> - Alle Vaults auflisten</gray>
         """.trimIndent())
         player.sendMessage(message)
     }
@@ -187,7 +226,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         args: Array<out String>
     ): List<String> {
         if (args.size == 1) {
-            return listOf("claim", "unclaim", "invite", "ban", "info")
+            return listOf("claim", "unclaim", "invite", "ban", "info", "list")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
         if (args.size == 2 && (args[0].equals("invite", true) || args[0].equals("ban", true))) {
