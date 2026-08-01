@@ -132,7 +132,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             return
         }
 
-        val targetId = Bukkit.getOfflinePlayer(args[1]).uniqueId
+        val targetId = getOfflinePlayer(args[1]).uniqueId
         if (targetId !in claim.invited) {
             player.sendMessage(mm("<red>Dieser Spieler ist nicht zu deinem Vault eingeladen!</red>"))
             return
@@ -149,23 +149,42 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
     private fun handleInfo(player: Player) {
         val claims = plugin.store.vaultClaimStore
-        val claim = claims.getClaimByOwner(player.uniqueId)
-        if (claim == null) {
-            player.sendMessage(mm("<gray>Du hast kein Vault beansprucht. Nutze <yellow>/vault claim</yellow> in der Nähe eines Vaults.</gray>"))
+        val diamonds = plugin.store.vaultDiamondStore
+
+        val ownClaim = claims.getClaimByOwner(player.uniqueId)
+        val invitedClaims = claims.getClaimsInvitedTo(player.uniqueId)
+
+        if (ownClaim == null && invitedClaims.isEmpty()) {
+            player.sendMessage(mm("<gray>Du hast kein Vault beansprucht und bist auch zu keinem eingeladen. Nutze <yellow>/vault claim</yellow> in der Nähe eines Vaults.</gray>"))
             return
         }
-        val vaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(claim.vaultId)
-        val invitedNames = claim.invited.map { Bukkit.getOfflinePlayer(it).name ?: "Unbekannt" }
-        val lines = mutableListOf(
-            "<gold>=== Dein Vault ===</gold>",
-            "<gray>Vault: <white>${claim.vaultId}</white></gray>",
-            "<gray>Diamanten im Vault: <aqua>$vaultDiamonds</aqua></gray>",
-        )
-        lines += if (invitedNames.isEmpty()) {
-            "<gray>Eingeladen: <dark_gray>Niemand</dark_gray></gray>"
-        } else {
-            "<gray>Eingeladen: <white>${invitedNames.joinToString(", ")}</white></gray>"
+
+        val lines = mutableListOf("<gold>=== Deine Vaults ===</gold>")
+
+        if (ownClaim != null) {
+            val vaultDiamonds = diamonds.getVaultCount(ownClaim.vaultId)
+            val invitedNames = ownClaim.invited.map { getOfflinePlayer(it).name ?: "Unbekannt" }
+
+            lines += ""
+            lines += "<white>Dein Vault: <gold>${ownClaim.vaultId}</gold></white>"
+            lines += "<gray>Diamanten im Vault: <aqua>$vaultDiamonds</aqua></gray>"
+            lines += if (invitedNames.isEmpty()) {
+                "<gray>Eingeladen: <dark_gray>Niemand</dark_gray></gray>"
+            } else {
+                "<gray>Eingeladen: <white>${invitedNames.joinToString(", ")}</white></gray>"
+            }
         }
+
+        if (invitedClaims.isNotEmpty()) {
+            lines += ""
+            lines += "<white>Eingeladen zu:</white>"
+            invitedClaims.forEach { claim ->
+                val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
+                val vaultDiamonds = diamonds.getVaultCount(claim.vaultId)
+                lines += "<gray>- <gold>${claim.vaultId}</gold> <gray>(von <white>$ownerName</white>)</gray> <gray>|</gray> <aqua>$vaultDiamonds</aqua><gray> Diamanten</gray>"
+            }
+        }
+
         player.sendMessage(mm(lines.joinToString("\n")))
     }
 

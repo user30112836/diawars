@@ -43,13 +43,6 @@ class ScoreboardPreferencesStore(private val plugin: Diawars) {
         }
     }
 
-    fun setComponentEnabled(playerId: UUID, component: ScoreboardComponent, enabled: Boolean) {
-        update(playerId) { pref ->
-            val next = if (enabled) pref.enabledComponents + component else pref.enabledComponents - component
-            pref.copy(enabledComponents = next)
-        }
-    }
-
     fun resetToDefault(playerId: UUID) {
         preferences.remove(playerId)
         save()

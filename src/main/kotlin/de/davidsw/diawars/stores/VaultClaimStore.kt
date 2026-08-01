@@ -20,8 +20,8 @@ class VaultClaimStore(private val plugin: Diawars) {
     }
 
     fun getClaim(vaultId: String): VaultClaim? = claimsByVault[vaultId]
-
     fun getClaimByOwner(playerId: UUID): VaultClaim? = claimsByVault.values.firstOrNull { it.owner == playerId }
+    fun getClaimsInvitedTo(playerId: UUID):  List<VaultClaim> = claimsByVault.values.filter { playerId in it.invited }
 
     fun isVaultClaimed(vaultId: String): Boolean = claimsByVault.containsKey(vaultId)
 

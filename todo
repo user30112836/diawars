@@ -8,7 +8,6 @@ Improvements:
 
 Vaults:
 - Separate the displayed names of the vaults from the ids
-- The invited vaults should also show up in /vault info
 - Include the vault management in the menu
 
 Lobby:

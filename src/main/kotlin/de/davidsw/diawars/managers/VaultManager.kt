@@ -3,7 +3,6 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MaterialSets.VAULT_UNDERGROUND
 import org.bukkit.Location
-import org.bukkit.Material
 
 data class VaultRegion(
     val id: String,
