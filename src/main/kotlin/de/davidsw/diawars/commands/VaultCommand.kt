@@ -4,6 +4,7 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Bukkit
+import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -60,8 +61,10 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             player.sendMessage(mm("<red>Dieses Vault gehört nicht deinem Team!</red>"))
             return
         }
-        if (claims.isVaultClaimed(vault.id)) {
-            player.sendMessage(mm("<red>Dieses Vault wurde bereits von einem anderen Spieler beansprucht!</red>"))
+        val existingClaim = claims.getClaim(vault.id)
+        if (existingClaim != null) {
+            val owner = getOfflinePlayer(existingClaim.owner).name ?: "Unbekannt"
+            player.sendMessage(mm("<red>Dieses Vault wurde bereits von <gold>$owner</gold> beansprucht!</red>"))
             return
         }
 
