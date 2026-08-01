@@ -7,22 +7,26 @@ import java.io.File
 
 class VaultDiamondStore(private val plugin: Diawars) {
     private val storeFile = File(plugin.dataFolder, "vault_diamonds.yml")
-    private val cache = mutableMapOf<Team, Int>()
+    private val cache = mutableMapOf<String, Int>()
 
     init {
         load()
     }
 
-    fun getVaultCount(team: Team): Int = cache.getOrDefault(team, 0)
+    fun getVaultCount(vaultId: String): Int = cache.getOrDefault(vaultId, 0)
 
-    fun addDiamonds(team: Team, amount: Int) {
-        cache[team] = (cache.getOrDefault(team, 0) + amount).coerceAtLeast(0)
+    fun addDiamonds(vaultId: String, amount: Int) {
+        cache[vaultId] = (cache.getOrDefault(vaultId, 0) + amount).coerceAtLeast(0)
         flushToDisk()
     }
 
-    fun removeDiamonds(team: Team, amount: Int) {
-        cache[team] = (cache.getOrDefault(team, 0) - amount).coerceAtLeast(0)
+    fun removeDiamonds(vaultId: String, amount: Int) {
+        cache[vaultId] = (cache.getOrDefault(vaultId, 0) - amount).coerceAtLeast(0)
         flushToDisk()
+    }
+
+    fun getTeamTotal(team: Team): Int {
+        return plugin.vaultManager.getVaultsForTeam(team).sumOf { getVaultCount(it.id) }
     }
 
     private fun load() {
@@ -32,17 +36,17 @@ class VaultDiamondStore(private val plugin: Diawars) {
         }
 
         val yaml = YamlConfiguration.loadConfiguration(storeFile)
-        for (team in Team.entries) {
-            cache[team] = yaml.getInt(team.configKey, 0)
+        for (vaultId in yaml.getKeys(false)) {
+            cache[vaultId] = yaml.getInt(vaultId, 0)
         }
 
-        plugin.logger.info("Loaded vault diamond counts.")
+        plugin.logger.info("Loaded diamond counts for ${cache.size} vault(s).")
     }
 
     private fun flushToDisk() {
         val yaml = YamlConfiguration()
-        for ((team, count) in cache) {
-            yaml.set(team.configKey, count)
+        for ((vaultId, count) in cache) {
+            yaml.set(vaultId, count)
         }
         try {
             yaml.save(storeFile)

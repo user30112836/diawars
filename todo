@@ -4,11 +4,12 @@ Bugs:
 - 4 Border does not align correctly (It's fine on default settings)
 
 Improvements:
---- Empty ---
+- Merging to PaperMC 26.2 (now stable)
 
 Vaults:
-- Every vault should get its own store
+- Separate the displayed names of the vaults from the ids
 - Through the /vault and /scores commands you should get detailed information about the vaults
+- Include diamonds in your vault to the sidebar
 
 Lobby:
 - Make the player spawn there on first join

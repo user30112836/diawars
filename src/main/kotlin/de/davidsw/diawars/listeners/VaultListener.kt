@@ -31,7 +31,7 @@ class VaultListener(private val plugin: Diawars): Listener {
             return
         }
 
-        plugin.store.vaultDiamondStore.addDiamonds(vault.team, 9)
+        plugin.store.vaultDiamondStore.addDiamonds(vault.id, 9)
     }
 
     @EventHandler
@@ -47,6 +47,6 @@ class VaultListener(private val plugin: Diawars): Listener {
             return
         }
 
-        plugin.store.vaultDiamondStore.removeDiamonds(vault.team, 9)
+        plugin.store.vaultDiamondStore.removeDiamonds(vault.id, 9)
     }
 }

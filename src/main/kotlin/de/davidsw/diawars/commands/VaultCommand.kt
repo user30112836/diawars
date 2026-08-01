@@ -149,10 +149,12 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             player.sendMessage(mm("<gray>Du hast kein Vault beansprucht. Nutze <yellow>/vault claim</yellow> in der Nähe eines Vaults.</gray>"))
             return
         }
+        val vaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(claim.vaultId)
         val invitedNames = claim.invited.map { Bukkit.getOfflinePlayer(it).name ?: "Unbekannt" }
         val lines = mutableListOf(
             "<gold>=== Dein Vault ===</gold>",
             "<gray>Vault: <white>${claim.vaultId}</white></gray>",
+            "<gray>Diamanten im Vault: <aqua>$vaultDiamonds</aqua></gray>",
         )
         lines += if (invitedNames.isEmpty()) {
             "<gray>Eingeladen: <dark_gray>Niemand</dark_gray></gray>"

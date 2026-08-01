@@ -69,6 +69,7 @@ class VaultManager(private val plugin: Diawars) {
     }
 
     fun getVaultAt(location: Location): VaultRegion? = regions.firstOrNull { it.contains(location) }
+    fun getVaultsForTeam(team: Team): List<VaultRegion> = regions.filter { it.team == team }
 
     fun isValidPlacementSpot(location: Location): VaultRegion? {
         val vault = getVaultAt(location) ?: return null
