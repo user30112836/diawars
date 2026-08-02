@@ -14,6 +14,7 @@ import org.bukkit.inventory.Inventory
 
 class MainMenu(private val plugin: Diawars) {
     companion object {
+        private const val SLOT_VAULT        = 13
         private const val SLOT_PVP_TOGGLE   = 20
         private const val SLOT_SELF_KILL    = 22
         private const val SLOT_SCOREBOARD   = 24
@@ -183,6 +184,31 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Vault management
+        val ownClaim = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)
+        val vaultLore = if (ownClaim != null) {
+            val vaultName = plugin.vaultManager.getVaultById(ownClaim.vaultId)?.displayName ?: ownClaim.vaultId
+            val vaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(ownClaim.vaultId)
+            listOf(
+                mm("<gray>Dein Vault: </gray><gold>$vaultName</gold>"),
+                mm("<gray>Diamanten: </gray><aqua>$vaultDiamonds</aqua>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            )
+        } else {
+            listOf(
+                mm("<gray>Du hast noch kein Vault beansprucht</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            )
+        }
+        inv.setItem(SLOT_VAULT, item(
+            material = Material.CHEST,
+            name = mm("<gold><bold>Vault-Verwaltung</bold></gold>"),
+            lore = vaultLore,
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -221,21 +247,21 @@ class MainMenu(private val plugin: Diawars) {
 
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
+            SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
+
             SLOT_INV -> {
                 val item = player.inventory.itemInMainHand
-                when {
-                    item.type in MaterialSets.SHULKER_BOXES -> {
+                when (item.type) {
+                    in MaterialSets.SHULKER_BOXES -> {
                         player.closeInventory()
                         if (!plugin.shulkerAccessManager.openHeldShulker(player)) {
                             player.sendMessage(mm("<red>Diese Shulker-Box konnte nicht geöffnet werden!</red>"))
                         }
                     }
-
-                    item.type == Material.ENDER_CHEST -> {
+                    Material.ENDER_CHEST -> {
                         player.closeInventory()
                         plugin.shulkerAccessManager.openHeldEnderChest(player)
                     }
-
                     else -> {
                         player.sendMessage(mm("<red>Du musst eine Shulker-Box oder eine Enderkiste in der Hand haben!</red>"))
                     }

@@ -42,6 +42,8 @@ import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.MainMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
+import de.davidsw.diawars.menu.VaultListMenu
+import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
@@ -60,6 +62,8 @@ data class Menu(
     var borderMenu: BorderMenu,
     var scoreboardMenu: ScoreboardMenu,
     var eventMenu: EventMenu,
+    var vaultMenu: VaultMenu,
+    var vaultListMenu: VaultListMenu,
 )
 
 data class Store(
@@ -135,6 +139,8 @@ class Diawars : JavaPlugin() {
             borderMenu = BorderMenu(this),
             scoreboardMenu = ScoreboardMenu(this),
             eventMenu = EventMenu(this),
+            vaultMenu = VaultMenu(this),
+            vaultListMenu = VaultListMenu(this),
         )
 
         diamondLimitManager.startTrackingTask()
