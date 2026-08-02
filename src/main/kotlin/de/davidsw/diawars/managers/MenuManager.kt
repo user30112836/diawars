@@ -25,99 +25,49 @@ class MenuManager(private val plugin: Diawars) {
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
-        menuInvSwap[player.uniqueId] = true
-        if (memorize) {
-            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
-            val playerPosition = position[player.uniqueId] ?: -1
-            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_MAIN)
-            history[player.uniqueId] = playerHistory
-            position[player.uniqueId] = playerPosition + 1
-        }
-        val inv = Bukkit.createInventory(null, 54, TITLE_MAIN)
-        fillBorder(inv, player)
-        player.openInventory(inv)
+        val inv = openMenuInv(player, TITLE_MAIN, memorize)
         startUpdater({ plugin.menu.mainMenu.populateMainMenu(inv, player) }, player)
     }
 
     fun openBorderMenu(player: Player, memorize: Boolean = true) {
-        menuInvSwap[player.uniqueId] = true
-        if (memorize) {
-            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
-            val playerPosition = position[player.uniqueId] ?: -1
-            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_BORDER)
-            history[player.uniqueId] = playerHistory
-            position[player.uniqueId] = playerPosition + 1
-        }
-        val inv = Bukkit.createInventory(null, 54, TITLE_BORDER)
-        fillBorder(inv, player)
-        player.openInventory(inv)
+        val inv = openMenuInv(player, TITLE_BORDER, memorize)
         startUpdater({ plugin.menu.borderMenu.populateBorderMenu(inv, player) }, player)
     }
 
     fun openScoreboardMenu(player: Player, memorize: Boolean = true) {
-        menuInvSwap[player.uniqueId] = true
-        if (memorize) {
-            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
-            val playerPosition = position[player.uniqueId] ?: -1
-            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_SCOREBOARD)
-            history[player.uniqueId] = playerHistory
-            position[player.uniqueId] = playerPosition + 1
-        }
-        val inv = Bukkit.createInventory(null, 54, TITLE_SCOREBOARD)
-        fillBorder(inv, player)
-        player.openInventory(inv)
+        val inv = openMenuInv(player, TITLE_SCOREBOARD, memorize)
         startUpdater({ plugin.menu.scoreboardMenu.populateScoreboardMenu(inv, player) }, player)
     }
 
     fun openEventMenu(player: Player, memorize: Boolean = true) {
-        menuInvSwap[player.uniqueId] = true
-        if (memorize) {
-            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
-            val playerPosition = position[player.uniqueId] ?: -1
-            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_EVENT)
-            history[player.uniqueId] = playerHistory
-            position[player.uniqueId] = playerPosition + 1
-        }
-        val inv = Bukkit.createInventory(null, 54, TITLE_EVENT)
-        fillBorder(inv, player)
-        player.openInventory(inv)
+        val inv = openMenuInv(player, TITLE_EVENT, memorize)
         startUpdater({ plugin.menu.eventMenu.populateEventMenu(inv, player) }, player)
     }
 
     fun openVaultMenu(player: Player, memorize: Boolean = true) {
-        menuInvSwap[player.uniqueId] = true
-        if (memorize) {
-            val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
-            val playerPosition = position[player.uniqueId] ?: -1
-            while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_VAULT)
-            history[player.uniqueId] = playerHistory
-            position[player.uniqueId] = playerPosition + 1
-        }
-        val inv = Bukkit.createInventory(null, 54, TITLE_VAULT)
-        fillBorder(inv, player)
-        player.openInventory(inv)
+        val inv = openMenuInv(player, TITLE_VAULT, memorize)
         startUpdater({ plugin.menu.vaultMenu.populateVaultMenu(inv, player) }, player)
     }
 
     fun openVaultListMenu(player: Player, memorize: Boolean = true) {
+        val inv = openMenuInv(player, TITLE_VAULT_LIST, memorize)
+        startUpdater({ plugin.menu.vaultListMenu.populateVaultListMenu(inv, player) }, player)
+    }
+
+    private fun openMenuInv(player: Player, title: Component, memorize: Boolean): Inventory {
         menuInvSwap[player.uniqueId] = true
         if (memorize) {
             val playerHistory: MutableList<Component> = history[player.uniqueId] ?: mutableListOf()
             val playerPosition = position[player.uniqueId] ?: -1
             while (playerHistory.size > playerPosition + 1) playerHistory.removeLast()
-            playerHistory.add(TITLE_VAULT_LIST)
+            playerHistory.add(title)
             history[player.uniqueId] = playerHistory
             position[player.uniqueId] = playerPosition + 1
         }
-        val inv = Bukkit.createInventory(null, 54, TITLE_VAULT_LIST)
+        val inv = Bukkit.createInventory(null, 54, title)
         fillBorder(inv, player)
         player.openInventory(inv)
-        startUpdater({ plugin.menu.vaultListMenu.populateVaultListMenu(inv, player) }, player)
+        return inv
     }
 
     private fun startUpdater(func: () -> Unit, player: Player) {
