@@ -99,6 +99,8 @@ class VaultListMenu(private val plugin: Diawars) {
 
     fun handleVaultListClick(player: Player, slot: Int, inv: Inventory) {
         when (slot) {
+            SLOT_PAGE_INFO -> resetPage(player)
+
             SLOT_PREV_PAGE -> {
                 val page = currentPage[player.uniqueId] ?: 0
                 if (page > 0) {
