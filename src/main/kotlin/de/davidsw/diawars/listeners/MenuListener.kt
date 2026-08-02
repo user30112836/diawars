@@ -10,58 +10,65 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 
 class MenuListener(private val plugin: Diawars): Listener {
+    private val clickHandlers: Map<Any, (InventoryClickEvent, Player, Int) -> Unit> = mapOf(
+        MenuManager.TITLE_MAIN to { event, player, slot ->
+            plugin.menu.mainMenu.handleMainClick(player, slot, event.inventory)
+        },
+
+        MenuManager.TITLE_BORDER to { event, player, slot ->
+            plugin.menu.borderMenu.handleBorderClick(player, slot, event.inventory)
+        },
+
+        MenuManager.TITLE_SCOREBOARD to { event, player, slot ->
+            plugin.menu.scoreboardMenu.handleScoreboardClick(player, slot, event.inventory)
+        },
+
+        MenuManager.TITLE_EVENT to { _, player, slot ->
+            plugin.menu.eventMenu.handleEventClick(player, slot)
+        },
+
+        MenuManager.TITLE_VAULT to { event, player, slot ->
+            plugin.menu.vaultMenu.handleVaultClick(player, slot, event.inventory)
+        },
+
+        MenuManager.TITLE_VAULT_LIST to { event, player, slot ->
+            plugin.menu.vaultListMenu.handleVaultListClick(player, slot, event.inventory)
+        }
+    )
+
+    private val managedMenus = setOf(
+        MenuManager.TITLE_MAIN,
+        MenuManager.TITLE_BORDER,
+        MenuManager.TITLE_SCOREBOARD,
+        MenuManager.TITLE_EVENT,
+        MenuManager.TITLE_VAULT
+    )
+
     @EventHandler(priority = EventPriority.HIGH)
     fun onInventoryClick(event: InventoryClickEvent) {
-        val player = event.whoClicked as Player
-        val title = event.view.title()
+        val handler = clickHandlers[event.view.title()] ?: return
 
-        when (title) {
-            MenuManager.TITLE_MAIN -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0 until 54) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.mainMenu.handleMainClick(event.whoClicked as Player, slot, event.inventory)
-            }
-            MenuManager.TITLE_BORDER -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.borderMenu.handleBorderClick(event.whoClicked as Player, slot, event.inventory)
-            }
-            MenuManager.TITLE_SCOREBOARD -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.scoreboardMenu.handleScoreboardClick(event.whoClicked as Player, slot, event.inventory)
-            }
-            MenuManager.TITLE_EVENT -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.eventMenu.handleEventClick(event.whoClicked as Player, slot)
-            }
-            MenuManager.TITLE_VAULT -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.vaultMenu.handleVaultClick(event.whoClicked as Player, slot, event.inventory)
-            }
-            MenuManager.TITLE_VAULT_LIST -> {
-                event.isCancelled = true
-                val slot = event.rawSlot
-                if (slot !in 0..53) return
-                if (slot in 48 until 51) plugin.menuManager.navigate(player, slot) else plugin.menu.vaultListMenu.handleVaultListClick(event.whoClicked as Player, slot, event.inventory)
-            }
-            else -> {}
+        event.isCancelled = true
+
+        val slot = event.rawSlot
+        if (slot !in 0 until 54) return
+
+        val player = event.whoClicked as Player
+
+        if (slot in 48..50) {
+            plugin.menuManager.navigate(player, slot)
+            return
         }
+
+        handler(event, player, slot)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onInventoryClose(event: InventoryCloseEvent) {
-        val title = event.view.title()
-        if (title == MenuManager.TITLE_BORDER || title == MenuManager.TITLE_MAIN || title == MenuManager.TITLE_SCOREBOARD || title == MenuManager.TITLE_EVENT || title == MenuManager.TITLE_VAULT) {
-            plugin.menuManager.stopUpdater(event.player as Player)
-            plugin.menuManager.emptyHistory(event.player as Player)
-        }
+        if (event.view.title() !in managedMenus) return
+
+        val player = event.player as Player
+        plugin.menuManager.stopUpdater(player)
+        plugin.menuManager.emptyHistory(player)
     }
 }
