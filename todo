@@ -1,7 +1,6 @@
 Bugs:
-- 1 PvP logic is reversed (Might be fixed)
-- 2 Inventory in event worlds does not get saved
-- 4 Border does not align correctly (It's fine on default settings)
+- PvP logic is reversed (Might be fixed)
+- Border does not align correctly (It's fine on default settings)
 
 Improvements:
 === Empty ===
@@ -15,7 +14,7 @@ Lobby:
 
 Events:
 - Players should not be able to join event worlds when they exceed the diamond limit
-- 12 Make things configurable when setting up events
+- Make things configurable when setting up events
     -> World type
     -> Player gamemode
     -> World daytime
@@ -23,6 +22,7 @@ Events:
     -> Rewards
     -> Effects
     -> Inventory
+- Players should be able to edit rejected event worlds
 
 Features:
 - Log every interaction with diamonds
@@ -35,7 +35,7 @@ Reports:
 - When "unread" bugs are detected on join the op gets notified
 
 Admin Command:
-- 15 Inspecting inv of players
+- Inspecting inv of players
 
 Manual:
 - Organised in different segments

@@ -29,9 +29,6 @@ class EventManager(private val plugin: Diawars) {
     // player -> which event/world they are currently inside of
     private val sessions = mutableMapOf<UUID, Session>()
 
-    // eventId -> scheduled bukkit task ids (activate / end)
-    private val scheduledTasks = mutableMapOf<String, MutableList<Int>>()
-
     private val store get() = plugin.store.eventStore
     private val states get() = plugin.store.playerStateStore
 
@@ -103,6 +100,11 @@ class EventManager(private val plugin: Diawars) {
         player.inventory.clear()
         player.enderChest.clear()
 
+        if (!plugin.store.eventInventoryStore.restoreInventory(event.id, player)) {
+            player.inventory.clear()
+            player.enderChest.clear()
+        }
+
         return Result.Success("<green>Du bist zu deinem Event <gold>${event.name}</gold> zurückgekehrt.</green>")
     }
 
@@ -136,6 +138,7 @@ class EventManager(private val plugin: Diawars) {
         if (event != null) {
             deleteEventWorld(event)
             store.removeEvent(event.id)
+            plugin.store.eventInventoryStore.clearEvent(event.id)
         }
 
         return Result.Success("<yellow>Dein Event wurde abgebrochen und gelöscht.</yellow>")
@@ -312,8 +315,10 @@ class EventManager(private val plugin: Diawars) {
 
         player.teleport(world.spawnLocation)
         player.gameMode = GameMode.SURVIVAL
-        player.inventory.clear()
-        player.enderChest.clear()
+        if (!plugin.store.eventInventoryStore.restoreInventory(event.id, player)) {
+            player.inventory.clear()
+            player.enderChest.clear()
+        }
 
         return Result.Success("<green>Du bist dem Event <gold>${event.name}</gold> beigetreten!</green>")
     }
@@ -327,7 +332,10 @@ class EventManager(private val plugin: Diawars) {
     }
 
     private fun leaveWorld(player: Player) {
-        sessions.remove(player.uniqueId)
+        val session = sessions.remove(player.uniqueId)
+        if (session != null && session.mode != SessionMode.REVIEW) {
+            plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
+        }
         if (!states.restoreState(player)) {
             player.gameMode = GameMode.SURVIVAL
             player.teleport(plugin.server.worlds.first().spawnLocation)
@@ -363,5 +371,13 @@ class EventManager(private val plugin: Diawars) {
     fun reactivateSchedules() {
         startEventChecker()
         checkEventTransitions()
+    }
+
+    fun saveActiveInventories() {
+        for ((uuid, session) in sessions) {
+            if (session.mode == SessionMode.REVIEW) continue
+            val player = getPlayer(uuid) ?: continue
+            plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
+        }
     }
 }

@@ -45,6 +45,7 @@ import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
+import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
 import de.davidsw.diawars.stores.PlayerStateStore
@@ -71,6 +72,7 @@ data class Store(
     var borderPreferencesStore: BorderPreferencesStore,
     var pvpStatusStore: PvPStatusStore,
     var eventStore: EventStore,
+    var eventInventoryStore: EventInventoryStore,
     var playerStateStore: PlayerStateStore,
     var rewardStore: RewardStore,
     var scoreboardPreferencesStore: ScoreboardPreferencesStore,
@@ -109,6 +111,7 @@ class Diawars : JavaPlugin() {
             borderPreferencesStore = BorderPreferencesStore(this),
             pvpStatusStore = PvPStatusStore(this),
             eventStore = EventStore(this),
+            eventInventoryStore = EventInventoryStore(this),
             playerStateStore = PlayerStateStore(this),
             rewardStore = RewardStore(this),
             scoreboardPreferencesStore = ScoreboardPreferencesStore(this),
@@ -187,6 +190,7 @@ class Diawars : JavaPlugin() {
     }
 
     override fun onDisable() {
+        eventManager.saveActiveInventories()
         store.pvpStatusStore.stop()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
