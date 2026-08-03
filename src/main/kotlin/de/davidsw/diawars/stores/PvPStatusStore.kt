@@ -6,7 +6,6 @@ import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.configuration.file.YamlConfiguration
-import java.io.File
 import java.util.UUID
 import kotlin.collections.component1
 import kotlin.collections.component2

@@ -6,7 +6,6 @@ import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
-import java.io.File
 import java.util.UUID
 import kotlin.collections.iterator
 

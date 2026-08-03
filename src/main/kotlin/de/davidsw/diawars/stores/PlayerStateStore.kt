@@ -9,7 +9,6 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import java.io.File
 import java.util.UUID
 
 data class PlayerSavedState(

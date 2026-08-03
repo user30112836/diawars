@@ -3,7 +3,6 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
-import java.io.File
 import java.util.UUID
 
 enum class EventState {
