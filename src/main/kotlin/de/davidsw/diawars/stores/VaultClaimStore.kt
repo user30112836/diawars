@@ -1,6 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.UUID
@@ -12,7 +13,7 @@ data class VaultClaim(
 )
 
 class VaultClaimStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "vault_claims.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "vault_claims.yml")
     private val claimsByVault = mutableMapOf<String, VaultClaim>()
 
     init {

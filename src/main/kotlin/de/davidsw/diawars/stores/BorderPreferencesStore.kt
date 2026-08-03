@@ -3,10 +3,10 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.ParticleParser
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Color
 import org.bukkit.Particle
 import org.bukkit.configuration.file.YamlConfiguration
-import java.io.File
 import java.util.UUID
 import kotlin.collections.iterator
 
@@ -31,7 +31,7 @@ data class BorderPreference(
 
 class BorderPreferencesStore(private val plugin: Diawars) {
     private val preferences = mutableMapOf<UUID, BorderPreference>()
-    private val preferencesFile = File(plugin.dataFolder, "border_preferences.yml")
+    private val preferencesFile = StoreFiles.resolve(plugin, "border_preferences.yml")
     private lateinit var config: YamlConfiguration
 
     init {

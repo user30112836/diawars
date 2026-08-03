@@ -1,6 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
@@ -37,7 +38,7 @@ data class PlayerSavedState(
  * world can never cause item loss.
  */
 class PlayerStateStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "event_player_states.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "event_player_states.yml")
     private val cache = mutableMapOf<UUID, PlayerSavedState>()
 
     init {

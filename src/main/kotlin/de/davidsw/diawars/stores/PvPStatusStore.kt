@@ -2,6 +2,7 @@ package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.configuration.file.YamlConfiguration
@@ -20,7 +21,7 @@ data class PvPStatus(
 )
 
 class PvPStatusStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "pvp_status.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "pvp_status.yml")
     private val cache = mutableMapOf<UUID, PvPStatus>()
     private val toggleDelaySeconds get() = plugin.config.getInt("pvp-toggle.delay-seconds", 300)
 

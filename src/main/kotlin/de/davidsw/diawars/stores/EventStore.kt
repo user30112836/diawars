@@ -1,6 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.UUID
@@ -25,7 +26,7 @@ data class GameEvent(
 )
 
 class EventStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "events.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "events.yml")
     private val cache = mutableMapOf<String, GameEvent>()
 
     init {

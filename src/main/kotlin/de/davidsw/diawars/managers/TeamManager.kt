@@ -1,6 +1,8 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.ConfigFiles
+import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
 enum class Team(val configKey: String, var displayName: String) {
@@ -15,14 +17,15 @@ enum class Team(val configKey: String, var displayName: String) {
 
 class TeamManager(private val plugin: Diawars) {
     private val playerTeams = mutableMapOf<UUID, Team>()
+    private val teamsFile = ConfigFiles.resolve(plugin, "teams.yml")
 
     init {
         loadTeamsFromConfig()
     }
 
-    private fun loadTeamFromConfig(team: Team) {
-        team.displayName = plugin.config.getString("teams.${team.configKey}.display-name") ?: team.displayName
-        plugin.config.getStringList("teams.${team.configKey}.players").forEach { uuidString ->
+    private fun loadTeamFromConfig(config: YamlConfiguration,team: Team) {
+        team.displayName = config.getString("${team.configKey}.display-name") ?: team.displayName
+        config.getStringList("${team.configKey}.players").forEach { uuidString ->
             try {
                 val uuid = UUID.fromString(uuidString)
                 if (uuid in playerTeams) {
@@ -38,8 +41,9 @@ class TeamManager(private val plugin: Diawars) {
     fun loadTeamsFromConfig() {
         playerTeams.clear()
 
-        loadTeamFromConfig(Team.TEAM_A)
-        loadTeamFromConfig(Team.TEAM_B)
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        loadTeamFromConfig(config, Team.TEAM_A)
+        loadTeamFromConfig(config, Team.TEAM_B)
 
         plugin.logger.info("Loaded teams: ${playerTeams.values}")
     }

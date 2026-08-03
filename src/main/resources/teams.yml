@@ -1,0 +1,15 @@
+# Team A (Westliche Zone, X > 0)
+team-a:
+  display-name: "Team A"
+  players:
+    - "UUID1"
+    - "UUID2"
+    - "UUID3"
+
+# Team B (Östliche Zone, X < 0)
+team-b:
+  display-name: "Team B"
+  players:
+    - "UUID4"
+    - "UUID5"
+    - "UUID6"

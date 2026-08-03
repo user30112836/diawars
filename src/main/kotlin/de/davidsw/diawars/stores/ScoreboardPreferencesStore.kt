@@ -1,6 +1,7 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.UUID
@@ -19,7 +20,7 @@ data class ScoreboardPreference(
 )
 
 class ScoreboardPreferencesStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "scoreboard_preferences.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "scoreboard_preferences.yml")
     private val preferences = mutableMapOf<UUID, ScoreboardPreference>()
 
     init { load() }

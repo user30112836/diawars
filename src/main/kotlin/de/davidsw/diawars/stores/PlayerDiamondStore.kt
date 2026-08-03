@@ -3,6 +3,7 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.DiamondCounter
 import de.davidsw.diawars.managers.Team
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import java.io.File
@@ -10,7 +11,7 @@ import java.util.UUID
 import kotlin.collections.iterator
 
 class PlayerDiamondStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "diamond_scores.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "diamond_scores.yml")
     private val cache = mutableMapOf<UUID, Int>()
     private val names = mutableMapOf<UUID, String>()
 

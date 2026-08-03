@@ -1,12 +1,13 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.io.File
 import java.util.UUID
 
 class MessageStore(private val plugin: Diawars) {
-    private val storeFile = File(plugin.dataFolder, "pending_messages.yml")
+    private val storeFile = StoreFiles.resolve(plugin, "pending_messages.yml")
     private val cache = mutableMapOf<UUID, MutableList<String>>()
 
     init {

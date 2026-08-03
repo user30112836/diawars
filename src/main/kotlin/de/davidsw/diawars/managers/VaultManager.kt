@@ -1,8 +1,10 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.ConfigFiles
 import de.davidsw.diawars.util.MaterialSets.VAULT_UNDERGROUND
 import org.bukkit.Location
+import org.bukkit.configuration.file.YamlConfiguration
 
 data class VaultRegion(
     val id: String,
@@ -24,6 +26,7 @@ data class VaultRegion(
 
 class VaultManager(private val plugin: Diawars) {
     private var regions: List<VaultRegion> = emptyList()
+    private val vaultsFile = ConfigFiles.resolve(plugin, "vaults.yml")
 
     init {
         loadFromConfig()
@@ -31,38 +34,36 @@ class VaultManager(private val plugin: Diawars) {
 
     fun loadFromConfig() {
         val list = mutableListOf<VaultRegion>()
-        val section = plugin.config.getConfigurationSection("vaults")
+        val section = YamlConfiguration.loadConfiguration(vaultsFile)
 
-        if (section != null) {
-            for (id in section.getKeys(false)) {
-                try {
-                    val vaultSection = section.getConfigurationSection(id) ?: continue
-                    val world = vaultSection.getString("world") ?: "world"
-                    val teamKey = vaultSection.getString("team") ?: continue
-                    val team = Team.entries.firstOrNull { it.configKey == teamKey }
-                        ?: run {
-                            plugin.logger.warning("Vault '$id' has unknown team '$teamKey'")
-                            continue
-                        }
-                    val displayName = vaultSection.getString("display-name") ?: id
-                    val c1 = vaultSection.getConfigurationSection("corner1") ?: continue
-                    val c2 = vaultSection.getConfigurationSection("corner2") ?: continue
+        for (id in section.getKeys(false)) {
+            try {
+                val vaultSection = section.getConfigurationSection(id) ?: continue
+                val world = vaultSection.getString("world") ?: "world"
+                val teamKey = vaultSection.getString("team") ?: continue
+                val team = Team.entries.firstOrNull { it.configKey == teamKey }
+                    ?: run {
+                        plugin.logger.warning("Vault '$id' has unknown team '$teamKey'")
+                        continue
+                    }
+                val displayName = vaultSection.getString("display-name") ?: id
+                val c1 = vaultSection.getConfigurationSection("corner1") ?: continue
+                val c2 = vaultSection.getConfigurationSection("corner2") ?: continue
 
-                    val x1 = c1.getInt("x"); val y1 = c1.getInt("y"); val z1 = c1.getInt("z")
-                    val x2 = c2.getInt("x"); val y2 = c2.getInt("y"); val z2 = c2.getInt("z")
+                val x1 = c1.getInt("x"); val y1 = c1.getInt("y"); val z1 = c1.getInt("z")
+                val x2 = c2.getInt("x"); val y2 = c2.getInt("y"); val z2 = c2.getInt("z")
 
-                    list += VaultRegion(
-                        id = id,
-                        displayName = displayName,
-                        world = world,
-                        team = team,
-                        minX = minOf(x1, x2), maxX = maxOf(x1, x2),
-                        minY = minOf(y1, y2),
-                        minZ = minOf(z1, z2), maxZ = maxOf(z1, z2),
-                    )
-                } catch (e: Exception) {
-                    plugin.logger.warning("Could not load vault '$id': ${e.message}")
-                }
+                list += VaultRegion(
+                    id = id,
+                    displayName = displayName,
+                    world = world,
+                    team = team,
+                    minX = minOf(x1, x2), maxX = maxOf(x1, x2),
+                    minY = minOf(y1, y2),
+                    minZ = minOf(z1, z2), maxZ = maxOf(z1, z2),
+                )
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not load vault '$id': ${e.message}")
             }
         }
 
