@@ -5,6 +5,7 @@ Bugs:
 
 Improvements:
 - Merging to PaperMC 26.2 (now stable)
+- Separating config and store files in two folders
 
 Lobby:
 - Make the player spawn there on first join
@@ -25,15 +26,35 @@ Events:
     -> Inventory
 
 Features:
-- 23 GUI
-    -> Integrating the particle density and amount settings
-- 28 Manual via a /manual command (major)
 - Log every interaction with diamonds
+
+Reports:
+- Way for players to report bugs in the plugin via /bug
+- Notifying ops when new bugs got reported
+- Op can get a list of the bugs (with player names)
+- Op can mark bugs as read or resolved
+- When "unread" bugs are detected on join the op gets notified
 
 Admin Command:
 - 15 Inspecting inv of players
+
+Manual:
+- Organised in different segments
+    -> Can be accessed through the menu with submenus
+    -> Opens a temporary book (no item) with the selected segment
+- Segments
+    -> Full manual (every segment combined in one book)
+    -> Quick overview (Short summary of the functionalities)
+    -> Segments for every function set of the plugin
+    -> Rules on the server
+- Contents of the manual are configurable
+    -> Own yml-File
 
 Multiplayer-Tests:
 - Are personal configs getting deleted when offline?
 - Is the PvPStatus working correctly?
 - Are fights getting detected properly?
+- Does the vault invite system work?
+
+Polls:
+- Whether withers should be able to destroy every block

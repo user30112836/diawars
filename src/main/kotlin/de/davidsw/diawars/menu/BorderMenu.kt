@@ -1,6 +1,7 @@
 package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.stores.BorderDensity
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -17,6 +18,13 @@ class BorderMenu(private val plugin: Diawars) {
         private const val SLOT_BORDER_TOGGLE = 31
         private const val SLOT_BORDER_DIST_INC = 33
         private const val SLOT_BORDER_RESET = 40
+
+        private const val SLOT_DENSITY_H_DEC = 19
+        private const val SLOT_DENSITY_H_INC = 25
+        private const val SLOT_DENSITY_V_DEC = 28
+        private const val SLOT_DENSITY_V_INC = 34
+        private const val SLOT_AMOUNT_DEC = 37
+        private const val SLOT_AMOUNT_INC = 43
 
         private val PARTICLE_TYPES = listOf("REDSTONE", "FLAME", "GLOW", "END_ROD", "SOUL", "ENCHANT", "PORTAL", "HEART")
         private val NAMED_COLORS   = listOf("YELLOW", "RED", "BLUE", "GREEN", "ORANGE", "PURPLE", "WHITE", "AQUA")
@@ -85,6 +93,60 @@ class BorderMenu(private val plugin: Diawars) {
             ),
         ))
 
+        // Horizontal density controls
+        inv.setItem(SLOT_DENSITY_H_DEC, item(
+            material = Material.RED_STAINED_GLASS_PANE,
+            name     = mm("<red><bold>◄ Dichte horizontal -1</bold></red>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.density.horizontal}</gray>"),
+                mm("<dark_gray>Minimum: ${BorderDensity.MIN}</dark_gray>"),
+            ),
+        ))
+        inv.setItem(SLOT_DENSITY_H_INC, item(
+            material = Material.GREEN_STAINED_GLASS_PANE,
+            name     = mm("<green><bold>Dichte horizontal +1 ►</bold></green>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.density.horizontal}</gray>"),
+                mm("<dark_gray>Maximum: ${BorderDensity.MAX}</dark_gray>"),
+            ),
+        ))
+
+        // Vertical density controls
+        inv.setItem(SLOT_DENSITY_V_DEC, item(
+            material = Material.RED_STAINED_GLASS_PANE,
+            name     = mm("<red><bold>◄ Dichte vertikal -1</bold></red>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.density.vertical}</gray>"),
+                mm("<dark_gray>Minimum: ${BorderDensity.MIN}</dark_gray>"),
+            ),
+        ))
+        inv.setItem(SLOT_DENSITY_V_INC, item(
+            material = Material.GREEN_STAINED_GLASS_PANE,
+            name     = mm("<green><bold>Dichte vertikal +1 ►</bold></green>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.density.vertical}</gray>"),
+                mm("<dark_gray>Maximum: ${BorderDensity.MAX}</dark_gray>"),
+            ),
+        ))
+
+        // Particle amount controls
+        inv.setItem(SLOT_AMOUNT_DEC, item(
+            material = Material.RED_STAINED_GLASS_PANE,
+            name     = mm("<red><bold>◄ Partikel-Menge -1</bold></red>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.amount}</gray>"),
+                mm("<dark_gray>Minimum: 1</dark_gray>"),
+            ),
+        ))
+        inv.setItem(SLOT_AMOUNT_INC, item(
+            material = Material.GREEN_STAINED_GLASS_PANE,
+            name     = mm("<green><bold>Partikel-Menge +1 ►</bold></green>"),
+            lore     = listOf(
+                mm("<gray>Aktuell: ${pref.amount}</gray>"),
+                mm("<dark_gray>Maximum: 10</dark_gray>"),
+            ),
+        ))
+
         // Reset
         inv.setItem(SLOT_BORDER_RESET, item(
             material = Material.ANVIL,
@@ -126,6 +188,42 @@ class BorderMenu(private val plugin: Diawars) {
             SLOT_BORDER_DIST_INC -> {
                 val current = prefs.getPreference(player.uniqueId).renderDistance
                 prefs.setRenderDistance(player.uniqueId, (current + 8).coerceAtMost(64))
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_DENSITY_H_DEC -> {
+                val current = prefs.getPreference(player.uniqueId).density.horizontal
+                prefs.setHorizontalDensity(player.uniqueId, current - 1)
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_DENSITY_H_INC -> {
+                val current = prefs.getPreference(player.uniqueId).density.horizontal
+                prefs.setHorizontalDensity(player.uniqueId, current + 1)
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_DENSITY_V_DEC -> {
+                val current = prefs.getPreference(player.uniqueId).density.vertical
+                prefs.setVerticalDensity(player.uniqueId, current - 1)
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_DENSITY_V_INC -> {
+                val current = prefs.getPreference(player.uniqueId).density.vertical
+                prefs.setVerticalDensity(player.uniqueId, current + 1)
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_AMOUNT_DEC -> {
+                val current = prefs.getPreference(player.uniqueId).amount
+                prefs.setAmount(player.uniqueId, (current - 1).coerceAtLeast(1))
+                populateBorderMenu(inv, player)
+            }
+
+            SLOT_AMOUNT_INC -> {
+                val current = prefs.getPreference(player.uniqueId).amount
+                prefs.setAmount(player.uniqueId, (current + 1).coerceAtMost(10))
                 populateBorderMenu(inv, player)
             }
 
