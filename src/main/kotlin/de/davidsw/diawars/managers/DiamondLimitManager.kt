@@ -124,6 +124,9 @@ class DiamondLimitManager(private val plugin: Diawars) {
                     val ticksLeft = plugin.config.getInt("dia-timer.despawn-time", 6000) - ticksLived
 
                     if (ticksLeft <= 0) {
+                        plugin.diamondLogManager.log(
+                            DiamondAction.DESPAWN, item.itemStack.type, item.itemStack.amount, location = item.location
+                        )
                         data.textDisplay.remove()
                         toRemove.add(uuid)
                         return@forEach

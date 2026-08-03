@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.DiamondAction
 import de.davidsw.diawars.util.DiamondGlow
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -16,6 +17,8 @@ class DiamondListener(private val plugin: Diawars): Listener {
         if (stack.type != Material.DIAMOND) return
         DiamondGlow.applyGlow(stack)
         event.item.itemStack = stack
+        val entity = event.entity
+        if (entity is Player) plugin.diamondLogManager.log(DiamondAction.PICKUP, stack.type, stack.amount, entity)
     }
 
     @EventHandler
@@ -32,9 +35,11 @@ class DiamondListener(private val plugin: Diawars): Listener {
                     DiamondGlow.applyGlow(item)
                 }
             })
+            plugin.diamondLogManager.log(DiamondAction.CRAFT, stack.type, stack.amount, player, details = "Shift-Klick (mehrfach)")
         } else {
             DiamondGlow.applyGlow(stack)
             event.currentItem = stack
+            plugin.diamondLogManager.log(DiamondAction.CRAFT, stack.type, stack.amount, player)
         }
     }
 }

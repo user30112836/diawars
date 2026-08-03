@@ -57,6 +57,7 @@ class RewardManager(private val plugin: Diawars) {
         val leftover = player.inventory.addItem(glowingStack).values.sumOf { it.amount }
         val given = amount - leftover
         if (given > 0) {
+            plugin.diamondLogManager.log(DiamondAction.REWARD, Material.DIAMOND, given, player)
             player.sendMessage(pmm("<green>Du hast <gold>$given Diamant(en)</gold> erhalten!</green>"))
         }
         if (leftover > 0) {

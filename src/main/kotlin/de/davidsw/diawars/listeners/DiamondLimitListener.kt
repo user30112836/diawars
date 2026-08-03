@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.DiamondAction
 import org.bukkit.GameRules
 import org.bukkit.Material
 import org.bukkit.entity.Item
@@ -26,12 +27,14 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
     fun onItemSpawn(event: ItemSpawnEvent) {
         val item = event.entity.itemStack
         if (item.type == Material.DIAMOND) {
+            plugin.diamondLogManager.log(DiamondAction.DROP, item.type, item.amount, location = event.entity.location)
             plugin.server.scheduler.runTask(plugin, Runnable {
                 plugin.diamondLimitManager.resetTicksLived(event.entity)
                 plugin.diamondLimitManager.trackDiamond(event.entity)
             })
         }
         if (item.type == Material.DIAMOND_BLOCK) {
+            plugin.diamondLogManager.log(DiamondAction.DROP, item.type, item.amount, location = event.entity.location)
             plugin.server.scheduler.runTask(plugin, Runnable {
                 plugin.diamondLimitManager.convertDiamondBlocks(event.entity)
             })

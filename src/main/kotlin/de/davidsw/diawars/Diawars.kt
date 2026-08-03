@@ -25,6 +25,7 @@ import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
 import de.davidsw.diawars.managers.ContainerExplosionManager
 import de.davidsw.diawars.managers.DiamondLimitManager
+import de.davidsw.diawars.managers.DiamondLogManager
 import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.LobbyManager
@@ -87,9 +88,10 @@ class Diawars : JavaPlugin() {
     lateinit var zoneManager: ZoneManager
     lateinit var borderManager: BorderManager
     lateinit var pvpManager: PvPManager
-    lateinit var diamondLimitManager: DiamondLimitManager
     lateinit var containerExplosionManager: ContainerExplosionManager
+    lateinit var diamondLimitManager: DiamondLimitManager
     lateinit var diamondScoreboardManager: DiamondScoreboardManager
+    lateinit var diamondLogManager: DiamondLogManager
     lateinit var menuManager: MenuManager
     lateinit var scoresManager: ScoresManager
     lateinit var eventManager: EventManager
@@ -124,9 +126,10 @@ class Diawars : JavaPlugin() {
         zoneManager = ZoneManager(this)
         borderManager = BorderManager(this)
         pvpManager = PvPManager(this)
-        diamondLimitManager = DiamondLimitManager(this)
         containerExplosionManager = ContainerExplosionManager(this)
+        diamondLimitManager = DiamondLimitManager(this)
         diamondScoreboardManager = DiamondScoreboardManager(this)
+        diamondLogManager = DiamondLogManager(this)
         menuManager = MenuManager(this)
         scoresManager = ScoresManager(this)
         eventManager = EventManager(this)

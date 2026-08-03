@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.managers.DiamondAction
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
@@ -32,6 +33,7 @@ class VaultListener(private val plugin: Diawars): Listener {
         }
 
         plugin.store.vaultDiamondStore.addDiamonds(vault.id, 9)
+        plugin.diamondLogManager.log(DiamondAction.PLACE, Material.DIAMOND_BLOCK, 1, player, location = event.block.location)
     }
 
     @EventHandler
@@ -48,5 +50,6 @@ class VaultListener(private val plugin: Diawars): Listener {
         }
 
         plugin.store.vaultDiamondStore.removeDiamonds(vault.id, 9)
+        plugin.diamondLogManager.log(DiamondAction.BREAK, Material.DIAMOND_BLOCK, 1, player, location = event.block.location)
     }
 }

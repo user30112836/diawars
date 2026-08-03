@@ -1,9 +1,15 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
-- Border does not align correctly (It's fine on default settings)
+- Vault diamond count gets confused when the diamond blocks are not destroyed by a player
 
 Improvements:
 === Empty ===
+
+Log:
+- Not only log interactions with players (also other entities)
+- /log command for admins (displays recent entries)
+- Separate folder for logs (instead of data folder)
+- New file every day to keep acceptable file sizes
 
 Lobby:
 - Make the player spawn there on first join
@@ -23,9 +29,6 @@ Events:
     -> Effects
     -> Inventory
 - Players should be able to edit rejected event worlds
-
-Features:
-- Log every interaction with diamonds
 
 Reports:
 - Way for players to report bugs in the plugin via /bug
