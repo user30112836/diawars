@@ -1,12 +1,13 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
+import de.davidsw.diawars.util.LogFiles
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import java.io.File
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -16,14 +17,21 @@ enum class DiamondAction {
 }
 
 class DiamondLogManager(private val plugin: Diawars) {
-    private val logFile: File = StoreFiles.resolve(plugin, "diamond_log.txt")
-    private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")
+    private val fileNameFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     init {
-        if (!logFile.exists()) {
-            logFile.parentFile.mkdirs()
-            logFile.createNewFile()
+        LogFiles.resolve(plugin, "").parentFile.mkdir()
+    }
+
+    private fun currentLogFile(): File {
+        val fileName = "${LocalDate.now().format(fileNameFormatter)}.txt"
+        val file = LogFiles.resolve(plugin, fileName)
+        if (!file.exists()) {
+            file.parentFile.mkdirs()
+            file.createNewFile()
         }
+        return file
     }
 
     fun log(
@@ -38,7 +46,7 @@ class DiamondLogManager(private val plugin: Diawars) {
         if (amount <= 0) return
         if (material != Material.DIAMOND && material != Material.DIAMOND_BLOCK) return
 
-        val timestamp = LocalDateTime.now().format(formatter)
+        val timestamp = LocalDateTime.now().format(timeFormatter)
         val name = playerName ?: playerId?.let { Bukkit.getOfflinePlayer(it).name } ?: "N/A"
         val locText = location?.let { "${it.world?.name ?: "?"} ${it.blockX},${it.blockY},${it.blockZ}" } ?: "N/A"
 
@@ -52,7 +60,7 @@ class DiamondLogManager(private val plugin: Diawars) {
         }
 
         try {
-            logFile.appendText(line + System.lineSeparator())
+            currentLogFile().appendText(line + System.lineSeparator())
         } catch (e: Exception) {
             plugin.logger.severe("Could not write to diamond log: ${e.message}")
         }

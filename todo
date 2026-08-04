@@ -8,8 +8,6 @@ Improvements:
 Log:
 - Not only log interactions with players (also other entities)
 - /log command for admins (displays recent entries)
-- Separate folder for logs (instead of data folder)
-- New file every day to keep acceptable file sizes
 
 Lobby:
 - Make the player spawn there on first join
