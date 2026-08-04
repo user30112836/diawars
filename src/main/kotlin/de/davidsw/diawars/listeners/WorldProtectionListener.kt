@@ -11,6 +11,8 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockDropItemEvent
 import org.bukkit.event.block.BlockExplodeEvent
+import org.bukkit.event.block.BlockPistonExtendEvent
+import org.bukkit.event.block.BlockPistonRetractEvent
 import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.world.LootGenerateEvent
@@ -65,5 +67,19 @@ class WorldProtectionListener(private val plugin: Diawars): Listener {
             DiamondAction.BREAK, Material.DIAMOND_BLOCK, 1,
             event.entity, location = event.block.location, details = detail,
         )
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onPistonExtend(event: BlockPistonExtendEvent) {
+        if (event.blocks.any { it.type == Material.DIAMOND_BLOCK }) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun onPistonRetract(event: BlockPistonRetractEvent) {
+        if (event.blocks.any { it.type == Material.DIAMOND_BLOCK }) {
+            event.isCancelled = true
+        }
     }
 }
