@@ -35,6 +35,15 @@ class DiamondLogManager(private val plugin: Diawars) {
         return file
     }
 
+    fun getRecentEntries(limit: Int = 15): List<String> {
+        return try {
+            currentLogFile().readLines().takeLast(limit)
+        } catch (e: Exception) {
+            plugin.logger.severe("Could not read diamond log: ${e.message}")
+            emptyList()
+        }
+    }
+
     fun log(
         action: DiamondAction,
         material: Material,

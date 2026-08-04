@@ -43,6 +43,10 @@ commands:
     description: Vault-Beanspruchung und Verwaltung
     usage: /<command> <claim|unclaim|invite|ban|info|list>
     permission: diawars.use
+  log:
+    description: Zeigt die neusten Diamond-Log-Einträge
+    usage: /<command> [amount]
+    permission: diawars.admin
 
 permissions:
   diawars.use:

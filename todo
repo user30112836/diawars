@@ -5,9 +5,6 @@ Bugs:
 Improvements:
 === Empty ===
 
-Log:
-- /log command for admins (displays recent entries)
-
 Lobby:
 - Make the player spawn there on first join
 - When the player first leaves the lobby he should spawn in his zone
