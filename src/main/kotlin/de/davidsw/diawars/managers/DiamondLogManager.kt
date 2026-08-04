@@ -5,6 +5,7 @@ import de.davidsw.diawars.util.LogFiles
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import java.io.File
 import java.time.LocalDate
@@ -13,7 +14,7 @@ import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 enum class DiamondAction {
-    PICKUP, DROP, DESPAWN, CRAFT, PLACE, BREAK, REWARD
+    PICKUP, DROP, DESPAWN, CRAFT, PLACE, BREAK, REWARD, EXPLODE, TRADE
 }
 
 class DiamondLogManager(private val plugin: Diawars) {
@@ -74,4 +75,19 @@ class DiamondLogManager(private val plugin: Diawars) {
         location: Location? = player.location,
         details: String? = null,
     ) = log(action, material, amount, player.uniqueId, player.name, location, details)
+
+    fun log(
+        action: DiamondAction,
+        material: Material,
+        amount: Int,
+        entity: Entity,
+        location: Location? = entity.location,
+        details: String? = null,
+    ) = log(
+        action, material, amount,
+        playerId = (entity as? Player)?.uniqueId,
+        playerName = if (entity is Player) entity.name else entity.type.name,
+        location = location,
+        details = details,
+    )
 }

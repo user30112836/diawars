@@ -1,12 +1,12 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
 - Vault diamond count gets confused when the diamond blocks are not destroyed by a player
+- Diamond blocks should not be movable
 
 Improvements:
 === Empty ===
 
 Log:
-- Not only log interactions with players (also other entities)
 - /log command for admins (displays recent entries)
 
 Lobby:
