@@ -24,13 +24,6 @@ Events:
     -> Inventory
 - Players should be able to edit rejected event worlds
 
-Reports:
-- Way for players to report bugs in the plugin via /bug
-- Notifying ops when new bugs got reported
-- Op can get a list of the bugs (with player names)
-- Op can mark bugs as read or resolved
-- When "unread" bugs are detected on join the op gets notified
-
 Admin Command:
 - Inspecting inv of players
 

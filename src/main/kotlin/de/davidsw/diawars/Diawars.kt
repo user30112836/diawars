@@ -1,5 +1,6 @@
 package de.davidsw.diawars
 
+import de.davidsw.diawars.commands.BugCommand
 import de.davidsw.diawars.commands.EventCommand
 import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
@@ -10,6 +11,7 @@ import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.commands.VaultCommand
+import de.davidsw.diawars.listeners.BugListener
 import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
@@ -24,6 +26,7 @@ import de.davidsw.diawars.listeners.VaultListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
 import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
+import de.davidsw.diawars.managers.BugManager
 import de.davidsw.diawars.managers.ContainerExplosionManager
 import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondLogManager
@@ -47,6 +50,7 @@ import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
+import de.davidsw.diawars.stores.BugStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
@@ -81,6 +85,7 @@ data class Store(
     var messageStore: MessageStore,
     var vaultDiamondStore: VaultDiamondStore,
     var vaultClaimStore: VaultClaimStore,
+    var bugStore: BugStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -102,6 +107,7 @@ class Diawars : JavaPlugin() {
     lateinit var shulkerAccessManager: ShulkerAccessManager
     lateinit var messageManager: MessageManager
     lateinit var vaultManager: VaultManager
+    lateinit var bugManager: BugManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -121,6 +127,7 @@ class Diawars : JavaPlugin() {
             messageStore = MessageStore(this),
             vaultDiamondStore = VaultDiamondStore(this),
             vaultClaimStore = VaultClaimStore(this),
+            bugStore = BugStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -140,6 +147,7 @@ class Diawars : JavaPlugin() {
         shulkerAccessManager = ShulkerAccessManager()
         messageManager = MessageManager(this)
         vaultManager = VaultManager(this)
+        bugManager = BugManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -170,6 +178,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(LobbyListener(this), this)
         server.pluginManager.registerEvents(MessageListener(this), this)
         server.pluginManager.registerEvents(VaultListener(this), this)
+        server.pluginManager.registerEvents(BugListener(this), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -181,6 +190,7 @@ class Diawars : JavaPlugin() {
         getCommand("inv")?.setExecutor(InvCommand(this))
         getCommand("vault")?.setExecutor(VaultCommand(this))
         getCommand("log")?.setExecutor(LogCommand(this))
+        getCommand("bug")?.setExecutor(BugCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

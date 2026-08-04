@@ -24,6 +24,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_INV          = 38
         private const val SLOT_EVENTS       = 40
         private const val SLOT_LOBBY        = 42
+        private const val SLOT_BUG_REPORT   = 25
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -185,6 +186,18 @@ class MainMenu(private val plugin: Diawars) {
             glow = false,
         ))
 
+        // Bug report
+        inv.setItem(SLOT_BUG_REPORT, item(
+            material = Material.WRITABLE_BOOK,
+            name = mm("<yellow><bold>Bug melden</bold></yellow>"),
+            lore = listOf(
+                mm("<gray>Melde einen Fehler im Plugin</gray>"),
+                mm(""),
+                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+            ),
+            glow = false,
+        ))
+
         // Vault management
         val ownClaim = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)
         val vaultLore = if (ownClaim != null) {
@@ -248,6 +261,15 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
+
+            SLOT_BUG_REPORT -> {
+                player.closeInventory()
+                player.sendMessage(
+                    mm(
+                        "<yellow>Bitte beschreibe den Fehler:</yellow> " + "<click:suggest_command:'/bug report '><gold>[Bug melden]</gold></click>"
+                    )
+                )
+            }
 
             SLOT_INV -> {
                 val item = player.inventory.itemInMainHand
