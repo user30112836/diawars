@@ -34,6 +34,8 @@ class EventInventoryStore(private val plugin: Diawars) {
         flushToDisk()
     }
 
+    fun getInventory(eventId: String, playerId: UUID) = cache[eventId]?.get(playerId)
+
     fun restoreInventory(eventId: String, player: Player): Boolean {
         val saved = cache[eventId]?.get(player.uniqueId) ?: return false
         player.inventory.clear()

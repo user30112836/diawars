@@ -24,9 +24,6 @@ Events:
     -> Inventory
 - Players should be able to edit rejected event worlds
 
-Admin Command:
-- Inspecting inv of players
-
 Manual:
 - Organised in different segments
     -> Can be accessed through the menu with submenus
@@ -44,6 +41,3 @@ Multiplayer-Tests:
 - Is the PvPStatus working correctly?
 - Are fights getting detected properly?
 - Does the vault invite system work?
-
-Polls:
-- Whether withers should be able to destroy every block

@@ -1,5 +1,6 @@
 package de.davidsw.diawars
 
+import de.davidsw.diawars.commands.AdminInvCommand
 import de.davidsw.diawars.commands.BugCommand
 import de.davidsw.diawars.commands.EventCommand
 import de.davidsw.diawars.commands.InvCommand
@@ -16,6 +17,7 @@ import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
+import de.davidsw.diawars.listeners.InventoryInspectListener
 import de.davidsw.diawars.listeners.LobbyListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.MessageListener
@@ -32,6 +34,7 @@ import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondLogManager
 import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.InventoryInspectManager
 import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
@@ -108,6 +111,7 @@ class Diawars : JavaPlugin() {
     lateinit var messageManager: MessageManager
     lateinit var vaultManager: VaultManager
     lateinit var bugManager: BugManager
+    lateinit var inventoryInspectManager: InventoryInspectManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -148,6 +152,7 @@ class Diawars : JavaPlugin() {
         messageManager = MessageManager(this)
         vaultManager = VaultManager(this)
         bugManager = BugManager(this)
+        inventoryInspectManager = InventoryInspectManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -179,6 +184,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(MessageListener(this), this)
         server.pluginManager.registerEvents(VaultListener(this), this)
         server.pluginManager.registerEvents(BugListener(this), this)
+        server.pluginManager.registerEvents(InventoryInspectListener(), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -191,6 +197,7 @@ class Diawars : JavaPlugin() {
         getCommand("vault")?.setExecutor(VaultCommand(this))
         getCommand("log")?.setExecutor(LogCommand(this))
         getCommand("bug")?.setExecutor(BugCommand(this))
+        getCommand("admininv")?.setExecutor(AdminInvCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

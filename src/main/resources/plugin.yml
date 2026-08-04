@@ -51,6 +51,10 @@ commands:
     description: Meldet oder verwaltet Bugs
     usage: /<command> <report|list|resolve>
     permission: diawars.use
+  admininv:
+    description: Ermöglicht die Inspection von Spieler-Inventaren
+    usage: /<command> <main|event|enderchest>
+    permission: diawars.admin
 
 permissions:
   diawars.use:

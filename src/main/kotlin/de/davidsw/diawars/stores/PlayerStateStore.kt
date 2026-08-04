@@ -66,6 +66,8 @@ class PlayerStateStore(private val plugin: Diawars) {
         flushToDisk()
     }
 
+    fun getState(playerId: UUID) = cache[playerId]
+
     fun restoreState(player: Player, minimal: Boolean = false): Boolean {
         val state = cache.remove(player.uniqueId) ?: return false
         flushToDisk()
