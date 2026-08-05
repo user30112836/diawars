@@ -1,6 +1,7 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
+import org.bukkit.Location
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerRespawnEvent
@@ -11,8 +12,13 @@ class PlayerRespawnListener(private val plugin: Diawars): Listener {
         if (event.isBedSpawn || event.isAnchorSpawn) return
 
         val player = event.player
-        if (plugin.lobbyManager.isLobbyWorld(player.world.name)) return
-        if (plugin.eventManager.isEventWorld(player.world.name)) return
+        val world = player.world
+
+        if (plugin.lobbyManager.isLobbyWorld(world.name)) return
+        if (plugin.eventManager.isEventWorld(world.name)) {
+            event.respawnLocation = world.spawnLocation
+            return
+        }
 
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return
         val location = plugin.teamManager.getSpawnLocation(team) ?: return
