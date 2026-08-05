@@ -2,44 +2,44 @@ overview:
   title: "Kurzübersicht"
   pages:
     - |
-      <gold><bold>Diawars</bold></gold>
+      <aqua><bold>Diawars</bold></aqua>
       <gray>Kurzübersicht</gray>
 
-      <white>Diawars ist ein teambasiertes
+      <dark_gray>Diawars ist ein teambasiertes
       Diamanten-PvP Spiel. Sammle
       Diamanten, verteidige deine Zone
-      und greife die gegnerische an!</white>
+      und greife die gegnerische an!</dark_gray>
 
-      <yellow>/menu</yellow> <gray>öffnet das
+      <gold>/menu</gold> <gray>öffnet das
       Hauptmenü mit allen Funktionen.</gray>
 
 rules:
   title: "Serverregeln"
   pages:
     - |
-      <gold><bold>Serverregeln</bold></gold>
+      <aqua><bold>Serverregeln</bold></aqua>
 
-      <red>1.</red> <white>Kein Bug-Abuse.
+      <red>1.</red> <dark_gray>Kein Bug-Abuse.
       Gefundene Fehler bitte über
-      /bug report melden.</white>
+      /bug report melden.</dark_gray>
 
-      <red>2.</red> <white>Kein Spam bei
-      Bug-Reports oder im Chat.</white>
+      <red>2.</red> <dark_gray>Kein Spam bei
+      Bug-Reports oder im Chat.</dark_gray>
 
-      <red>3.</red> <white>Kein Griefing
-      außerhalb der Gegnerzone.</white>
+      <red>3.</red> <dark_gray>Kein Griefing
+      außerhalb der Gegnerzone.</dark_gray>
     - |
-      <gold><bold>Serverregeln</bold></gold>
+      <aqua><bold>Serverregeln</bold></aqua>
 
-      <red>4.</red> <white>Kein Einsatz von
+      <red>4.</red> <dark_gray>Kein Einsatz von
       Cheats, Hacks oder unerlaubten
-      Modifikationen.</white>
+      Modifikationen.</dark_gray>
 
-      <red>5.</red> <white>Respektvoller
-      Umgang mit anderen Spielern.</white>
+      <red>5.</red> <dark_gray>Respektvoller
+      Umgang mit anderen Spielern.</dark_gray>
 
-      <red>6.</red> <white>Anweisungen der
-      Admins sind zu befolgen.</white>
+      <red>6.</red> <dark_gray>Anweisungen der
+      Admins sind zu befolgen.</dark_gray>
 
       <gray>Verstöße können zu Verwarnungen
       oder Bans führen.</gray>
@@ -49,160 +49,160 @@ segments:
     title: "PvP-System"
     pages:
       - |
-        <gold><bold>PvP-System</bold></gold>
+        <aqua><bold>PvP-System</bold></aqua>
 
-        <white>Mit </white><yellow>/pvp</yellow>
-        <white>schaltest du PvP an oder
+        <dark_gray>Mit </dark_gray><gold>/pvp</gold>
+        <dark_gray>schaltest du PvP an oder
         aus. Änderungen greifen erst nach
-        5 Minuten Verzögerung.</white>
+        5 Minuten Verzögerung.</dark_gray>
 
-        <white>Während eines Kampfes kannst
+        <dark_gray>Während eines Kampfes kannst
         du deinen PvP-Status nicht ändern
-        und solltest nicht ausloggen!</white>
+        und solltest nicht ausloggen!</dark_gray>
       - |
-        <gold><bold>PvP-System</bold></gold>
+        <aqua><bold>PvP-System</bold></aqua>
 
-        <yellow>/pvp status</yellow>
+        <gold>/pvp status</gold>
         <gray>Zeigt deinen aktuellen Status</gray>
 
-        <yellow>/pvp cancel</yellow>
+        <gold>/pvp cancel</gold>
         <gray>Bricht eine wartende Änderung ab</gray>
 
-        <white>Beim Töten eines Gegners
+        <dark_gray>Beim Töten eines Gegners
         erhältst du Diamanten als
-        Belohnung.</white>
+        Belohnung.</dark_gray>
 
   vaults:
     title: "Vaults"
     pages:
       - |
-        <gold><bold>Vaults</bold></gold>
+        <aqua><bold>Vaults</bold></aqua>
 
-        <white>Jedes Team besitzt Vaults,
+        <dark_gray>Jedes Team besitzt Vaults,
         in denen Diamantblöcke sicher
-        gelagert werden können.</white>
+        gelagert werden können.</dark_gray>
 
-        <yellow>/vault claim</yellow>
+        <gold>/vault claim</gold>
         <gray>Beansprucht ein Vault in
         deiner Nähe</gray>
 
-        <yellow>/vault invite &lt;spieler&gt;</yellow>
+        <gold>/vault invite &lt;spieler&gt;</gold>
         <gray>Lädt ein Teammitglied ein</gray>
       - |
-        <gold><bold>Vaults</bold></gold>
+        <aqua><bold>Vaults</bold></aqua>
 
-        <yellow>/vault ban &lt;spieler&gt;</yellow>
+        <gold>/vault ban &lt;spieler&gt;</gold>
         <gray>Entfernt einen eingeladenen
         Spieler</gray>
 
-        <yellow>/vault info</yellow> <gray>/</gray>
-        <yellow>/vault list</yellow>
+        <gold>/vault info</gold> <gray>/</gray>
+        <gold>/vault list</gold>
         <gray>Zeigt deine bzw. alle Vaults</gray>
 
-        <white>Nur du und eingeladene
+        <dark_gray>Nur du und eingeladene
         Spieler können in deinem Vault
-        Diamantblöcke platzieren.</white>
+        Diamantblöcke platzieren.</dark_gray>
 
   events:
     title: "Events"
     pages:
       - |
-        <gold><bold>Events</bold></gold>
+        <aqua><bold>Events</bold></aqua>
 
-        <white>Spieler können eigene
+        <dark_gray>Spieler können eigene
         Minigame-Events bauen und zur
-        Prüfung einreichen.</white>
+        Prüfung einreichen.</dark_gray>
 
-        <yellow>/event create &lt;name&gt;</yellow>
+        <gold>/event create &lt;name&gt;</gold>
         <gray>Erstellt ein neues Event</gray>
 
-        <yellow>/event submit</yellow>
+        <gold>/event submit</gold>
         <gray>Reicht dein Event ein</gray>
       - |
-        <gold><bold>Events</bold></gold>
+        <aqua><bold>Events</bold></aqua>
 
-        <yellow>/event join &lt;id&gt;</yellow>
+        <gold>/event join &lt;id&gt;</gold>
         <gray>Tritt einem aktiven Event bei</gray>
 
-        <yellow>/event list</yellow>
+        <gold>/event list</gold>
         <gray>Zeigt verfügbare Events</gray>
 
-        <white>Angenommene Events werden
+        <dark_gray>Angenommene Events werden
         automatisch zur Startzeit
-        aktiviert.</white>
+        aktiviert.</dark_gray>
 
   zones:
     title: "Zonen & Border"
     pages:
       - |
-        <gold><bold>Zonen & Border</bold></gold>
+        <aqua><bold>Zonen & Border</bold></aqua>
 
-        <white>Die Welt ist bei X=0 in
+        <dark_gray>Die Welt ist bei X=0 in
         zwei Team-Zonen geteilt. Die
         Grenze wird durch Partikel
-        dargestellt.</white>
+        dargestellt.</dark_gray>
 
-        <yellow>/teamzones info</yellow>
+        <gold>/teamzones info</gold>
         <gray>Zeigt deinen Zonen-Status</gray>
       - |
-        <gold><bold>Zonen & Border</bold></gold>
+        <aqua><bold>Zonen & Border</bold></aqua>
 
-        <yellow>/teamzones border</yellow>
+        <gold>/teamzones border</gold>
         <gray>Passt Partikel, Farbe,
         Sichtweite und Dichte der
         Grenze an</gray>
 
-        <white>In der Gegnerzone kannst
+        <dark_gray>In der Gegnerzone kannst
         du nur mit deinem Item in der
-        Hand interagieren.</white>
+        Hand interagieren.</dark_gray>
 
   scoreboard:
     title: "Scoreboard & Anzeige"
     pages:
       - |
-        <gold><bold>Scoreboard</bold></gold>
+        <aqua><bold>Scoreboard</bold></aqua>
 
-        <yellow>/scores info</yellow>
+        <gold>/scores info</gold>
         <gray>Zeigt den aktuellen
         Punktestand</gray>
 
-        <yellow>/scores sidebar</yellow>
+        <gold>/scores sidebar</gold>
         <gray>Schaltet die Sidebar an
         oder aus</gray>
       - |
-        <gold><bold>Scoreboard</bold></gold>
+        <aqua><bold>Scoreboard</bold></aqua>
 
-        <white>Über das Menü kannst du
+        <dark_gray>Über das Menü kannst du
         einzelne Anzeige-Komponenten wie
         Team-Diamanten oder deinen
         Vault-Stand ein- und
-        ausblenden.</white>
+        ausblenden.</dark_gray>
 
   lobby:
     title: "Lobby"
     pages:
       - |
-        <gold><bold>Lobby</bold></gold>
+        <aqua><bold>Lobby</bold></aqua>
 
-        <yellow>/lobby</yellow>
+        <gold>/lobby</gold>
         <gray>Betritt oder verlässt die
         Lobby</gray>
 
-        <white>In der Lobby kannst du
+        <dark_gray>In der Lobby kannst du
         keinen Schaden nehmen und
         keine Blöcke abbauen oder
-        platzieren.</white>
+        platzieren.</dark_gray>
 
   bugs:
     title: "Bug-Reports"
     pages:
       - |
-        <gold><bold>Bug-Reports</bold></gold>
+        <aqua><bold>Bug-Reports</bold></aqua>
 
-        <yellow>/bug report &lt;beschreibung&gt;</yellow>
+        <gold>/bug report &lt;beschreibung&gt;</gold>
         <gray>Meldet einen gefundenen
         Fehler</gray>
 
-        <white>Bitte beschreibe Fehler so
+        <dark_gray>Bitte beschreibe Fehler so
         genau wie möglich und melde
-        jeden Bug nur einmal.</white>
+        jeden Bug nur einmal.</dark_gray>
