@@ -1,18 +1,15 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.ConfigFiles
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.getWorld
 import org.bukkit.Location
 import org.bukkit.WorldCreator
 import org.bukkit.WorldType
-import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import java.util.UUID
 
 class LobbyManager(private val plugin: Diawars) {
-    private val teamsFile = ConfigFiles.resolve(plugin, "teams.yml")
     private val playersInLobby = mutableSetOf<UUID>()
     private val states get() = plugin.store.playerStateStore
 
@@ -80,7 +77,9 @@ class LobbyManager(private val plugin: Diawars) {
         }
 
         if (!states.restoreState(player, true)) {
-            player.teleport(plugin.server.worlds.first().spawnLocation)
+            if (!sendPlayerToOwnZone(player)) {
+                player.teleport(plugin.server.worlds.first().spawnLocation)
+            }
         }
 
         return true
@@ -126,18 +125,8 @@ class LobbyManager(private val plugin: Diawars) {
 
     private fun sendPlayerToOwnZone(player: Player): Boolean {
         val team = plugin.teamManager.getPlayerTeam(player.uniqueId) ?: return false
-        val teamsConfig = YamlConfiguration.loadConfiguration(teamsFile)
-        val section = teamsConfig.getConfigurationSection("${team.configKey}.spawn-point") ?: return false
-        val world = plugin.server.worlds.first()
-
-        player.teleport(Location(
-            world,
-            section.getDouble("x"),
-            section.getDouble("y"),
-            section.getDouble("z"),
-            section.getDouble("yaw").toFloat(),
-            section.getDouble("pitch").toFloat(),
-        ))
+        val location = plugin.teamManager.getSpawnLocation(team) ?: return false
+        player.teleport(location)
         return true
     }
 

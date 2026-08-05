@@ -2,6 +2,7 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ConfigFiles
+import org.bukkit.Location
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
@@ -61,4 +62,18 @@ class TeamManager(private val plugin: Diawars) {
     }
 
     fun getTeamMembers(team: Team): Set<UUID> = playerTeams.filterValues { it == team }.keys
+
+    fun getSpawnLocation(team: Team): Location? {
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        val section = config.getConfigurationSection("${team.configKey}.spawn-point") ?: return null
+
+        return Location(
+            plugin.server.worlds.first(),
+            section.getDouble("x"),
+            section.getDouble("y"),
+            section.getDouble("z"),
+            section.getDouble("yaw").toFloat(),
+            section.getDouble("pitch").toFloat(),
+        )
+    }
 }

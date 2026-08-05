@@ -1,8 +1,8 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
-- Spawn point should be the spawn-location in the config not the world spawn
 - Players can leave the server without dropping diamonds when exceeding the limit in the lobby
 - The lobby system gets confused when players disconnect from the lobby
+- Players should stay in the event world when dying in it (Currently lose their inv and spawn in main world)
 
 Improvements:
 === Empty ===

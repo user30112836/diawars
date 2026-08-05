@@ -22,6 +22,7 @@ import de.davidsw.diawars.listeners.LobbyListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.MessageListener
 import de.davidsw.diawars.listeners.PlayerEventListener
+import de.davidsw.diawars.listeners.PlayerRespawnListener
 import de.davidsw.diawars.listeners.PvPListener
 import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.VaultListener
@@ -181,6 +182,7 @@ class Diawars : JavaPlugin() {
         afkManager.start()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
+        server.pluginManager.registerEvents(PlayerRespawnListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)
         server.pluginManager.registerEvents(DiamondLimitListener(this), this)
         server.pluginManager.registerEvents(ContainerExplosionListener(this), this)
