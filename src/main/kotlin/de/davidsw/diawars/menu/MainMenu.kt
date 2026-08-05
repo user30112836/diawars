@@ -25,6 +25,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_EVENTS       = 40
         private const val SLOT_LOBBY        = 42
         private const val SLOT_BUG_REPORT   = 25
+        private const val SLOT_MANUAL       = 16
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -222,6 +223,19 @@ class MainMenu(private val plugin: Diawars) {
             lore = vaultLore,
             glow = false,
         ))
+
+        // Manual
+        inv.setItem(SLOT_MANUAL, item(
+            material = Material.WRITTEN_BOOK,
+            name = mm("<gold><bold>Handbuch</bold></gold>"),
+            lore = listOf(
+                mm("<gray>Anleitung, Übersicht und</gray>"),
+                mm("<gray>Serverregeln nachlesen</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -261,6 +275,8 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
+
+            SLOT_MANUAL -> plugin.menuManager.openManualMenu(player)
 
             SLOT_BUG_REPORT -> {
                 player.closeInventory()

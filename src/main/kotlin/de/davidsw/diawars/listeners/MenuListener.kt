@@ -14,26 +14,24 @@ class MenuListener(private val plugin: Diawars): Listener {
         MenuManager.TITLE_MAIN to { event, player, slot ->
             plugin.menu.mainMenu.handleMainClick(player, slot, event.inventory)
         },
-
         MenuManager.TITLE_BORDER to { event, player, slot ->
             plugin.menu.borderMenu.handleBorderClick(player, slot, event.inventory)
         },
-
         MenuManager.TITLE_SCOREBOARD to { event, player, slot ->
             plugin.menu.scoreboardMenu.handleScoreboardClick(player, slot, event.inventory)
         },
-
         MenuManager.TITLE_EVENT to { _, player, slot ->
             plugin.menu.eventMenu.handleEventClick(player, slot)
         },
-
         MenuManager.TITLE_VAULT to { event, player, slot ->
             plugin.menu.vaultMenu.handleVaultClick(player, slot, event.inventory)
         },
-
         MenuManager.TITLE_VAULT_LIST to { event, player, slot ->
             plugin.menu.vaultListMenu.handleVaultListClick(player, slot, event.inventory)
-        }
+        },
+        MenuManager.TITLE_MANUAL to { _, player, slot ->
+            plugin.menu.manualMenu.handleManualClick(player, slot)
+        },
     )
 
     private val managedMenus = setOf(
@@ -41,7 +39,8 @@ class MenuListener(private val plugin: Diawars): Listener {
         MenuManager.TITLE_BORDER,
         MenuManager.TITLE_SCOREBOARD,
         MenuManager.TITLE_EVENT,
-        MenuManager.TITLE_VAULT
+        MenuManager.TITLE_VAULT,
+        MenuManager.TITLE_MANUAL,
     )
 
     @EventHandler(priority = EventPriority.HIGH)

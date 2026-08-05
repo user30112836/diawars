@@ -1,0 +1,208 @@
+overview:
+  title: "Kurzübersicht"
+  pages:
+    - |
+      <gold><bold>Diawars</bold></gold>
+      <gray>Kurzübersicht</gray>
+
+      <white>Diawars ist ein teambasiertes
+      Diamanten-PvP Spiel. Sammle
+      Diamanten, verteidige deine Zone
+      und greife die gegnerische an!</white>
+
+      <yellow>/menu</yellow> <gray>öffnet das
+      Hauptmenü mit allen Funktionen.</gray>
+
+rules:
+  title: "Serverregeln"
+  pages:
+    - |
+      <gold><bold>Serverregeln</bold></gold>
+
+      <red>1.</red> <white>Kein Bug-Abuse.
+      Gefundene Fehler bitte über
+      /bug report melden.</white>
+
+      <red>2.</red> <white>Kein Spam bei
+      Bug-Reports oder im Chat.</white>
+
+      <red>3.</red> <white>Kein Griefing
+      außerhalb der Gegnerzone.</white>
+    - |
+      <gold><bold>Serverregeln</bold></gold>
+
+      <red>4.</red> <white>Kein Einsatz von
+      Cheats, Hacks oder unerlaubten
+      Modifikationen.</white>
+
+      <red>5.</red> <white>Respektvoller
+      Umgang mit anderen Spielern.</white>
+
+      <red>6.</red> <white>Anweisungen der
+      Admins sind zu befolgen.</white>
+
+      <gray>Verstöße können zu Verwarnungen
+      oder Bans führen.</gray>
+
+segments:
+  pvp:
+    title: "PvP-System"
+    pages:
+      - |
+        <gold><bold>PvP-System</bold></gold>
+
+        <white>Mit </white><yellow>/pvp</yellow>
+        <white>schaltest du PvP an oder
+        aus. Änderungen greifen erst nach
+        5 Minuten Verzögerung.</white>
+
+        <white>Während eines Kampfes kannst
+        du deinen PvP-Status nicht ändern
+        und solltest nicht ausloggen!</white>
+      - |
+        <gold><bold>PvP-System</bold></gold>
+
+        <yellow>/pvp status</yellow>
+        <gray>Zeigt deinen aktuellen Status</gray>
+
+        <yellow>/pvp cancel</yellow>
+        <gray>Bricht eine wartende Änderung ab</gray>
+
+        <white>Beim Töten eines Gegners
+        erhältst du Diamanten als
+        Belohnung.</white>
+
+  vaults:
+    title: "Vaults"
+    pages:
+      - |
+        <gold><bold>Vaults</bold></gold>
+
+        <white>Jedes Team besitzt Vaults,
+        in denen Diamantblöcke sicher
+        gelagert werden können.</white>
+
+        <yellow>/vault claim</yellow>
+        <gray>Beansprucht ein Vault in
+        deiner Nähe</gray>
+
+        <yellow>/vault invite &lt;spieler&gt;</yellow>
+        <gray>Lädt ein Teammitglied ein</gray>
+      - |
+        <gold><bold>Vaults</bold></gold>
+
+        <yellow>/vault ban &lt;spieler&gt;</yellow>
+        <gray>Entfernt einen eingeladenen
+        Spieler</gray>
+
+        <yellow>/vault info</yellow> <gray>/</gray>
+        <yellow>/vault list</yellow>
+        <gray>Zeigt deine bzw. alle Vaults</gray>
+
+        <white>Nur du und eingeladene
+        Spieler können in deinem Vault
+        Diamantblöcke platzieren.</white>
+
+  events:
+    title: "Events"
+    pages:
+      - |
+        <gold><bold>Events</bold></gold>
+
+        <white>Spieler können eigene
+        Minigame-Events bauen und zur
+        Prüfung einreichen.</white>
+
+        <yellow>/event create &lt;name&gt;</yellow>
+        <gray>Erstellt ein neues Event</gray>
+
+        <yellow>/event submit</yellow>
+        <gray>Reicht dein Event ein</gray>
+      - |
+        <gold><bold>Events</bold></gold>
+
+        <yellow>/event join &lt;id&gt;</yellow>
+        <gray>Tritt einem aktiven Event bei</gray>
+
+        <yellow>/event list</yellow>
+        <gray>Zeigt verfügbare Events</gray>
+
+        <white>Angenommene Events werden
+        automatisch zur Startzeit
+        aktiviert.</white>
+
+  zones:
+    title: "Zonen & Border"
+    pages:
+      - |
+        <gold><bold>Zonen & Border</bold></gold>
+
+        <white>Die Welt ist bei X=0 in
+        zwei Team-Zonen geteilt. Die
+        Grenze wird durch Partikel
+        dargestellt.</white>
+
+        <yellow>/teamzones info</yellow>
+        <gray>Zeigt deinen Zonen-Status</gray>
+      - |
+        <gold><bold>Zonen & Border</bold></gold>
+
+        <yellow>/teamzones border</yellow>
+        <gray>Passt Partikel, Farbe,
+        Sichtweite und Dichte der
+        Grenze an</gray>
+
+        <white>In der Gegnerzone kannst
+        du nur mit deinem Item in der
+        Hand interagieren.</white>
+
+  scoreboard:
+    title: "Scoreboard & Anzeige"
+    pages:
+      - |
+        <gold><bold>Scoreboard</bold></gold>
+
+        <yellow>/scores info</yellow>
+        <gray>Zeigt den aktuellen
+        Punktestand</gray>
+
+        <yellow>/scores sidebar</yellow>
+        <gray>Schaltet die Sidebar an
+        oder aus</gray>
+      - |
+        <gold><bold>Scoreboard</bold></gold>
+
+        <white>Über das Menü kannst du
+        einzelne Anzeige-Komponenten wie
+        Team-Diamanten oder deinen
+        Vault-Stand ein- und
+        ausblenden.</white>
+
+  lobby:
+    title: "Lobby"
+    pages:
+      - |
+        <gold><bold>Lobby</bold></gold>
+
+        <yellow>/lobby</yellow>
+        <gray>Betritt oder verlässt die
+        Lobby</gray>
+
+        <white>In der Lobby kannst du
+        keinen Schaden nehmen und
+        keine Blöcke abbauen oder
+        platzieren.</white>
+
+  bugs:
+    title: "Bug-Reports"
+    pages:
+      - |
+        <gold><bold>Bug-Reports</bold></gold>
+
+        <yellow>/bug report &lt;beschreibung&gt;</yellow>
+        <gray>Meldet einen gefundenen
+        Fehler</gray>
+
+        <white>Bitte beschreibe Fehler so
+        genau wie möglich und melde
+        jeden Bug nur einmal.</white>

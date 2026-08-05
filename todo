@@ -25,16 +25,9 @@ Events:
 - Players should be able to edit rejected event worlds
 
 Manual:
-- Organised in different segments
-    -> Can be accessed through the menu with submenus
-    -> Opens a temporary book (no item) with the selected segment
-- Segments
-    -> Full manual (every segment combined in one book)
-    -> Quick overview (Short summary of the functionalities)
-    -> Segments for every function set of the plugin
-    -> Rules on the server
-- Contents of the manual are configurable
-    -> Own yml-File
+- White can't be seen properly
+- Yellow should be replaced with gold
+- Default contents of the manual should be tuned
 
 Multiplayer-Tests:
 - Are personal configs getting deleted when offline?

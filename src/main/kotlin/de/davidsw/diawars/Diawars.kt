@@ -36,6 +36,7 @@ import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.InventoryInspectManager
 import de.davidsw.diawars.managers.LobbyManager
+import de.davidsw.diawars.managers.ManualManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
@@ -49,6 +50,7 @@ import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.MainMenu
+import de.davidsw.diawars.menu.ManualMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
@@ -74,6 +76,7 @@ data class Menu(
     var eventMenu: EventMenu,
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
+    var manualMenu: ManualMenu,
 )
 
 data class Store(
@@ -112,6 +115,7 @@ class Diawars : JavaPlugin() {
     lateinit var vaultManager: VaultManager
     lateinit var bugManager: BugManager
     lateinit var inventoryInspectManager: InventoryInspectManager
+    lateinit var manualManager: ManualManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -153,6 +157,7 @@ class Diawars : JavaPlugin() {
         vaultManager = VaultManager(this)
         bugManager = BugManager(this)
         inventoryInspectManager = InventoryInspectManager(this)
+        manualManager = ManualManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -161,6 +166,7 @@ class Diawars : JavaPlugin() {
             eventMenu = EventMenu(this),
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
+            manualMenu = ManualMenu(this),
         )
 
         diamondLimitManager.startTrackingTask()
