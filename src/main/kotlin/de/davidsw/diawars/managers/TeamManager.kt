@@ -23,7 +23,7 @@ class TeamManager(private val plugin: Diawars) {
         loadTeamsFromConfig()
     }
 
-    private fun loadTeamFromConfig(config: YamlConfiguration,team: Team) {
+    private fun loadTeamFromConfig(config: YamlConfiguration, team: Team) {
         team.displayName = config.getString("${team.configKey}.display-name") ?: team.displayName
         config.getStringList("${team.configKey}.players").forEach { uuidString ->
             try {

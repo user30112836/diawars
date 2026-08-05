@@ -1,16 +1,12 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
 - Vault diamond count gets confused when the diamond blocks are not destroyed by a player
+- Spawn point should be the spawn-location in the config not the world spawn
+- Players can leave the server without dropping diamonds when exceeding the limit in the lobby
+- The lobby system gets confused when players disconnect from the lobby
 
 Improvements:
 === Empty ===
-
-Lobby:
-- Make the player spawn there on first join
-- When the player first leaves the lobby he should spawn in his zone
-- When a player hasn't left the lobby yet they should receive a welcome message
-    -> Recommend the player to increase his particles to see the border properly
-    -> Short introduction to the plugin and a reference to the manual
 
 Events:
 - Players should not be able to join event worlds when they exceed the diamond limit

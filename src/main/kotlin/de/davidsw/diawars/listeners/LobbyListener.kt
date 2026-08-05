@@ -18,6 +18,7 @@ class LobbyListener(plugin: Diawars): Listener {
     @EventHandler
     fun onPlayerJoin(event: PlayerJoinEvent) {
         manager.handlePlayerJoin(event.player)
+        manager.handleOnboardingJoin(event.player)
     }
 
     @EventHandler(priority = EventPriority.HIGH)

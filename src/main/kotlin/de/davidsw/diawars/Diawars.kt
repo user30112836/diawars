@@ -59,6 +59,7 @@ import de.davidsw.diawars.stores.BugStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
+import de.davidsw.diawars.stores.OnboardingStore
 import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
@@ -92,6 +93,7 @@ data class Store(
     var vaultDiamondStore: VaultDiamondStore,
     var vaultClaimStore: VaultClaimStore,
     var bugStore: BugStore,
+    var onboardingStore: OnboardingStore,
 )
 
 class Diawars : JavaPlugin() {
@@ -136,6 +138,7 @@ class Diawars : JavaPlugin() {
             vaultDiamondStore = VaultDiamondStore(this),
             vaultClaimStore = VaultClaimStore(this),
             bugStore = BugStore(this),
+            onboardingStore = OnboardingStore(this),
         )
 
         teamManager = TeamManager(this)

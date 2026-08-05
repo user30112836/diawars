@@ -1,6 +1,12 @@
 # Team A (Westliche Zone, X > 0)
 team-a:
   display-name: "Team A"
+  spawn-point:
+    x: 10
+    y: 64
+    z: 0
+    yaw: 0
+    pitch: 0
   players:
     - "UUID1"
     - "UUID2"
@@ -9,6 +15,12 @@ team-a:
 # Team B (Östliche Zone, X < 0)
 team-b:
   display-name: "Team B"
+  spawn-point:
+    x: -10
+    y: 64
+    z: 0
+    yaw: 0
+    pitch: 0
   players:
     - "UUID4"
     - "UUID5"
