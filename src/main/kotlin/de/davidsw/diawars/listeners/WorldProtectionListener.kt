@@ -3,6 +3,7 @@ package de.davidsw.diawars.listeners
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.DiamondAction
 import de.davidsw.diawars.util.MaterialSets
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Enderman
 import org.bukkit.entity.Wither
@@ -39,6 +40,7 @@ class WorldProtectionListener(private val plugin: Diawars): Listener {
                     DiamondAction.EXPLODE, Material.DIAMOND_BLOCK, 1,
                     event.entity, location = block.location,
                 )
+                removeFromVaultIfPresent(block.location)
             }
     }
 
@@ -52,6 +54,7 @@ class WorldProtectionListener(private val plugin: Diawars): Listener {
                     playerId = null, playerName = "TNT",
                     location = block.location,
                 )
+                removeFromVaultIfPresent(block.location)
             }
     }
 
@@ -67,6 +70,7 @@ class WorldProtectionListener(private val plugin: Diawars): Listener {
             DiamondAction.BREAK, Material.DIAMOND_BLOCK, 1,
             event.entity, location = event.block.location, details = detail,
         )
+        removeFromVaultIfPresent(event.block.location)
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -81,5 +85,10 @@ class WorldProtectionListener(private val plugin: Diawars): Listener {
         if (event.blocks.any { it.type == Material.DIAMOND_BLOCK }) {
             event.isCancelled = true
         }
+    }
+
+    private fun removeFromVaultIfPresent(location: Location) {
+        val vault = plugin.vaultManager.getVaultAt(location) ?: return
+        plugin.store.vaultDiamondStore.removeDiamonds(vault.id, 9)
     }
 }

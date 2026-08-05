@@ -1,6 +1,5 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
-- Vault diamond count gets confused when the diamond blocks are not destroyed by a player
 - Spawn point should be the spawn-location in the config not the world spawn
 - Players can leave the server without dropping diamonds when exceeding the limit in the lobby
 - The lobby system gets confused when players disconnect from the lobby
