@@ -1,7 +1,8 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
 - Sometimes the diamond limit does not get applied
-- The lobby system gets confused when players disconnect from the lobby
+- Spawn points get overwritten across worlds
+- When restarting the server while players are in event world they get kicked to the main world without state recovery
 
 Improvements:
 === Empty ===
@@ -12,7 +13,7 @@ Events:
     -> World type
     -> Player gamemode
     -> World daytime
-    -> Gamerules: advance_time, advance_weather, mob_griefing, mob_drops, spawn_...
+    -> Gamerules: keep_inventory, advance_time, advance_weather, mob_griefing, mob_drops, spawn_...
     -> Rewards
     -> Effects
     -> Inventory

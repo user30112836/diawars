@@ -354,20 +354,15 @@ class EventManager(private val plugin: Diawars) {
         }
     }
 
-    /**
-     * Called on player join. If the plugin/server restarted while a player was
-     * still inside an event world, their in-memory session is gone but their
-     * saved state on disk isn't - restore them safely instead of leaving them
-     * stuck with an event inventory in a possibly-unloaded world.
-     */
     fun handlePlayerJoin(player: Player) {
-        if (!sessions.containsKey(player.uniqueId) && states.hasSavedState(player.uniqueId)) {
-            states.restoreState(player)
-            player.sendMessage(mm("<yellow>Deine Event-Sitzung wurde durch einen Serverneustart unterbrochen. Du wurdest zurückgesetzt.</yellow>"))
-        }
+        if (sessions.containsKey(player.uniqueId)) return
+        if (!isEventWorld(player.world.name)) return
+        if (!states.hasSavedState(player.uniqueId)) return
+
+        states.restoreState(player)
+        player.sendMessage(mm("<yellow>Deine Event-Sitzung wurde durch einen Serverneustart unterbrochen. Du wurdest zurückgesetzt.</yellow>"))
     }
 
-    /** Re-schedules pending start/end transitions after a plugin/server restart. */
     fun reactivateSchedules() {
         startEventChecker()
         checkEventTransitions()

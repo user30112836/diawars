@@ -1,7 +1,6 @@
 package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
-import org.bukkit.Location
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerRespawnEvent

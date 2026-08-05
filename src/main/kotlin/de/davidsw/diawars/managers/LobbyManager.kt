@@ -86,12 +86,14 @@ class LobbyManager(private val plugin: Diawars) {
     }
 
     fun handlePlayerJoin(player: Player) {
-        if (!isInLobby(player.uniqueId) && states.hasSavedState(player.uniqueId) && player.world.name == worldName) {
-            states.restoreState(player, true)
-            player.sendMessage(mm(
-                "<yellow>Deine Lobby-Sitzung wurde durch einen Serverneustart unterbrochen. Du wurdest zurückgesetzt.</yellow>"
-            ))
-        }
+        if (isInLobby(player.uniqueId)) return
+        if (!states.hasSavedState(player.uniqueId)) return
+        if (player.world.name != worldName) return
+
+        playersInLobby.add(player.uniqueId)
+        player.sendMessage(mm(
+            "<yellow>Deine Lobby-Sitzung wurde durch einen Serverneustart unterbrochen. Du wurdest wieder in die Lobby gesetzt.</yellow>"
+        ))
     }
 
     fun handleOnboardingJoin(player: Player) {
