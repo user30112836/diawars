@@ -11,7 +11,7 @@ import java.util.UUID
 
 class LobbyManager(private val plugin: Diawars) {
     private val playersInLobby = mutableSetOf<UUID>()
-    private val states get() = plugin.store.playerStateStore
+    private val states get() = plugin.store.lobbyStateStore
 
     val worldName: String
         get() = plugin.config.getString("lobby.world", "lobby") ?: "lobby"
@@ -88,7 +88,6 @@ class LobbyManager(private val plugin: Diawars) {
     fun handlePlayerJoin(player: Player) {
         if (isInLobby(player.uniqueId)) return
         if (!states.hasSavedState(player.uniqueId)) return
-        if (player.world.name != worldName) return
 
         playersInLobby.add(player.uniqueId)
         player.sendMessage(mm(

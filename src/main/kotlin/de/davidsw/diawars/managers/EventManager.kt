@@ -30,7 +30,7 @@ class EventManager(private val plugin: Diawars) {
     private val sessions = mutableMapOf<UUID, Session>()
 
     private val store get() = plugin.store.eventStore
-    private val states get() = plugin.store.playerStateStore
+    private val states get() = plugin.store.eventStateStore
 
     fun getSession(playerId: UUID): Session? = sessions[playerId]
     fun isEventWorld(worldName: String): Boolean = store.getByWorld(worldName) != null
@@ -357,7 +357,6 @@ class EventManager(private val plugin: Diawars) {
 
     fun handlePlayerJoin(player: Player) {
         if (sessions.containsKey(player.uniqueId)) return
-        if (!isEventWorld(player.world.name)) return
         if (!states.hasSavedState(player.uniqueId)) return
 
         states.restoreState(player)

@@ -37,7 +37,8 @@ class InventoryInspectManager(private val plugin: Diawars) {
                 targetPlayer.inventory.itemInOffHand,
             )
         } else {
-            val saved = plugin.store.playerStateStore.getState(target.uniqueId)
+            val saved = plugin.store.eventStateStore.getState(target.uniqueId)
+                ?: plugin.store.lobbyStateStore.getState(target.uniqueId)
             if (saved == null) {
                 admin.sendMessage(mm("<red>Für diesen Spieler liegen keine Normalwelt-Inventardaten vor!</red>"))
                 return
@@ -111,7 +112,7 @@ class InventoryInspectManager(private val plugin: Diawars) {
         val contents = if (targetPlayer != null && !inSpecialContext) {
             targetPlayer.enderChest.contents.toList()
         } else {
-            plugin.store.playerStateStore.getState(target.uniqueId)?.enderChest ?: run {
+            (plugin.store.eventStateStore.getState(target.uniqueId) ?: plugin.store.lobbyStateStore.getState(target.uniqueId))?.enderChest ?: run {
                 admin.sendMessage(mm("<red>Für diesen Spieler liegen keine Enderkisten-Daten vor!</red>"))
                 return
             }

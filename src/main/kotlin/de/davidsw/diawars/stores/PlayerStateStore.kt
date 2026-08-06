@@ -30,14 +30,8 @@ data class PlayerSavedState(
     val level: Int,
 )
 
-/**
- * Stores a snapshot of a player's inventory, location and vitals whenever they
- * enter an event world, so it can be fully restored once they leave.
- * Persisted to disk so a server restart while a player is inside an event
- * world can never cause item loss.
- */
-class PlayerStateStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "event_player_states.yml")
+class PlayerStateStore(private val plugin: Diawars, fileName: String = "player_states.yml") {
+    private val storeFile = StoreFiles.resolve(plugin, fileName)
     private val cache = mutableMapOf<UUID, PlayerSavedState>()
 
     init {
