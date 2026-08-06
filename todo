@@ -1,6 +1,5 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
-- Sometimes the diamond limit does not get applied
 - Spawn points get overwritten across worlds
 - When restarting the server while players are in event world they get kicked to the main world without state recovery
 
