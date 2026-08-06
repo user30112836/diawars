@@ -1,11 +1,11 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
+- /event cancel does not delete the event world (other players can recover it by using the same worldName)
 
 Improvements:
 === Empty ===
 
 Events:
-- Players should not be able to join event worlds when they exceed the diamond limit
 - Make things configurable when setting up events
     -> World type
     -> Player gamemode

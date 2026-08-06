@@ -43,6 +43,10 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+        val limit = plugin.config.getInt("diamond-limit", 32)
+        if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
+            return Result.Error("<red>Du hast zu viele Diamanten im Inventar!</red>")
+        }
         val alreadyOpen = store.getByCreator(player.uniqueId).any {
             it.state == EventState.BUILDING || it.state == EventState.SUBMITTED
         }
@@ -84,6 +88,10 @@ class EventManager(private val plugin: Diawars) {
     fun resumeBuilding(player: Player): Result {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
+        }
+        val limit = plugin.config.getInt("diamond-limit", 32)
+        if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
+            return Result.Error("<red>Du hast zu viele Diamanten im Inventar!</red>")
         }
         val event = store.getByCreator(player.uniqueId).firstOrNull { it.state == EventState.BUILDING }
             ?: return Result.Error("<red>Du hast kein Event in Bearbeitung!</red>")
@@ -301,6 +309,12 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+
+        val limit = plugin.config.getInt("diamond-limit", 32)
+        if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
+            return Result.Error("<red>Du hast zu viele Diamanten im Inventar!</red>")
+        }
+
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.ACTIVE) {
             return Result.Error("<red>Dieses Event ist derzeit nicht aktiv!</red>")
