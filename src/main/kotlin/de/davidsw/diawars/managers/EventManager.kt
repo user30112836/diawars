@@ -352,6 +352,7 @@ class EventManager(private val plugin: Diawars) {
         if (folder.exists()) {
             folder.deleteRecursively()
         }
+        plugin.store.playerSpawnStore.clearWorldSpawns(event.worldName)
     }
 
     fun handlePlayerJoin(player: Player) {

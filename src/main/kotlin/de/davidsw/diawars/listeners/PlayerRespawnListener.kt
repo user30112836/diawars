@@ -8,14 +8,19 @@ import org.bukkit.event.player.PlayerRespawnEvent
 class PlayerRespawnListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onRespawn(event: PlayerRespawnEvent) {
-        if (event.isBedSpawn || event.isAnchorSpawn) return
-
         val player = event.player
-        val world = player.world
+        val deathWorld = player.world
+        val spawnStore = plugin.store.playerSpawnStore
 
-        if (plugin.lobbyManager.isLobbyWorld(world.name)) return
-        if (plugin.eventManager.isEventWorld(world.name)) {
-            event.respawnLocation = world.spawnLocation
+        if (plugin.lobbyManager.isLobbyWorld(deathWorld.name) || plugin.eventManager.isEventWorld(deathWorld.name)) {
+            val worldBed = spawnStore.getWorldSpawn(deathWorld.name, player.uniqueId)
+            event.respawnLocation = worldBed ?: deathWorld.spawnLocation
+            return
+        }
+
+        val mainBed = spawnStore.getMainSpawn(player.uniqueId)
+        if (mainBed != null) {
+            event.respawnLocation = mainBed
             return
         }
 

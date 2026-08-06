@@ -23,6 +23,7 @@ import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.MessageListener
 import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PlayerRespawnListener
+import de.davidsw.diawars.listeners.PlayerSpawnChangeListener
 import de.davidsw.diawars.listeners.PvPListener
 import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.VaultListener
@@ -61,6 +62,7 @@ import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
 import de.davidsw.diawars.stores.OnboardingStore
+import de.davidsw.diawars.stores.PlayerSpawnStore
 import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
@@ -88,6 +90,7 @@ data class Store(
     var eventStore: EventStore,
     var eventInventoryStore: EventInventoryStore,
     var playerStateStore: PlayerStateStore,
+    var playerSpawnStore: PlayerSpawnStore,
     var rewardStore: RewardStore,
     var scoreboardPreferencesStore: ScoreboardPreferencesStore,
     var messageStore: MessageStore,
@@ -133,6 +136,7 @@ class Diawars : JavaPlugin() {
             eventStore = EventStore(this),
             eventInventoryStore = EventInventoryStore(this),
             playerStateStore = PlayerStateStore(this),
+            playerSpawnStore = PlayerSpawnStore(this),
             rewardStore = RewardStore(this),
             scoreboardPreferencesStore = ScoreboardPreferencesStore(this),
             messageStore = MessageStore(this),
@@ -183,6 +187,7 @@ class Diawars : JavaPlugin() {
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PlayerRespawnListener(this), this)
+        server.pluginManager.registerEvents(PlayerSpawnChangeListener(this), this)
         server.pluginManager.registerEvents(PvPListener(this), this)
         server.pluginManager.registerEvents(DiamondLimitListener(this), this)
         server.pluginManager.registerEvents(ContainerExplosionListener(this), this)
