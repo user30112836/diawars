@@ -2,6 +2,7 @@ package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.MenuManager
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -10,7 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 
 class MenuListener(private val plugin: Diawars): Listener {
-    private val clickHandlers: Map<Any, (InventoryClickEvent, Player, Int) -> Unit> = mapOf(
+    private val clickHandlers: Map<Component, (InventoryClickEvent, Player, Int) -> Unit> = mapOf(
         MenuManager.TITLE_MAIN to { event, player, slot ->
             plugin.menu.mainMenu.handleMainClick(player, slot, event.inventory)
         },
@@ -34,14 +35,7 @@ class MenuListener(private val plugin: Diawars): Listener {
         },
     )
 
-    private val managedMenus = setOf(
-        MenuManager.TITLE_MAIN,
-        MenuManager.TITLE_BORDER,
-        MenuManager.TITLE_SCOREBOARD,
-        MenuManager.TITLE_EVENT,
-        MenuManager.TITLE_VAULT,
-        MenuManager.TITLE_MANUAL,
-    )
+    private val managedMenus: Set<Component> = clickHandlers.keys
 
     @EventHandler(priority = EventPriority.HIGH)
     fun onInventoryClick(event: InventoryClickEvent) {

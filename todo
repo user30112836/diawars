@@ -10,8 +10,7 @@ Bugs:
 -/ Players can place diamonds in bundles and surpass the limit
 -/ Passively moved players don't get the AFK status
 
-Improvements:
-~7 Reorganise the MenuListener to make the code clearer (MenuListener.kt:37)
+Improvements
 -8 Improve sidebar layout (DiamondScoreboardManager.kt:143)
 -14 PopulateMainMenu can abort mid-render (MainMenu.kt:41)
 -! Instead of itemStack AIR there should be item.remove() (DiamondLimitManager.kt:200)
