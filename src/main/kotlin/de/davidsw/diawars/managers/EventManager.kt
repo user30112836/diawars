@@ -11,6 +11,7 @@ import org.bukkit.Bukkit.getWorld
 import org.bukkit.Bukkit.getWorldContainer
 import org.bukkit.Bukkit.unloadWorld
 import org.bukkit.GameMode
+import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
 import java.io.File
@@ -143,9 +144,16 @@ class EventManager(private val plugin: Diawars) {
         leaveWorld(player)
 
         if (event != null) {
-            deleteEventWorld(event)
+            val deleted = deleteEventWorld(event)
             store.removeEvent(event.id)
             plugin.store.eventInventoryStore.clearEvent(event.id)
+
+            if (!deleted) {
+                return Result.Success(
+                    "<yellow>Dein Event wurde abgebrochen. Die Event-Welt konnte allerdings nicht " +
+                            "vollständig gelöscht werden - bitte melde dich bei einem Admin.</yellow>"
+                )
+            }
         }
 
         return Result.Success("<yellow>Dein Event wurde abgebrochen und gelöscht.</yellow>")
@@ -294,7 +302,12 @@ class EventManager(private val plugin: Diawars) {
             plugin.messageManager.sendOrQueue(uuid, "<gray>Das Event <gold>${event.name}</gold> ist zu Ende.</gray>")
         }
 
-        getWorld(event.worldName)?.let { unloadWorld(it, true) }
+        getWorld(event.worldName)?.let { world ->
+            evacuate(world)
+            if (!unloadWorld(world, true)) {
+                plugin.logger.warning("Could not unload the ended event world '${event.worldName}'.")
+            }
+        }
     }
 
     // ------------------------------------------------------------------
@@ -356,13 +369,37 @@ class EventManager(private val plugin: Diawars) {
     // Cleanup / safety
     // ------------------------------------------------------------------
 
-    private fun deleteEventWorld(event: GameEvent) {
-        getWorld(event.worldName)?.let { unloadWorld(it, false) }
-        val folder = File(getWorldContainer(), event.worldName)
-        if (folder.exists()) {
-            folder.deleteRecursively()
+    private fun evacuate(world: World) {
+        for (player in world.players.toList()) {
+            if (sessions.containsKey(player.uniqueId)) {
+                leaveWorld(player)
+            } else {
+                player.teleport(plugin.server.worlds.first().spawnLocation)
+            }
         }
+    }
+
+    private fun deleteEventWorld(event: GameEvent): Boolean {
+        val world = getWorld(event.worldName)
+        if (world != null) {
+            evacuate(world)
+            if (!unloadWorld(world, false)) {
+                plugin.logger.severe(
+                    "Could not unload event world '${event.worldName}'. Skipping deletion to " +
+                            "avoid leaving a partially deleted world behind."
+                )
+                return false
+            }
+        }
+
+        val folder = File(getWorldContainer(), event.worldName)
+        if (folder.exists() && !folder.deleteRecursively()) {
+            plugin.logger.severe("Could not fully delete the event world folder '${folder.absolutePath}'.")
+            return false
+        }
+
         plugin.store.playerSpawnStore.clearWorldSpawns(event.worldName)
+        return true
     }
 
     fun handlePlayerJoin(player: Player) {
