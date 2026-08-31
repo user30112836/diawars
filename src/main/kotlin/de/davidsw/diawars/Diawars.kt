@@ -69,6 +69,7 @@ import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
+import de.davidsw.diawars.stores.YamlStore
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
@@ -83,23 +84,34 @@ data class Menu(
     var manualMenu: ManualMenu,
 )
 
-data class Store(
-    var playerDiamondStore: PlayerDiamondStore,
-    var borderPreferencesStore: BorderPreferencesStore,
-    var pvpStatusStore: PvPStatusStore,
-    var lobbyStateStore: PlayerStateStore,
-    var eventStateStore: PlayerStateStore,
-    var eventStore: EventStore,
-    var eventInventoryStore: EventInventoryStore,
-    var playerSpawnStore: PlayerSpawnStore,
-    var rewardStore: RewardStore,
-    var scoreboardPreferencesStore: ScoreboardPreferencesStore,
-    var messageStore: MessageStore,
-    var vaultDiamondStore: VaultDiamondStore,
-    var vaultClaimStore: VaultClaimStore,
-    var bugStore: BugStore,
-    var onboardingStore: OnboardingStore,
-)
+class Store(
+    val playerDiamondStore: PlayerDiamondStore,
+    val borderPreferencesStore: BorderPreferencesStore,
+    val pvpStatusStore: PvPStatusStore,
+    val lobbyStateStore: PlayerStateStore,
+    val eventStateStore: PlayerStateStore,
+    val eventStore: EventStore,
+    val eventInventoryStore: EventInventoryStore,
+    val playerSpawnStore: PlayerSpawnStore,
+    val rewardStore: RewardStore,
+    val scoreboardPreferencesStore: ScoreboardPreferencesStore,
+    val messageStore: MessageStore,
+    val vaultDiamondStore: VaultDiamondStore,
+    val vaultClaimStore: VaultClaimStore,
+    val bugStore: BugStore,
+    val onboardingStore: OnboardingStore,
+) {
+    private val all: List<YamlStore> = listOf(
+        playerDiamondStore, borderPreferencesStore, pvpStatusStore,
+        lobbyStateStore, eventStateStore, eventStore, eventInventoryStore,
+        playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
+        vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore,
+    )
+
+    fun flushDirty(): Int = all.count { it.flushIfDirty() }
+
+    fun flushAllNow() = all.forEach { it.flushNow(isFinal = true) }
+}
 
 class Diawars : JavaPlugin() {
 
@@ -179,6 +191,8 @@ class Diawars : JavaPlugin() {
             manualMenu = ManualMenu(this),
         )
 
+        startStoreFlushTask()
+
         diamondLimitManager.startTrackingTask()
         diamondLimitManager.trackExistingDiamonds()
         diamondScoreboardManager.start()
@@ -229,9 +243,14 @@ class Diawars : JavaPlugin() {
         logger.info("The Diawars-Plugin got activated!")
     }
 
+    private fun startStoreFlushTask() {
+        val intervalTicks = config.getInt("storage.flush-interval-seconds", 30).coerceAtLeast(1) * 20L
+        server.scheduler.runTaskTimer(this, Runnable { store.flushDirty() }, intervalTicks, intervalTicks)
+    }
+
     override fun onDisable() {
         eventManager.saveActiveInventories()
-        store.pvpStatusStore.stop()
+        store.flushAllNow()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
     }

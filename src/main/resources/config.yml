@@ -48,3 +48,6 @@ afk:
 
 vault:
   claim-distance: 5
+
+storage:
+  flush-interval-seconds: 30

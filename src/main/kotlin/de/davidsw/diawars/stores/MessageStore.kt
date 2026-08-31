@@ -1,12 +1,10 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-class MessageStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "pending_messages.yml")
+class MessageStore(plugin: Diawars) : YamlStore(plugin, "pending_messages.yml") {
     private val cache = mutableMapOf<UUID, MutableList<String>>()
 
     init {
@@ -20,36 +18,23 @@ class MessageStore(private val plugin: Diawars) {
     fun addPending(playerId: UUID, message: String) {
         val messages = cache.getOrPut(playerId) { mutableListOf() }
         messages.add(message)
-        save()
+        saveImmediately()
     }
 
     fun clearPending(playerId: UUID) {
         if (cache.remove(playerId) != null) {
-            save()
+            saveImmediately()
         }
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, messages) in cache) {
             if (messages.isEmpty()) continue
-            config.set(uuid.toString(), messages)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save pending messages to $storeFile: ${e.message}")
+            yaml.set(uuid.toString(), messages)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)

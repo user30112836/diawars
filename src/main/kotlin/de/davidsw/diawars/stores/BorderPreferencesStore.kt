@@ -3,7 +3,6 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.ParticleParser
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Color
 import org.bukkit.Particle
 import org.bukkit.configuration.file.YamlConfiguration
@@ -29,13 +28,11 @@ data class BorderPreference(
     val amount: Int = 1,
 )
 
-class BorderPreferencesStore(private val plugin: Diawars) {
+class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_preferences.yml") {
     private val preferences = mutableMapOf<UUID, BorderPreference>()
-    private val preferencesFile = StoreFiles.resolve(plugin, "border_preferences.yml")
-    private lateinit var config: YamlConfiguration
 
     init {
-        loadPreferences()
+        load()
     }
 
     fun getPreference(playerId: UUID): BorderPreference {
@@ -78,14 +75,14 @@ class BorderPreferencesStore(private val plugin: Diawars) {
 
     fun resetToDefault(playerId: UUID) {
         preferences.remove(playerId)
-        savePreferences()
+        markDirty()
     }
 
     fun parseParticleType(type: String): Particle? = ParticleParser.parse(type)
 
     private fun update(playerId: UUID, transform: (BorderPreference) -> BorderPreference) {
         preferences[playerId] = transform(getPreference(playerId))
-        savePreferences()
+        markDirty()
     }
 
     private fun getDefaultPreference(): BorderPreference {
@@ -102,18 +99,11 @@ class BorderPreferencesStore(private val plugin: Diawars) {
         )
     }
 
-    private fun loadPreferences() {
-        if (!preferencesFile.exists()) {
-            preferencesFile.parentFile.mkdirs()
-            preferencesFile.createNewFile()
-        }
-
-        config = YamlConfiguration.loadConfiguration(preferencesFile)
-
-        for (key in config.getKeys(false)) {
+    override fun readFrom(yaml: YamlConfiguration) {
+        for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)
-                val section = config.getConfigurationSection(key) ?: continue
+                val section = yaml.getConfigurationSection(key) ?: continue
 
                 preferences[uuid] = BorderPreference(
                     enabled = section.getBoolean("enabled", true),
@@ -132,24 +122,16 @@ class BorderPreferencesStore(private val plugin: Diawars) {
         }
     }
 
-    private fun savePreferences() {
-        config = YamlConfiguration()
-
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, pref) in preferences) {
             val key = uuid.toString()
-            config.set("$key.enabled", pref.enabled)
-            config.set("$key.particle-type", pref.particleType)
-            config.set("$key.color", "${pref.color.red},${pref.color.green},${pref.color.blue}")
-            config.set("$key.render-distance", pref.renderDistance)
-            config.set("$key.density.horizontal", pref.density.horizontal)
-            config.set("$key.density.vertical", pref.density.vertical)
-            config.set("$key.amount", pref.amount)
-        }
-
-        try {
-            config.save(preferencesFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save border settings to $preferencesFile: ${e.message}")
+            yaml.set("$key.enabled", pref.enabled)
+            yaml.set("$key.particle-type", pref.particleType)
+            yaml.set("$key.color", "${pref.color.red},${pref.color.green},${pref.color.blue}")
+            yaml.set("$key.render-distance", pref.renderDistance)
+            yaml.set("$key.density.horizontal", pref.density.horizontal)
+            yaml.set("$key.density.vertical", pref.density.vertical)
+            yaml.set("$key.amount", pref.amount)
         }
     }
 }

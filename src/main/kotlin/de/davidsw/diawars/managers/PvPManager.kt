@@ -64,10 +64,10 @@ class PvPManager(private val plugin: Diawars) {
         }
     }
 
-    fun continueToggle(playerId: UUID, targetStatus: Boolean, delay: Int) {
+    fun continueToggle(playerId: UUID, targetStatus: Boolean, delaySeconds: Int) {
         val taskId = Bukkit.getScheduler().runTaskLater(plugin, Runnable {
             store.applyPvPStatus(playerId, targetStatus)
-        }, delay * 20L).taskId
+        }, delaySeconds * 20L).taskId
         toggleTasks[playerId] = taskId
     }
 
@@ -122,12 +122,13 @@ class PvPManager(private val plugin: Diawars) {
     fun reactivateTasks() {
         for ((playerId, status) in store.getAll().entries) {
             if (status.toggleActive) {
-                val timeLeft = status.oldTimeRemaining
-                if (timeLeft <= 0) {
+                val secondsLeft = status.oldTimeRemaining
+                    .coerceAtMost(plugin.config.getInt("pvp-toggle.delay-seconds", 300))
+                if (secondsLeft <= 0) {
                     store.applyPvPStatus(playerId, status.toggleDestination)
                 } else {
-                    store.setRemainingTimeTicks(playerId, timeLeft)
-                    continueToggle(playerId, status.toggleDestination, timeLeft)
+                    store.setRemainingTimeSeconds(playerId, secondsLeft)
+                    continueToggle(playerId, status.toggleDestination, secondsLeft)
                 }
             }
         }

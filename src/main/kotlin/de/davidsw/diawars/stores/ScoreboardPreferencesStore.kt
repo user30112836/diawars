@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
@@ -18,8 +17,7 @@ data class ScoreboardPreference(
     val enabledComponents: Set<ScoreboardComponent> = ScoreboardComponent.entries.toSet(),
 )
 
-class ScoreboardPreferencesStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "scoreboard_preferences.yml")
+class ScoreboardPreferencesStore(plugin: Diawars) : YamlStore(plugin, "scoreboard_preferences.yml") {
     private val preferences = mutableMapOf<UUID, ScoreboardPreference>()
 
     init { load() }
@@ -45,22 +43,15 @@ class ScoreboardPreferencesStore(private val plugin: Diawars) {
 
     fun resetToDefault(playerId: UUID) {
         preferences.remove(playerId)
-        save()
+        markDirty()
     }
 
     private fun update(playerId: UUID, transform: (ScoreboardPreference) -> ScoreboardPreference) {
         preferences[playerId] = transform(getPreference(playerId))
-        save()
+        markDirty()
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)
@@ -84,19 +75,13 @@ class ScoreboardPreferencesStore(private val plugin: Diawars) {
         }
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, pref) in preferences) {
             val key = uuid.toString()
-            config.set("$key.sidebar-enabled", pref.sidebarEnabled)
+            yaml.set("$key.sidebar-enabled", pref.sidebarEnabled)
             ScoreboardComponent.entries.forEach {
-                config.set("$key.components.${it.configKey}", it in pref.enabledComponents)
+                yaml.set("$key.components.${it.configKey}", it in pref.enabledComponents)
             }
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save scoreboard preferences: ${e.message}")
         }
     }
 }

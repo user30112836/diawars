@@ -1,12 +1,10 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-class RewardStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "rewards.yml")
+class RewardStore(plugin: Diawars) : YamlStore(plugin, "rewards.yml") {
     private val cache = mutableMapOf<UUID, Int>()
 
     init {
@@ -17,34 +15,21 @@ class RewardStore(private val plugin: Diawars) {
 
     fun addPending(playerId: UUID, amount: Int) {
         cache[playerId] = getPending(playerId) + amount
-        save()
+        saveImmediately()
     }
 
     fun clearPending(playerId: UUID) {
         cache.remove(playerId)
-        save()
+        saveImmediately()
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, amount) in cache) {
-            config.set(uuid.toString(), amount)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save event rewards to $storeFile: ${e.message}")
+            yaml.set(uuid.toString(), amount)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 cache[UUID.fromString(key)] = yaml.getInt(key)

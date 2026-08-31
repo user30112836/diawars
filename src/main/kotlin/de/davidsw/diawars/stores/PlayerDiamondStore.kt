@@ -3,14 +3,12 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.DiamondCounter
 import de.davidsw.diawars.managers.Team
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import java.util.UUID
 import kotlin.collections.iterator
 
-class PlayerDiamondStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "diamond_scores.yml")
+class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.yml") {
     private val cache = mutableMapOf<UUID, Int>()
     private val names = mutableMapOf<UUID, String>()
 
@@ -23,19 +21,19 @@ class PlayerDiamondStore(private val plugin: Diawars) {
     fun snapshot(player: Player) {
         val count = DiamondCounter.countForPlayer(player)
         updateCache(player.uniqueId, player.name, count)
-        flushToDisk()
+        saveImmediately()
     }
 
     fun snapshotIfChanged(player: Player) {
         val count = DiamondCounter.countForPlayer(player)
         if (cache[player.uniqueId] == count) return
         updateCache(player.uniqueId, player.name, count)
-        flushToDisk()
+        markDirty()
     }
 
     fun saveCount(player: Player, count: Int) {
         updateCache(player.uniqueId, player.name, count)
-        flushToDisk()
+        markDirty()
     }
 
     fun getOfflineTeamCount(team: Team): Int {
@@ -56,14 +54,7 @@ class PlayerDiamondStore(private val plugin: Diawars) {
         return plugin.teamManager.getTeamMembers(team).sumOf { getStoredCount(it) }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)
@@ -83,17 +74,11 @@ class PlayerDiamondStore(private val plugin: Diawars) {
         names[playerId] = playerName
     }
 
-    private fun flushToDisk() {
-        val yaml = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, count) in cache) {
             val key = uuid.toString()
             yaml.set("$key.diamonds", count)
             yaml.set("$key.name", names[uuid] ?: "unknown")
-        }
-        try {
-            yaml.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save diamond scores to $storeFile: ${e.message}")
         }
     }
 }

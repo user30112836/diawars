@@ -2,7 +2,6 @@ package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getCurrentTick
 import org.bukkit.configuration.file.YamlConfiguration
@@ -19,8 +18,9 @@ data class PvPStatus(
     val oldTimeRemaining: Int,
 )
 
-class PvPStatusStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "pvp_status.yml")
+private const val TICKS_PER_SECOND = 20
+
+class PvPStatusStore(plugin: Diawars) : YamlStore(plugin, "pvp_status.yml") {
     private val cache = mutableMapOf<UUID, PvPStatus>()
     private val toggleDelaySeconds get() = plugin.config.getInt("pvp-toggle.delay-seconds", 300)
 
@@ -46,19 +46,20 @@ class PvPStatusStore(private val plugin: Diawars) {
 
     fun getRemainingTime(playerId: UUID): Long {
         val startTime = cache[playerId]?.toggleStartTime ?: return 0
-        val elapsed = (getCurrentTick() - startTime) / 20
+        val elapsed = (getCurrentTick() - startTime) / TICKS_PER_SECOND
         return (toggleDelaySeconds.toLong() - elapsed).coerceAtLeast(0)
     }
 
-    fun setRemainingTimeTicks(playerId: UUID, ticks: Int) {
+    fun setRemainingTimeSeconds(playerId: UUID, seconds: Int) {
+        val elapsedTicks = (toggleDelaySeconds - seconds.coerceIn(0, toggleDelaySeconds)) * TICKS_PER_SECOND
         cache[playerId] = PvPStatus(
             pvpEnabled = cache[playerId]?.pvpEnabled ?: true,
             toggleActive = true,
-            toggleStartTime = (getCurrentTick() - (toggleDelaySeconds - ticks)),
+            toggleStartTime = getCurrentTick() - elapsedTicks,
             toggleDestination = cache[playerId]?.toggleDestination ?: true,
             oldTimeRemaining = 0,
         )
-        save()
+        markDirty()
     }
 
     fun applyPvPStatus(playerId: UUID, status: Boolean) {
@@ -69,7 +70,7 @@ class PvPStatusStore(private val plugin: Diawars) {
             toggleDestination = status,
             oldTimeRemaining = 0,
         )
-        save()
+        markDirty()
         val statusText = if (status) "aktiviert" else "deaktiviert"
         Bukkit.getPlayer(playerId)?.sendMessage(mm("<green>Dein PvP-Status wurde <yellow>$statusText</yellow>!</green>"))
     }
@@ -82,7 +83,7 @@ class PvPStatusStore(private val plugin: Diawars) {
             toggleDestination = destination,
             oldTimeRemaining = 0,
         )
-        save()
+        markDirty()
     }
 
     fun removeToggle(playerId: UUID) {
@@ -93,17 +94,10 @@ class PvPStatusStore(private val plugin: Diawars) {
             toggleDestination = cache[playerId]?.toggleDestination ?: true,
             oldTimeRemaining = 0,
         )
-        save()
+        markDirty()
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)
@@ -123,28 +117,17 @@ class PvPStatusStore(private val plugin: Diawars) {
         plugin.logger.info("Loaded pvp status for ${cache.size} player(s).")
     }
 
-    private fun save(shutdown: Boolean = false) {
-        val config = YamlConfiguration()
-
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, status) in cache) {
             val key = uuid.toString()
-            config.set("$key.enabled", status.pvpEnabled)
-            config.set("$key.toggle", status.toggleActive)
-            config.set("$key.startTime", status.toggleStartTime)
-            config.set("$key.destination", status.toggleDestination)
-            if (shutdown) {
-                config.set("$key.old-time", (toggleDelaySeconds - (getCurrentTick() - status.toggleStartTime)))
+            yaml.set("$key.enabled", status.pvpEnabled)
+            yaml.set("$key.toggle", status.toggleActive)
+            yaml.set("$key.startTime", status.toggleStartTime)
+            yaml.set("$key.destination", status.toggleDestination)
+
+            if (finalFlush && status.toggleActive) {
+                yaml.set("$key.old-time", getRemainingTime(uuid).toInt())
             }
         }
-
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save pvp status to $storeFile: ${e.message}")
-        }
-    }
-
-    fun stop() {
-        save(true)
     }
 }

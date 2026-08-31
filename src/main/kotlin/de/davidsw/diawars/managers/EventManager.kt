@@ -6,7 +6,6 @@ import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.broadcast
-import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.Bukkit.getPlayer
 import org.bukkit.Bukkit.getWorld
 import org.bukkit.Bukkit.getWorldContainer
@@ -26,7 +25,7 @@ class EventManager(private val plugin: Diawars) {
         data class Error(val message: String): Result()
     }
 
-    // player -> which event/world they are currently inside of
+    // player -> which event/world they are currently inside
     private val sessions = mutableMapOf<UUID, Session>()
 
     private val store get() = plugin.store.eventStore
@@ -126,7 +125,7 @@ class EventManager(private val plugin: Diawars) {
             ?: return Result.Error("<red>Dieses Event existiert nicht mehr!</red>")
 
         event.state = EventState.SUBMITTED
-        store.save()
+        store.markDirty()
 
         leaveWorld(player)
 
@@ -186,20 +185,17 @@ class EventManager(private val plugin: Diawars) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
         }
         val now = System.currentTimeMillis() / 1000
-        if (endEpoch <=startEpoch) return Result.Error("<red>Das Ende muss nach dem Start liegen!</red>")
+        if (endEpoch <= startEpoch) return Result.Error("<red>Das Ende muss nach dem Start liegen!</red>")
         if (endEpoch <= now) return Result.Error("<red>Das Ende darf nicht in der Vergangenheit liegen!</red>")
 
         event.startTime = startEpoch
         event.endTime = endEpoch
         event.state = EventState.ACCEPTED
-        store.save()
-
-        val creator = getOfflinePlayer(event.creator)
-        if (creator !is Player) return Result.Error("<red>Der Ersteller ist unbekannt!</red>")
+        store.markDirty()
 
         val rewardAmount = plugin.config.getInt("event.accept-reward-diamonds", 10)
         if (rewardAmount > 0) {
-            plugin.rewardManager.grantDiamondReward(creator, rewardAmount)
+            plugin.rewardManager.grantDiamondReward(event.creator, rewardAmount)
         }
 
         val startText = DateTimeParser.parseToString(startEpoch)
@@ -220,7 +216,7 @@ class EventManager(private val plugin: Diawars) {
         }
 
         event.state = EventState.REJECTED
-        store.save()
+        store.markDirty()
 
         plugin.messageManager.sendOrQueue(
             event.creator,
@@ -252,18 +248,18 @@ class EventManager(private val plugin: Diawars) {
 
     private fun checkEventTransitions() {
         val now = System.currentTimeMillis() / 1000
-        for (event in store.getAll().toList()) {
-            when (event.state) {
+        for ((id, _, _, state, _, startTime, endTime) in store.getAll().toList()) {
+            when (state) {
                 EventState.ACCEPTED -> {
-                    if (event.endTime <= now) {
-                        endEvent(event.id)
-                    } else if (event.startTime <= now) {
-                        activateEvent(event.id)
+                    if (endTime <= now) {
+                        endEvent(id)
+                    } else if (startTime <= now) {
+                        activateEvent(id)
                     }
                 }
                 EventState.ACTIVE -> {
-                    if (event.endTime <= now) {
-                        endEvent(event.id)
+                    if (endTime <= now) {
+                        endEvent(id)
                     }
                 }
                 else -> {}
@@ -276,7 +272,7 @@ class EventManager(private val plugin: Diawars) {
         if (event.state != EventState.ACCEPTED) return
 
         event.state = EventState.ACTIVE
-        store.save()
+        store.markDirty()
 
         broadcast(mm("<gold><bold>Das Event <yellow>${event.name}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
     }
@@ -286,7 +282,7 @@ class EventManager(private val plugin: Diawars) {
         if (event.state == EventState.ENDED) return
 
         event.state = EventState.ENDED
-        store.save()
+        store.markDirty()
 
         sessions.filter { it.value.eventId == id }.keys.toList().forEach { uuid ->
             val player = getPlayer(uuid)

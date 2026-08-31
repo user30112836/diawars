@@ -1,9 +1,29 @@
 Bugs:
 - PvP logic is reversed (Might be fixed)
-- /event cancel does not delete the event world (other players can recover it by using the same worldName)
+~4 /event cancel does not delete the event world (other players can recover it by using the same worldName) (EventManager.kt:364)
+-1 Player inputs can serialize into buttons (XSS)
+    -> /bug report renders into /bug list (BugManager.kt:41)
+    -> event names render into the event lists (EventManager.kt:281)
+    -> Solution: escape before serializing (via smm = SafeMiniMessage)
+~3 Projectiles and area effect clouds bypass the pvp check (PvPListener.kt:23)
+~5 Event acceptance doesn't work when the creator is offline (EventManager.kt:198)
+-10 SendToLobby marks the player in-lobby before it can fail (LobbyManager.kt:48)
+-15 Vault count changes on events that could be cancelled (VaultListener.kt)
+-! "</gray" leaks into lore (MainMenu.kt:53)
+-/ Players can place diamonds in bundles and surpass the limit
+-/ Passively moved players don't get the AFK status
 
 Improvements:
-=== Empty ===
+~7 Reorganise the MenuListener to make the code clearer (MenuListener.kt:37)
+-8 Improve sidebar layout (DiamondScoreboardManager.kt:143)
+-14 PopulateMainMenu can abort mid-render (MainMenu.kt:41)
+-! Instead of itemStack AIR there should be item.remove() (DiamondLimitManager.kt:200)
+-! display.billboard = display.billboard is a no-op (DiamondLimitManager.kt:86)
+-! Swap armor order in the inspection inventory (InventoryInspectManager.kt:135)
+
+Performance:
+-2 Many particles for the border
+-3 Each lockup for spawn points takes a disk read
 
 Events:
 - Make things configurable when setting up events
@@ -15,6 +35,9 @@ Events:
     -> Effects
     -> Inventory
 - Players should be able to edit rejected event worlds
+
+Anti-Cheat:
+-/ Create communication with a client-side mod
 
 Manual:
 - Default contents of the manual should be tuned

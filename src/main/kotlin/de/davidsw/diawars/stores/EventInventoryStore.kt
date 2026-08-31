@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.Material
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -15,8 +14,7 @@ data class EventPlayerInventory(
     val enderChest: List<ItemStack?>,
 )
 
-class EventInventoryStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "event_player_inventories.yml")
+class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inventories.yml") {
     private val cache = mutableMapOf<String, MutableMap<UUID, EventPlayerInventory>>()
 
     init {
@@ -26,12 +24,12 @@ class EventInventoryStore(private val plugin: Diawars) {
     fun saveInventory(eventId: String, player: Player) {
         val perEvent = cache.getOrPut(eventId) { mutableMapOf() }
         perEvent[player.uniqueId] = EventPlayerInventory(
-            inventory = player.inventory.storageContents.toList(),
-            armor = player.inventory.armorContents.toList(),
+            inventory = player.inventory.storageContents.map { it?.clone() },
+            armor = player.inventory.armorContents.map { it?.clone() },
             offHand = player.inventory.itemInOffHand.clone(),
-            enderChest = player.enderChest.contents.toList(),
+            enderChest = player.enderChest.contents.map { it?.clone() },
         )
-        flushToDisk()
+        saveImmediately()
     }
 
     fun getInventory(eventId: String, playerId: UUID) = cache[eventId]?.get(playerId)
@@ -39,44 +37,31 @@ class EventInventoryStore(private val plugin: Diawars) {
     fun restoreInventory(eventId: String, player: Player): Boolean {
         val saved = cache[eventId]?.get(player.uniqueId) ?: return false
         player.inventory.clear()
-        player.inventory.storageContents = saved.inventory.toTypedArray()
-        player.inventory.armorContents = saved.armor.toTypedArray()
-        player.inventory.setItemInOffHand(saved.offHand ?: ItemStack(Material.AIR))
+        player.inventory.storageContents = saved.inventory.map { it?.clone() }.toTypedArray()
+        player.inventory.armorContents = saved.armor.map { it?.clone() }.toTypedArray()
+        player.inventory.setItemInOffHand(saved.offHand?.clone() ?: ItemStack(Material.AIR))
         player.enderChest.clear()
-        player.enderChest.contents = saved.enderChest.toTypedArray()
+        player.enderChest.contents = saved.enderChest.map { it?.clone() }.toTypedArray()
         return true
     }
 
     fun clearEvent(eventId: String) {
-        if (cache.remove(eventId) != null) flushToDisk()
+        if (cache.remove(eventId) != null) saveImmediately()
     }
 
-    private fun flushToDisk() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((eventId, players) in cache) {
             for ((uuid, inv) in players) {
                 val key = "$eventId.$uuid"
-                config.set("$key.inventory", inv.inventory)
-                config.set("$key.armor", inv.armor)
-                config.set("$key.offhand", inv.offHand)
-                config.set("$key.enderchest", inv.enderChest)
+                yaml.set("$key.inventory", inv.inventory)
+                yaml.set("$key.armor", inv.armor)
+                yaml.set("$key.offhand", inv.offHand)
+                yaml.set("$key.enderchest", inv.enderChest)
             }
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save event player inventories to $storeFile: ${e.message}")
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (eventId in yaml.getKeys(false)) {
             val eventSection = yaml.getConfigurationSection(eventId) ?: continue
             val perEvent = mutableMapOf<UUID, EventPlayerInventory>()

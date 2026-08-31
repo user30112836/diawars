@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
@@ -13,8 +12,7 @@ data class BugReport(
     var resolved: Boolean = false,
 )
 
-class BugStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "bugs.yml")
+class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
     private val cache = mutableMapOf<String, BugReport>()
     private val adminReads = mutableMapOf<UUID, Long>()
     private var nextId = 1
@@ -31,7 +29,7 @@ class BugStore(private val plugin: Diawars) {
         val id = (nextId++).toString()
         val bug = BugReport(id, reporter, description, System.currentTimeMillis() / 1000)
         cache[id] = bug
-        save()
+        saveImmediately()
         return bug
     }
 
@@ -39,7 +37,7 @@ class BugStore(private val plugin: Diawars) {
         val bug = cache[id] ?: return false
         if (bug.resolved) return false
         bug.resolved = true
-        save()
+        saveImmediately()
         return true
     }
 
@@ -50,36 +48,23 @@ class BugStore(private val plugin: Diawars) {
 
     fun markRead(adminId: UUID) {
         adminReads[adminId] = System.currentTimeMillis() / 1000
-        save()
+        saveImmediately()
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((id, bug) in cache) {
-            config.set("bugs.$id.reporter", bug.reporter.toString())
-            config.set("bugs.$id.description", bug.description)
-            config.set("bugs.$id.reported-at", bug.reportedAt)
-            config.set("bugs.$id.resolved", bug.resolved)
+            yaml.set("bugs.$id.reporter", bug.reporter.toString())
+            yaml.set("bugs.$id.description", bug.description)
+            yaml.set("bugs.$id.reported-at", bug.reportedAt)
+            yaml.set("bugs.$id.resolved", bug.resolved)
         }
         for ((admin, timestamp) in adminReads) {
-            config.set("admin-reads.$admin", timestamp)
+            yaml.set("admin-reads.$admin", timestamp)
         }
-        config.set("next-id", nextId)
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save bug reports to $storeFile: ${e.message}")
-        }
+        yaml.set("next-id", nextId)
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         yaml.getConfigurationSection("bugs")?.let { bugsSection ->
             for (id in bugsSection.getKeys(false)) {
                 try {

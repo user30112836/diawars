@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
@@ -11,8 +10,7 @@ data class VaultClaim(
     val invited: MutableSet<UUID> = mutableSetOf(),
 )
 
-class VaultClaimStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "vault_claims.yml")
+class VaultClaimStore(plugin: Diawars) : YamlStore(plugin, "vault_claims.yml") {
     private val claimsByVault = mutableMapOf<String, VaultClaim>()
 
     init {
@@ -29,22 +27,22 @@ class VaultClaimStore(private val plugin: Diawars) {
 
     fun claim(vaultId: String, playerId: UUID) {
         claimsByVault[vaultId] = VaultClaim(vaultId, playerId)
-        save()
+        saveImmediately()
     }
 
     fun unclaim(vaultId: String) {
         claimsByVault.remove(vaultId)
-        save()
+        saveImmediately()
     }
 
     fun invite(vaultId: String, playerId: UUID) {
         claimsByVault[vaultId]?.invited?.add(playerId)
-        save()
+        saveImmediately()
     }
 
     fun ban(vaultId: String, playerId: UUID) {
         claimsByVault[vaultId]?.invited?.remove(playerId)
-        save()
+        saveImmediately()
     }
 
     fun canPlace(vaultId: String, playerId: UUID): Boolean {
@@ -52,14 +50,7 @@ class VaultClaimStore(private val plugin: Diawars) {
         return claim.owner == playerId || playerId in claim.invited
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (vaultId in yaml.getKeys(false)) {
             try {
                 val section = yaml.getConfigurationSection(vaultId) ?: continue
@@ -77,16 +68,10 @@ class VaultClaimStore(private val plugin: Diawars) {
         plugin.logger.info("Loaded ${claimsByVault.size} vault claim(s).")
     }
 
-    private fun save() {
-        val yaml = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((vaultId, claim) in claimsByVault) {
             yaml.set("$vaultId.owner", claim.owner.toString())
             yaml.set("$vaultId.invited", claim.invited.map { it.toString() })
-        }
-        try {
-            yaml.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save vault claims to $storeFile: ${e.message}")
         }
     }
 }

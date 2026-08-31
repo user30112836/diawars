@@ -1,12 +1,10 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
-class OnboardingStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "onboarding.yml")
+class OnboardingStore(plugin: Diawars) : YamlStore(plugin, "onboarding.yml") {
     private val cache = mutableMapOf<UUID, Boolean>()
 
     init {
@@ -17,29 +15,16 @@ class OnboardingStore(private val plugin: Diawars) {
 
     fun markEnteredMainWorld(playerId: UUID) {
         cache[playerId] = true
-        save()
+        markDirty()
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, value) in cache) {
-            config.set(uuid.toString(), value)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save onboarding state to $storeFile: ${e.message}")
+            yaml.set(uuid.toString(), value)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 cache[UUID.fromString(key)] = yaml.getBoolean(key)

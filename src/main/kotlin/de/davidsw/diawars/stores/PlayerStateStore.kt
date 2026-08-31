@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
@@ -30,8 +29,7 @@ data class PlayerSavedState(
     val level: Int,
 )
 
-class PlayerStateStore(private val plugin: Diawars, fileName: String = "player_states.yml") {
-    private val storeFile = StoreFiles.resolve(plugin, fileName)
+class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") : YamlStore(plugin, fileName) {
     private val cache = mutableMapOf<UUID, PlayerSavedState>()
 
     init {
@@ -43,10 +41,10 @@ class PlayerStateStore(private val plugin: Diawars, fileName: String = "player_s
     fun saveState(player: Player) {
         val loc = player.location
         cache[player.uniqueId] = PlayerSavedState(
-            inventory = player.inventory.storageContents.toList(),
-            armor = player.inventory.armorContents.toList(),
+            inventory = player.inventory.storageContents.map { it?.clone() },
+            armor = player.inventory.armorContents.map { it?.clone() },
             offHand = player.inventory.itemInOffHand.clone(),
-            enderChest = player.enderChest.contents.toList(),
+            enderChest = player.enderChest.contents.map { it?.clone() },
             gameMode = player.gameMode,
             worldName = loc.world?.name ?: plugin.server.worlds.first().name,
             x = loc.x, y = loc.y, z = loc.z,
@@ -57,22 +55,22 @@ class PlayerStateStore(private val plugin: Diawars, fileName: String = "player_s
             exp = player.exp,
             level = player.level,
         )
-        flushToDisk()
+        saveImmediately()
     }
 
     fun getState(playerId: UUID) = cache[playerId]
 
     fun restoreState(player: Player, minimal: Boolean = false): Boolean {
         val state = cache.remove(player.uniqueId) ?: return false
-        flushToDisk()
+        saveImmediately()
 
         if (!minimal) {
             player.inventory.clear()
-            player.inventory.storageContents = state.inventory.toTypedArray()
-            player.inventory.armorContents = state.armor.toTypedArray()
-            player.inventory.setItemInOffHand(state.offHand ?: ItemStack(Material.AIR))
+            player.inventory.storageContents = state.inventory.map { it?.clone() }.toTypedArray()
+            player.inventory.armorContents = state.armor.map { it?.clone() }.toTypedArray()
+            player.inventory.setItemInOffHand(state.offHand?.clone() ?: ItemStack(Material.AIR))
             player.enderChest.clear()
-            player.enderChest.contents = state.enderChest.toTypedArray()
+            player.enderChest.contents = state.enderChest.map { it?.clone() }.toTypedArray()
             player.gameMode = state.gameMode
         }
 
@@ -93,45 +91,32 @@ class PlayerStateStore(private val plugin: Diawars, fileName: String = "player_s
 
     fun clearState(playerId: UUID) {
         cache.remove(playerId)
-        flushToDisk()
+        saveImmediately()
     }
 
-    private fun flushToDisk() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, state) in cache) {
             val key = uuid.toString()
-            config.set("$key.inventory", state.inventory)
-            config.set("$key.armor", state.armor)
-            config.set("$key.offhand", state.offHand)
-            config.set("$key.enderchest", state.enderChest)
-            config.set("$key.gamemode", state.gameMode.name)
-            config.set("$key.world", state.worldName)
-            config.set("$key.x", state.x)
-            config.set("$key.y", state.y)
-            config.set("$key.z", state.z)
-            config.set("$key.yaw", state.yaw)
-            config.set("$key.pitch", state.pitch)
-            config.set("$key.health", state.health)
-            config.set("$key.food", state.foodLevel)
-            config.set("$key.saturation", state.saturation)
-            config.set("$key.exp", state.exp)
-            config.set("$key.level", state.level)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save event player states to $storeFile: ${e.message}")
+            yaml.set("$key.inventory", state.inventory)
+            yaml.set("$key.armor", state.armor)
+            yaml.set("$key.offhand", state.offHand)
+            yaml.set("$key.enderchest", state.enderChest)
+            yaml.set("$key.gamemode", state.gameMode.name)
+            yaml.set("$key.world", state.worldName)
+            yaml.set("$key.x", state.x)
+            yaml.set("$key.y", state.y)
+            yaml.set("$key.z", state.z)
+            yaml.set("$key.yaw", state.yaw)
+            yaml.set("$key.pitch", state.pitch)
+            yaml.set("$key.health", state.health)
+            yaml.set("$key.food", state.foodLevel)
+            yaml.set("$key.saturation", state.saturation)
+            yaml.set("$key.exp", state.exp)
+            yaml.set("$key.level", state.level)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (key in yaml.getKeys(false)) {
             try {
                 val uuid = UUID.fromString(key)

@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
@@ -24,8 +23,7 @@ data class GameEvent(
     var endTime: Long = 0L,   // epoch seconds, only meaningful once ACCEPTED/ACTIVE
 )
 
-class EventStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "events.yml")
+class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
     private val cache = mutableMapOf<String, GameEvent>()
 
     init {
@@ -50,39 +48,26 @@ class EventStore(private val plugin: Diawars) {
 
     fun addEvent(event: GameEvent) {
         cache[event.id] = event
-        save()
+        saveImmediately()
     }
 
     fun removeEvent(id: String) {
         cache.remove(id)
-        save()
+        saveImmediately()
     }
 
-    fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((id, event) in cache) {
-            config.set("$id.name", event.name)
-            config.set("$id.creator", event.creator.toString())
-            config.set("$id.state", event.state.name)
-            config.set("$id.world", event.worldName)
-            config.set("$id.start-time", event.startTime)
-            config.set("$id.end-time", event.endTime)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save events to $storeFile: ${e.message}")
+            yaml.set("$id.name", event.name)
+            yaml.set("$id.creator", event.creator.toString())
+            yaml.set("$id.state", event.state.name)
+            yaml.set("$id.world", event.worldName)
+            yaml.set("$id.start-time", event.startTime)
+            yaml.set("$id.end-time", event.endTime)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (id in yaml.getKeys(false)) {
             try {
                 val section = yaml.getConfigurationSection(id) ?: continue
