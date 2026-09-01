@@ -4,7 +4,6 @@ Bugs:
     -> /bug report renders into /bug list (BugManager.kt:41)
     -> event names render into the event lists (EventManager.kt:281)
     -> Solution: escape before serializing (via smm = SafeMiniMessage)
--10 SendToLobby marks the player in-lobby before it can fail (LobbyManager.kt:48)
 -15 Vault count changes on events that could be cancelled (VaultListener.kt)
 -/ Passively moved players don't get the AFK status
 

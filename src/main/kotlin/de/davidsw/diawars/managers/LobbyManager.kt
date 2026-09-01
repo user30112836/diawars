@@ -45,9 +45,6 @@ class LobbyManager(private val plugin: Diawars) {
                 .createWorld()
             ?: return false
 
-        states.saveState(player)
-        playersInLobby.add(player.uniqueId)
-
         val section = plugin.config.getConfigurationSection("lobby.spawn-point") ?: return false
         val location = Location(
             world,
@@ -58,7 +55,9 @@ class LobbyManager(private val plugin: Diawars) {
             section.getDouble("pitch").toFloat(),
         )
 
+        states.saveState(player)
         player.teleport(location)
+        playersInLobby.add(player.uniqueId)
 
         return true
     }
