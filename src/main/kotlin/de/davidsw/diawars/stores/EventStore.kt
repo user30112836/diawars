@@ -25,6 +25,7 @@ data class GameEvent(
 
 class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
     private val cache = mutableMapOf<String, GameEvent>()
+    private val usedIds = mutableSetOf<String>()
 
     init {
         load()
@@ -42,12 +43,13 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
 
     fun generateId(name: String): String {
         val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { throw Error("Das Event braucht einen Namen!") }
-        if (cache.containsKey(id)) throw Error("Der Name des Events ist bereits vergeben!")
+        if (id in usedIds) throw Error("Der Name des Events ist bereits vergeben!")
         return id
     }
 
     fun addEvent(event: GameEvent) {
         cache[event.id] = event
+        usedIds.add(event.id)
         saveImmediately()
     }
 
@@ -65,10 +67,14 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
             yaml.set("$id.start-time", event.startTime)
             yaml.set("$id.end-time", event.endTime)
         }
+        yaml.set("_used-ids", usedIds.toList())
     }
 
     override fun readFrom(yaml: YamlConfiguration) {
+        usedIds.addAll(yaml.getStringList("_used-ids"))
+
         for (id in yaml.getKeys(false)) {
+            if (id == "_used-ids") continue
             try {
                 val section = yaml.getConfigurationSection(id) ?: continue
                 val creatorString = section.getString("creator") ?: continue
@@ -81,6 +87,7 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
                     startTime = section.getLong("start-time", 0L),
                     endTime = section.getLong("end-time", 0L),
                 )
+                usedIds.add(id)
             } catch (e: Exception) {
                 plugin.logger.warning("Could not load event $id: ${e.message}")
             }
