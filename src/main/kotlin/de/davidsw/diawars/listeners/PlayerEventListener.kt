@@ -28,14 +28,16 @@ class PlayerEventListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onPlayerMove(event: PlayerMoveEvent) {
         val player = event.player
-        plugin.afkManager.recordActivity(player.uniqueId)
+        val from = event.from
+        val to = event.to
+
+        if (from.yaw != to.yaw || from.pitch != to.pitch) {
+            plugin.afkManager.recordActivity(player.uniqueId)
+        }
 
         if (!plugin.teamManager.isPlayerInTeam(player.uniqueId)) {
             return
         }
-
-        val from = event.from
-        val to = event.to
 
         if (plugin.zoneManager.hasCrossedBoundary(from, to)) {
             if (!plugin.zoneManager.isInPlayerZone(player, event.to)) {

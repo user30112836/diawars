@@ -5,7 +5,6 @@ Bugs:
     -> event names render into the event lists (EventManager.kt:281)
     -> Solution: escape before serializing (via smm = SafeMiniMessage)
 -15 Vault count changes on events that could be cancelled (VaultListener.kt)
--/ Passively moved players don't get the AFK status
 
 Improvements
 -8 Improve sidebar layout (DiamondScoreboardManager.kt:143)
