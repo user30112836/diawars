@@ -14,6 +14,7 @@ import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.commands.VaultCommand
 import de.davidsw.diawars.listeners.BugListener
 import de.davidsw.diawars.listeners.ContainerExplosionListener
+import de.davidsw.diawars.listeners.DiamondBundleListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
@@ -216,6 +217,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(MessageListener(this), this)
         server.pluginManager.registerEvents(VaultListener(this), this)
         server.pluginManager.registerEvents(BugListener(this), this)
+        server.pluginManager.registerEvents(DiamondBundleListener(this), this)
         server.pluginManager.registerEvents(InventoryInspectListener(), this)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))

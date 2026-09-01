@@ -38,4 +38,6 @@ object MaterialSets {
         Material.BEDROCK,
         Material.DIAMOND_BLOCK,
     )
+
+    fun isBundle(material: Material): Boolean = material.name.endsWith("BUNDLE")
 }
