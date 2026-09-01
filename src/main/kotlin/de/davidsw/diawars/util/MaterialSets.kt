@@ -40,4 +40,5 @@ object MaterialSets {
     )
 
     fun isBundle(material: Material): Boolean = material.name.endsWith("BUNDLE")
+    fun isShulkerBox(material: Material): Boolean = material.name.endsWith("SHULKER_BOX")
 }

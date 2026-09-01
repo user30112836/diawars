@@ -146,7 +146,7 @@ class MainMenu(private val plugin: Diawars) {
 
         // Inventory access (held shulker box / ender chest)
         val heldItem = player.inventory.itemInMainHand
-        val canOpenInv = heldItem.type in MaterialSets.SHULKER_BOXES || heldItem.type == Material.ENDER_CHEST
+        val canOpenInv = MaterialSets.isShulkerBox(heldItem.type) || heldItem.type == Material.ENDER_CHEST
         inv.setItem(SLOT_INV, item(
             material = if (canOpenInv) heldItem.type else Material.CHEST,
             name = mm(if (canOpenInv) "<yellow><bold>Inventar öffnen</bold></yellow>" else "<gray><bold>Inventar öffnen</bold></gray>"),

@@ -30,7 +30,7 @@ class ContainerExplosionManager(private val plugin: Diawars) {
     }
 
     fun explodeContainer(holder: BlockInventoryHolder) {
-        if (holder.block.type in MaterialSets.SHULKER_BOXES) {
+        if (MaterialSets.isShulkerBox(holder.block.type)) {
             explodeShulker(holder)
             return
         }
