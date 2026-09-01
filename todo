@@ -12,7 +12,6 @@ Bugs:
 Improvements
 -8 Improve sidebar layout (DiamondScoreboardManager.kt:143)
 -14 PopulateMainMenu can abort mid-render (MainMenu.kt:41)
--! display.billboard = display.billboard is a no-op (DiamondLimitManager.kt:86)
 -! Swap armor order in the inspection inventory (InventoryInspectManager.kt:135)
 
 Performance:

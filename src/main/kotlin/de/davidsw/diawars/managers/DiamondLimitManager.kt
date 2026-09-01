@@ -83,7 +83,6 @@ class DiamondLimitManager(private val plugin: Diawars) {
             display.text(formatTimer(getTicksLived(item)))
             display.isShadowed = true
             display.isVisibleByDefault = true
-            display.billboard = display.billboard
             display.isPersistent = false
             display.backgroundColor = Color.fromARGB(160, 0, 0, 0)
             display.textOpacity = 230.toByte()
