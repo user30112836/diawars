@@ -49,7 +49,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
                 Material.DIAMOND -> {
                     val keep = minOf(item.amount, left)
                     val drop = item.amount - keep
-                    inv.setItem(i, if (keep == 0) ItemStack(Material.AIR) else item.clone().apply { amount = keep })
+                    inv.setItem(i, if (keep == 0) null else item.clone().apply { amount = keep })
                     if (drop > 0) {
                         player.location.world?.dropItemNaturally(player.location, ItemStack(Material.DIAMOND, drop))
                             ?.also { it.pickupDelay = 40 }
@@ -60,7 +60,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
                 Material.DIAMOND_BLOCK -> {
                     val keep = minOf(item.amount, left / 9)
                     val drop = item.amount - keep
-                    inv.setItem(i, if (keep == 0) ItemStack(Material.AIR) else item.clone().apply { amount = keep })
+                    inv.setItem(i, if (keep == 0) null else item.clone().apply { amount = keep })
                     if (drop > 0) {
                         player.location.world?.dropItemNaturally(player.location, ItemStack(Material.DIAMOND_BLOCK, drop))
                             ?.also { it.pickupDelay = 40 }
@@ -197,7 +197,8 @@ class DiamondLimitManager(private val plugin: Diawars) {
             if (left > 0) {
                 item.itemStack = ItemStack(Material.DIAMOND, left)
             } else {
-                item.itemStack = ItemStack(Material.AIR)
+                item.remove()
+                return
             }
         }
         plugin.server.scheduler.runTaskLater(plugin, Runnable {
