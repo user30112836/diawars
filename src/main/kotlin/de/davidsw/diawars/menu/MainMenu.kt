@@ -50,7 +50,7 @@ class MainMenu(private val plugin: Diawars) {
                     lore = listOf(
                         mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
                         mm("<gray>Klicken zum Umschalten</gray>"),
-                        mm("<gray>(5 Min. Verzögerung)</gray"),
+                        mm("<gray>(5 Min. Verzögerung)</gray>"),
                     ),
                     glow = false,
                 ))

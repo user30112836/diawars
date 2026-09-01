@@ -6,7 +6,6 @@ Bugs:
     -> Solution: escape before serializing (via smm = SafeMiniMessage)
 -10 SendToLobby marks the player in-lobby before it can fail (LobbyManager.kt:48)
 -15 Vault count changes on events that could be cancelled (VaultListener.kt)
--! "</gray" leaks into lore (MainMenu.kt:53)
 -/ Players can place diamonds in bundles and surpass the limit
 -/ Passively moved players don't get the AFK status
 
