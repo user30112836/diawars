@@ -14,6 +14,7 @@ import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.commands.VaultCommand
 import de.davidsw.diawars.listeners.AfkActivityListener
 import de.davidsw.diawars.listeners.BugListener
+import de.davidsw.diawars.listeners.ClientInfoListener
 import de.davidsw.diawars.listeners.ContainerExplosionListener
 import de.davidsw.diawars.listeners.DiamondBundleListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
@@ -60,6 +61,7 @@ import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.BugStore
+import de.davidsw.diawars.stores.ClientInfoStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
@@ -102,6 +104,7 @@ class Store(
     val vaultClaimStore: VaultClaimStore,
     val bugStore: BugStore,
     val onboardingStore: OnboardingStore,
+    val clientInfoStore: ClientInfoStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
@@ -160,6 +163,7 @@ class Diawars : JavaPlugin() {
             vaultClaimStore = VaultClaimStore(this),
             bugStore = BugStore(this),
             onboardingStore = OnboardingStore(this),
+            clientInfoStore = ClientInfoStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -221,6 +225,9 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(DiamondBundleListener(this), this)
         server.pluginManager.registerEvents(AfkActivityListener(this), this)
         server.pluginManager.registerEvents(InventoryInspectListener(), this)
+        server.pluginManager.registerEvents(ClientInfoListener(this), this)
+
+        server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))

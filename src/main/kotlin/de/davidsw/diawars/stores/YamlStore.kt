@@ -28,6 +28,10 @@ abstract class YamlStore(protected val plugin: Diawars, fileName: String) {
 
     protected fun load() {
         try {
+            storeFile.parentFile?.mkdirs()
+            if (!storeFile.exists()) {
+                storeFile.createNewFile()
+            }
             readFrom(YamlConfiguration.loadConfiguration(storeFile))
         } catch (e: Exception) {
             plugin.logger.severe("Could not load ${storeFile.name}: ${e.message}")
