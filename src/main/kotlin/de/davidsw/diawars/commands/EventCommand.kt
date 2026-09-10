@@ -82,11 +82,11 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
             "reject" -> {
                 if (!requireAdmin(sender)) return true
-                if (args.size < 2) {
-                    sender.sendMessage(mm("<red>Verwendung: /event reject &lt;id&gt;</red>"))
+                if (args.size < 3) {
+                    sender.sendMessage(mm("<red>Verwendung: /event reject &lt;id&gt; &lt;grund&gt;</red>"))
                     return true
                 }
-                respond(sender, plugin.eventManager.rejectEvent(args[1]))
+                respond(sender, plugin.eventManager.rejectEvent(args[1], args.slice(2 until args.size).joinToString(" ")))
             }
 
             "reward" -> {
@@ -178,7 +178,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         if (player.hasPermission("diawars.admin")) {
             lines += "<yellow>/event review <id></yellow><gray> - Eingereichtes Event prüfen</gray>"
             lines += "<yellow>/event accept <id> <start> <ende></yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>"
-            lines += "<yellow>/event reject <id></yellow><gray> - Event ablehnen</gray>"
+            lines += "<yellow>/event reject <id> <grund></yellow><gray> - Event ablehnen</gray>"
             lines += "<yellow>/event reward <spieler> <anzahl></yellow><gray> - Diamanten an Spieler vergeben</gray>"
         }
         player.sendMessage(mm(lines.joinToString("\n")))

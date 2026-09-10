@@ -24,7 +24,6 @@ Events:
     -> Rewards
     -> Effects
     -> Inventory
-- Players should be able to edit rejected event worlds
 
 Anti-Cheat:
 -/ Create communication with a client-side mod

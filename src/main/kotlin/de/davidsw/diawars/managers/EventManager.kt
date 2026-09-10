@@ -217,21 +217,22 @@ class EventManager(private val plugin: Diawars) {
         return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: $rewardAmount Diamant(en).</green>")
     }
 
-    fun rejectEvent(id: String): Result {
+    fun rejectEvent(id: String, reason: String): Result {
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.SUBMITTED) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
         }
 
-        event.state = EventState.REJECTED
+        event.state = EventState.BUILDING
         store.markDirty()
 
         plugin.messageManager.sendOrQueue(
             event.creator,
-            "<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt. Mit <yellow>/event resume</yellow> kannst du weiterbauen und es erneut einreichen.</red>"
+            "<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt: <white>$reason</white></red>\n" +
+                    "<gray>Nutze <yellow>/event resume</yellow> um weiterzubauen und es erneut einzureichen.</gray>"
         )
 
-        return Result.Success("<yellow>Event <gold>${event.name}</gold> wurde abgelehnt.</yellow>")
+        return Result.Success("<yellow>Event <gold>${event.name}</gold> wurde abgelehnt und zurück in die Bearbeitung versetzt.</yellow>")
     }
 
     // ------------------------------------------------------------------
