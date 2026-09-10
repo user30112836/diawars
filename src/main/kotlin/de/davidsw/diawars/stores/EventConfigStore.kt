@@ -1,7 +1,6 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
-import de.davidsw.diawars.util.StoreFiles
 import org.bukkit.GameMode
 import org.bukkit.GameRule
 import org.bukkit.GameRules
@@ -42,8 +41,7 @@ data class EventConfig(
     val startingOffHand: ItemStack? = null,
 )
 
-class EventConfigStore(private val plugin: Diawars) {
-    private val storeFile = StoreFiles.resolve(plugin, "event_configs.yml")
+class EventConfigStore(plugin: Diawars): YamlStore(plugin, "event_configs.yml") {
     private val cache = mutableMapOf<String, EventConfig>()
 
     init {
@@ -54,42 +52,29 @@ class EventConfigStore(private val plugin: Diawars) {
 
     fun update(eventId: String, transform: (EventConfig) -> EventConfig) {
         cache[eventId] = transform(getConfig(eventId))
-        save()
+        markDirty()
     }
 
     fun clearEvent(eventId: String) {
-        if (cache.remove(eventId) != null) save()
+        if (cache.remove(eventId) != null) saveImmediately()
     }
 
-    private fun save() {
-        val config = YamlConfiguration()
+    override fun writeTo(yaml: YamlConfiguration) {
         for ((eventId, cfg) in cache) {
-            config.set("$eventId.gamemode", cfg.gameMode.name)
-            config.set("$eventId.advance-time", cfg.advanceTime)
-            config.set("$eventId.fixed-time", cfg.fixedTime)
+            yaml.set("$eventId.gamemode", cfg.gameMode.name)
+            yaml.set("$eventId.advance-time", cfg.advanceTime)
+            yaml.set("$eventId.fixed-time", cfg.fixedTime)
             EventGameRules.CONFIGURABLE.keys.forEach { key ->
-                config.set("$eventId.gamerules.$key", cfg.gameRules[key] ?: EventGameRules.DEFAULTS[key])
+                yaml.set("$eventId.gamerules.$key", cfg.gameRules[key] ?: EventGameRules.DEFAULTS[key])
             }
-            config.set("$eventId.effects", cfg.effects.map { "${it.type}:${it.amplifier}" })
-            config.set("$eventId.starting-inventory", cfg.startingInventory)
-            config.set("$eventId.starting-armor", cfg.startingArmor)
-            config.set("$eventId.starting-offhand", cfg.startingOffHand)
-        }
-        try {
-            config.save(storeFile)
-        } catch (e: Exception) {
-            plugin.logger.severe("Could not save event configs to $storeFile: ${e.message}")
+            yaml.set("$eventId.effects", cfg.effects.map { "${it.type}:${it.amplifier}" })
+            yaml.set("$eventId.starting-inventory", cfg.startingInventory)
+            yaml.set("$eventId.starting-armor", cfg.startingArmor)
+            yaml.set("$eventId.starting-offhand", cfg.startingOffHand)
         }
     }
 
-    private fun load() {
-        if (!storeFile.exists()) {
-            storeFile.parentFile.mkdirs()
-            storeFile.createNewFile()
-        }
-
-        val yaml = YamlConfiguration.loadConfiguration(storeFile)
-
+    override fun readFrom(yaml: YamlConfiguration) {
         for (eventId in yaml.getKeys(false)) {
             try {
                 val section = yaml.getConfigurationSection(eventId) ?: continue

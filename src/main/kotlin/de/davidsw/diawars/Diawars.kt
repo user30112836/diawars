@@ -112,7 +112,7 @@ class Store(
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
-        lobbyStateStore, eventStateStore, eventStore, eventInventoryStore,
+        lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore,
     )
