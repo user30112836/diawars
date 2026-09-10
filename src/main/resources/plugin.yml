@@ -1,5 +1,5 @@
 name: Diawars
-version: '5.0-beta'
+version: '5.1-beta'
 main: de.davidsw.diawars.Diawars
 api-version: '26.2'
 author: DavidSW
@@ -29,7 +29,7 @@ commands:
     permission: diawars.use
   event:
     description: Event-System des Plugins
-    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject|reward>
+    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject|reward|config>
     permission: diawars.use
   lobby:
     description: Betritt oder verlässt die Lobby

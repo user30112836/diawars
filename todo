@@ -15,16 +15,6 @@ Performance:
 -2 Many particles for the border
 -3 Each lockup for spawn points takes a disk read
 
-Events:
-- Make things configurable when setting up events
-    -> World type
-    -> Player gamemode
-    -> World daytime
-    -> Gamerules: keep_inventory, advance_time, advance_weather, mob_griefing, mob_drops, spawn_...
-    -> Rewards
-    -> Effects
-    -> Inventory
-
 Anti-Cheat:
 -/ Create communication with a client-side mod
 

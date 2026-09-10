@@ -62,6 +62,7 @@ import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.BugStore
 import de.davidsw.diawars.stores.ClientInfoStore
+import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.MessageStore
@@ -96,6 +97,7 @@ class Store(
     val eventStateStore: PlayerStateStore,
     val eventStore: EventStore,
     val eventInventoryStore: EventInventoryStore,
+    val eventConfigStore: EventConfigStore,
     val playerSpawnStore: PlayerSpawnStore,
     val rewardStore: RewardStore,
     val scoreboardPreferencesStore: ScoreboardPreferencesStore,
@@ -155,6 +157,7 @@ class Diawars : JavaPlugin() {
             eventStateStore = PlayerStateStore(this, "event_player_states.yml"),
             eventStore = EventStore(this),
             eventInventoryStore = EventInventoryStore(this),
+            eventConfigStore = EventConfigStore(this),
             playerSpawnStore = PlayerSpawnStore(this),
             rewardStore = RewardStore(this),
             scoreboardPreferencesStore = ScoreboardPreferencesStore(this),

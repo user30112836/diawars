@@ -1,19 +1,24 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.stores.EventConfig
+import de.davidsw.diawars.stores.EventGameRules
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
+import de.davidsw.diawars.util.PotionEffectParser
 import org.bukkit.Bukkit.broadcast
 import org.bukkit.Bukkit.getPlayer
 import org.bukkit.Bukkit.getWorld
 import org.bukkit.Bukkit.getWorldContainer
 import org.bukkit.Bukkit.unloadWorld
 import org.bukkit.GameMode
+import org.bukkit.GameRules
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
+import org.bukkit.potion.PotionEffect
 import java.io.File
 import java.util.UUID
 
@@ -147,6 +152,7 @@ class EventManager(private val plugin: Diawars) {
             val deleted = deleteEventWorld(event)
             store.removeEvent(event.id)
             plugin.store.eventInventoryStore.clearEvent(event.id)
+            plugin.store.eventConfigStore.clearEvent(event.id)
 
             if (!deleted) {
                 return Result.Success(
@@ -283,6 +289,8 @@ class EventManager(private val plugin: Diawars) {
         event.state = EventState.ACTIVE
         store.markDirty()
 
+        applyWorldConfig(event)
+
         broadcast(mm("<gold><bold>Das Event <yellow>${event.name}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
     }
 
@@ -337,12 +345,14 @@ class EventManager(private val plugin: Diawars) {
         states.saveState(player)
         sessions[player.uniqueId] = Session(event.id, SessionMode.PLAY)
 
+        val config = plugin.store.eventConfigStore.getConfig(event.id)
+
         player.teleport(world.spawnLocation)
-        player.gameMode = GameMode.SURVIVAL
+        player.gameMode = config.gameMode
         if (!plugin.store.eventInventoryStore.restoreInventory(event.id, player)) {
-            player.inventory.clear()
-            player.enderChest.clear()
+            applyStartingInventory(player, config)
         }
+        applyConfiguredEffects(player, config)
 
         return Result.Success("<green>Du bist dem Event <gold>${event.name}</gold> beigetreten!</green>")
     }
@@ -359,6 +369,9 @@ class EventManager(private val plugin: Diawars) {
         val session = sessions.remove(player.uniqueId)
         if (session != null && session.mode != SessionMode.REVIEW) {
             plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
+        }
+        if (session != null && session.mode == SessionMode.PLAY) {
+            player.activePotionEffects.toList().forEach { player.removePotionEffect(it.type) }
         }
         if (!states.restoreState(player)) {
             player.gameMode = GameMode.SURVIVAL
@@ -421,6 +434,38 @@ class EventManager(private val plugin: Diawars) {
             if (session.mode == SessionMode.REVIEW) continue
             val player = getPlayer(uuid) ?: continue
             plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
+        }
+    }
+
+    private fun applyWorldConfig(event: GameEvent) {
+        val world = getWorld(event.worldName) ?: return
+        val config = plugin.store.eventConfigStore.getConfig(event.id)
+
+        EventGameRules.CONFIGURABLE.forEach { (key, rule) ->
+            world.setGameRule(rule, config.gameRules[key] ?: EventGameRules.DEFAULTS[key] ?: true)
+        }
+        world.setGameRule(GameRules.ADVANCE_TIME, config.advanceTime)
+        if (!config.advanceTime) {
+            world.time = config.fixedTime
+        }
+    }
+
+    private fun applyStartingInventory(player: Player, config: EventConfig) {
+        player.inventory.clear()
+        player.enderChest.clear()
+        if (config.startingInventory.isNotEmpty()) {
+            player.inventory.storageContents = config.startingInventory.toTypedArray()
+        }
+        if (config.startingArmor.isNotEmpty()) {
+            player.inventory.armorContents = config.startingArmor.toTypedArray()
+        }
+        config.startingOffHand?.let { player.inventory.setItemInOffHand(it) }
+    }
+
+    private fun applyConfiguredEffects(player: Player, config: EventConfig) {
+        config.effects.forEach { effect ->
+            val type = PotionEffectParser.parse(effect.type) ?: return@forEach
+            player.addPotionEffect(PotionEffect(type, PotionEffect.INFINITE_DURATION, effect.amplifier, true, false))
         }
     }
 }
