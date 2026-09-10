@@ -37,14 +37,14 @@ class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.ym
     }
 
     fun getOfflineTeamCount(team: Team): Int {
-        val onlineIds = plugin.server.onlinePlayers.map { it.uniqueId }
+        val onlineIds = plugin.server.onlinePlayers.mapTo(HashSet()) { it.uniqueId }
         return plugin.teamManager.getTeamMembers(team)
             .filter { it !in onlineIds }
             .sumOf { getStoredCount(it) }
     }
 
     fun getOnlineTeamCount(team: Team): Int {
-        val onlineIds = plugin.server.onlinePlayers.map { it.uniqueId }
+        val onlineIds = plugin.server.onlinePlayers.mapTo(HashSet()) { it.uniqueId }
         return plugin.teamManager.getTeamMembers(team)
             .filter { it in onlineIds }
             .sumOf { getStoredCount(it) }
