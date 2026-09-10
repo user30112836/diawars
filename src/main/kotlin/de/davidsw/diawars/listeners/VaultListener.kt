@@ -5,12 +5,13 @@ import de.davidsw.diawars.managers.DiamondAction
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 
 class VaultListener(private val plugin: Diawars): Listener {
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     fun onBlockPlace(event: BlockPlaceEvent) {
         if (event.block.type != Material.DIAMOND_BLOCK) return
         val player = event.player
@@ -36,7 +37,7 @@ class VaultListener(private val plugin: Diawars): Listener {
         plugin.diamondLogManager.log(DiamondAction.PLACE, Material.DIAMOND_BLOCK, 1, player, location = event.block.location)
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     fun onBlockBreak(event: BlockBreakEvent) {
         if (event.block.type != Material.DIAMOND_BLOCK) return
         val vault = plugin.vaultManager.getVaultAt(event.block.location) ?: return

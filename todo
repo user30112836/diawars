@@ -4,19 +4,17 @@ Bugs:
     -> /bug report renders into /bug list (BugManager.kt:41)
     -> event names render into the event lists (EventManager.kt:281)
     -> Solution: escape before serializing (via smm = SafeMiniMessage)
--15 Vault count changes on events that could be cancelled (VaultListener.kt)
 
-Improvements
--8 Improve sidebar layout (DiamondScoreboardManager.kt:143)
--14 PopulateMainMenu can abort mid-render (MainMenu.kt:41)
--! Swap armor order in the inspection inventory (InventoryInspectManager.kt:135)
+Improvements:
+=== Empty ===
 
 Performance:
 -2 Many particles for the border
 -3 Each lockup for spawn points takes a disk read
 
 Anti-Cheat:
--/ Create communication with a client-side mod
+- Create a client-side mod for Forge
+- Create a white list for mods
 
 Manual:
 - Default contents of the manual should be tuned
