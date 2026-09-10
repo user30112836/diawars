@@ -53,6 +53,7 @@ import de.davidsw.diawars.managers.TeamManager
 import de.davidsw.diawars.managers.VaultManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
+import de.davidsw.diawars.menu.EventConfigMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.MainMenu
 import de.davidsw.diawars.menu.ManualMenu
@@ -84,6 +85,7 @@ data class Menu(
     var borderMenu: BorderMenu,
     var scoreboardMenu: ScoreboardMenu,
     var eventMenu: EventMenu,
+    var eventConfigMenu: EventConfigMenu,
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
     var manualMenu: ManualMenu,
@@ -195,6 +197,7 @@ class Diawars : JavaPlugin() {
             borderMenu = BorderMenu(this),
             scoreboardMenu = ScoreboardMenu(this),
             eventMenu = EventMenu(this),
+            eventConfigMenu = EventConfigMenu(this),
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
             manualMenu = ManualMenu(this),

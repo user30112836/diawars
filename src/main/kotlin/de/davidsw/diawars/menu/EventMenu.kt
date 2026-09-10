@@ -20,13 +20,14 @@ class EventMenu(private val plugin: Diawars) {
         private const val SLOT_SUBMIT = 39
         private const val SLOT_CANCEL = 40
         private const val SLOT_LEAVE = 41
+        private const val SLOT_CONFIG = 42
         private const val SLOT_STATUS = 43
 
         private val ACTIVE_SLOTS = listOf(10, 11, 12, 13, 14, 15, 16)
         private val UPCOMING_SLOTS = listOf(19, 20, 21, 22, 23, 24, 25)
         private val PENDING_SLOTS = listOf(28, 29, 30, 31, 32, 33, 34)
 
-        private val ALL_SLOTS = listOf(SLOT_CREATE, SLOT_RESUME, SLOT_SUBMIT, SLOT_CANCEL, SLOT_LEAVE, SLOT_STATUS) +
+        private val ALL_SLOTS = listOf(SLOT_CREATE, SLOT_RESUME, SLOT_SUBMIT, SLOT_CANCEL, SLOT_LEAVE, SLOT_CONFIG, SLOT_STATUS) +
                 ACTIVE_SLOTS + PENDING_SLOTS + UPCOMING_SLOTS
     }
 
@@ -125,6 +126,21 @@ class EventMenu(private val plugin: Diawars) {
                     mm(""),
                     mm("<yellow>Klicken zum Verlassen</yellow>"),
                 ) else listOf(mm("<dark_gray>Du befindest dich in keinem Event</dark_gray>")),
+            )
+        )
+
+        val canConfigure = session != null && session.mode == EventManager.SessionMode.BUILD
+        inv.setItem(
+            SLOT_CONFIG, actionItem(
+                enabled = canConfigure,
+                material = Material.COMPARATOR,
+                name = "<light_purple><bold>Event konfigurieren</bold></light_purple>",
+                lore = if (canConfigure) listOf(
+                    mm("<gray>Spielmodus, Tageszeit, Gamerules,</gray>"),
+                    mm("<gray>Effekte und Start-Inventar</gray>"),
+                    mm(""),
+                    mm("<yellow>Klicken zum Öffnen</yellow>"),
+                ) else listOf(mm("<dark_gray>Nur während des Bauens verfügbar</dark_gray>")),
             )
         )
     }
@@ -307,6 +323,12 @@ class EventMenu(private val plugin: Diawars) {
             SLOT_LEAVE -> {
                 player.closeInventory()
                 respond(player, plugin.eventManager.leaveEvent(player))
+            }
+
+            SLOT_CONFIG -> {
+                val session = plugin.eventManager.getSession(player.uniqueId)
+                if (session == null || session.mode != EventManager.SessionMode.BUILD) return
+                plugin.menuManager.openEventConfigMenu(player)
             }
 
             in ACTIVE_SLOTS -> {

@@ -24,6 +24,9 @@ class MenuListener(private val plugin: Diawars): Listener {
         MenuManager.TITLE_EVENT to { _, player, slot ->
             plugin.menu.eventMenu.handleEventClick(player, slot)
         },
+        MenuManager.TITLE_EVENT_CONFIG to { event, player, slot ->
+            plugin.menu.eventConfigMenu.handleEventConfigClick(player, slot, event.inventory, event.click.isRightClick)
+        },
         MenuManager.TITLE_VAULT to { event, player, slot ->
             plugin.menu.vaultMenu.handleVaultClick(player, slot, event.inventory)
         },

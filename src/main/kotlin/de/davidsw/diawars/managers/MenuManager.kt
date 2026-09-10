@@ -20,6 +20,7 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_BORDER = mm("<green>Border-Einstellungen</green>")
         val TITLE_SCOREBOARD = mm("<green>Sidebar-Einstellungen</green>")
         val TITLE_EVENT = mm("<green>Events</green>")
+        val TITLE_EVENT_CONFIG = mm("<green>Event-Konfiguration</green>")
         val TITLE_VAULT = mm("<green>Vault-Verwaltung</green>")
         val TITLE_VAULT_LIST = mm("<green>Vault-Liste</green>")
         val TITLE_MANUAL = mm("<green>Handbuch</green>")
@@ -43,6 +44,11 @@ class MenuManager(private val plugin: Diawars) {
     fun openEventMenu(player: Player, memorize: Boolean = true) {
         val inv = openMenuInv(player, TITLE_EVENT, memorize)
         startUpdater({ plugin.menu.eventMenu.populateEventMenu(inv, player) }, player)
+    }
+
+    fun openEventConfigMenu(player: Player, memorize: Boolean = true) {   // NEW
+        val inv = openMenuInv(player, TITLE_EVENT_CONFIG, memorize)
+        startUpdater({ plugin.menu.eventConfigMenu.populateEventConfigMenu(inv, player) }, player)
     }
 
     fun openVaultMenu(player: Player, memorize: Boolean = true) {
@@ -119,6 +125,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
+            TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_MANUAL -> openManualMenu(player, false)
@@ -142,6 +149,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
+            TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_MANUAL -> openManualMenu(player, false)

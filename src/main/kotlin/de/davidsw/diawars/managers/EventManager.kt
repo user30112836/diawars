@@ -118,6 +118,8 @@ class EventManager(private val plugin: Diawars) {
             player.enderChest.clear()
         }
 
+        applyTimeConfig(event.id)
+
         return Result.Success("<green>Du bist zu deinem Event <gold>${event.name}</gold> zurückgekehrt.</green>")
     }
 
@@ -437,6 +439,17 @@ class EventManager(private val plugin: Diawars) {
         }
     }
 
+    fun applyTimeConfig(eventId: String) {
+        val event = store.getEvent(eventId) ?: return
+        val world = getWorld(event.worldName) ?: return
+        val config = plugin.store.eventConfigStore.getConfig(eventId)
+
+        world.setGameRule(GameRules.ADVANCE_TIME, config.advanceTime)
+        if (!config.advanceTime) {
+            world.time = config.fixedTime
+        }
+    }
+
     private fun applyWorldConfig(event: GameEvent) {
         val world = getWorld(event.worldName) ?: return
         val config = plugin.store.eventConfigStore.getConfig(event.id)
@@ -444,10 +457,7 @@ class EventManager(private val plugin: Diawars) {
         EventGameRules.CONFIGURABLE.forEach { (key, rule) ->
             world.setGameRule(rule, config.gameRules[key] ?: EventGameRules.DEFAULTS[key] ?: true)
         }
-        world.setGameRule(GameRules.ADVANCE_TIME, config.advanceTime)
-        if (!config.advanceTime) {
-            world.time = config.fixedTime
-        }
+        applyTimeConfig(event.id)
     }
 
     private fun applyStartingInventory(player: Player, config: EventConfig) {
