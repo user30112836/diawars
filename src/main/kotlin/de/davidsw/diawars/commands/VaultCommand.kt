@@ -3,7 +3,6 @@ package de.davidsw.diawars.commands
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import de.davidsw.diawars.util.MiniMessageHelper.pmm
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.Command
@@ -118,7 +117,12 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
         claims.invite(claim.vaultId, target.uniqueId)
         player.sendMessage(mm("<green>✓ <gold>${target.name}</gold> wurde zu deinem Vault eingeladen!</green>"))
-        target.sendMessage(pmm("<green>Du wurdest von <gold>${player.name}</gold> zu seinem Vault eingeladen! Du kannst dort jetzt Diamantblöcke platzieren.</green>"))
+        plugin.messageManager.sendOrQueue(
+            target.uniqueId,
+            "<green>Du wurdest von <gold>${player.name}</gold> zu seinem Vault eingeladen! Du kannst dort jetzt Diamantblöcke platzieren.</green>",
+            true,
+            player,
+        )
     }
 
     private fun handleBan(player: Player, args: Array<out String>) {
@@ -145,6 +149,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             targetId,
             "<red>Du wurdest aus dem Vault von <gold>${player.name}</gold> entfernt!</red>",
             true,
+            player,
         )
     }
 

@@ -18,7 +18,10 @@ class AfkManager(private val plugin: Diawars) {
     fun recordActivity(playerId: UUID) {
         lastActivity[playerId] = getCurrentTick()
         if (afkPlayers.remove(playerId)) {
-            getPlayer(playerId)?.let { updateListName(it, false) }
+            getPlayer(playerId)?.let {
+                updateListName(it, false)
+                plugin.messageManager.deliverPending(it)
+            }
             val player = getPlayer(playerId) ?: return
             plugin.rewardManager.startPlaytimeReward(player)
         }
