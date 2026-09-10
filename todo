@@ -18,9 +18,3 @@ Anti-Cheat:
 
 Manual:
 - Default contents of the manual should be tuned
-
-Multiplayer-Tests:
-- Are personal configs getting deleted when offline?
-- Is the PvPStatus working correctly?
-- Are fights getting detected properly?
-- Does the vault invite system work?

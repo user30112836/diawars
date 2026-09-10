@@ -218,7 +218,7 @@ class MainMenu(private val plugin: Diawars) {
             )
         }
         inv.setItem(SLOT_VAULT, item(
-            material = Material.CHEST,
+            material = Material.VAULT,
             name = mm("<gold><bold>Vault-Verwaltung</bold></gold>"),
             lore = vaultLore,
             glow = false,
