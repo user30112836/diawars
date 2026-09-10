@@ -69,7 +69,6 @@ class ClientInfoListener(
                 player.uniqueId,
                 json
             )
-            plugin.logger.info("Received client info message from ${player.name}: $json")
             plugin.store.clientInfoStore.addReported(player.uniqueId)
         } catch (e: Exception) {
             plugin.logger.warning(

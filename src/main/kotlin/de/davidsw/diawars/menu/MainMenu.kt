@@ -58,14 +58,22 @@ class MainMenu(private val plugin: Diawars) {
         }
 
         // Self-kill
-        if (!plugin.pvpManager.isInFight(player.uniqueId)) {
+        val inFight = plugin.pvpManager.isInFight(player.uniqueId)
+        if (inFight) {
+            inv.setItem(SLOT_SELF_KILL, item(
+                material = Material.BARRIER,
+                name = mm("<gray><bold>Self-kill</bold></gray>"),
+                lore = listOf(
+                    mm("<gray>Diese Funktion ist im Kampf deaktiviert</gray>"),
+                ),
+                glow = false,
+            ))
+        } else {
             inv.setItem(SLOT_SELF_KILL, item(
                 material = Material.BONE,
                 name = mm("<dark_red><bold>Self-kill</bold></dark_red>"),
                 lore = listOf(
                     mm("<gray>Hier kannst du dich selbst killen wenn du feststeckst</gray>"),
-                    mm("<gray>Du verlierst alle Diamanten in deinem Inventar</gray>"),
-                    mm("<gray>Diese Option steht in einem Kampf nicht zur verfügung</gray>"),
                 ),
                 glow = false,
             ))
@@ -107,7 +115,7 @@ class MainMenu(private val plugin: Diawars) {
             name     = mm("<aqua><bold>Sidebar-Einstellungen</bold></aqua>"),
             lore     = listOf(
                 mm("<gray>Status: </gray>${if (scoreboardPref.sidebarEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
-                mm("<gray>Angezeigte Komponenten: </gray><white>${scoreboardPref.enabledComponents.size}/4</white>"),
+                mm("<gray>Angezeigte Komponenten: </gray><white>${scoreboardPref.enabledComponents.size}/5</white>"),
                 mm(""),
                 mm("<yellow>Klicken zum Öffnen</yellow>"),
             ),
