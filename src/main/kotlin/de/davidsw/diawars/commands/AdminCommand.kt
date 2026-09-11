@@ -5,6 +5,7 @@ import de.davidsw.diawars.managers.BugManager
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.command.Command
@@ -267,7 +268,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             } else {
                 ""
             }
-            lines += "<gray>- <yellow>${event.id}</yellow> <white>${event.name}</white>$timeInfo</gray>"
+            lines += "<gray>- <yellow>${event.id}</yellow> <white>${escape(event.name)}</white>$timeInfo</gray>"
         }
         sender.sendMessage(mm(lines.joinToString("\n")))
     }

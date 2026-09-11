@@ -7,6 +7,7 @@ import de.davidsw.diawars.stores.EventGameRules
 import de.davidsw.diawars.stores.EventPotionEffect
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.PotionEffectParser
 import org.bukkit.GameMode
@@ -90,7 +91,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             val timeInfo = if (event.startTime > 0) {
                 " <dark_gray>(${DateTimeParser.parseToString(event.startTime)} - ${DateTimeParser.parseToString(event.endTime)})</dark_gray>"
             } else ""
-            lines += "<gray>- <yellow>${event.id}</yellow> <white>${event.name}</white>$timeInfo</gray>"
+            lines += "<gray>- <yellow>${event.id}</yellow> <white>${escape(event.name)}</white>$timeInfo</gray>"
         }
         sender.sendMessage(mm(lines.joinToString("\n")))
     }

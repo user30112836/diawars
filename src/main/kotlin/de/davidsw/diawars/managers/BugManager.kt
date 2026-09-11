@@ -1,6 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.entity.Player
@@ -38,7 +39,7 @@ class BugManager(private val plugin: Diawars) {
         val lines = mutableListOf("<gold>=== Offene Bugs (${bugs.size}) ===</gold>")
         bugs.forEach { bug ->
             val reporterName = getOfflinePlayer(bug.reporter).name ?: "Unbekannt"
-            lines += "<gray>- <yellow>#${bug.id}</yellow> <white>$reporterName</white>: ${bug.description}</gray>"
+            lines += "<gray>- <yellow>#${bug.id}</yellow> <white>$reporterName</white>: ${escape(bug.description)}</gray>"
         }
         return lines
     }

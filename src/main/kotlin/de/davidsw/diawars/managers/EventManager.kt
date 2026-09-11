@@ -6,6 +6,7 @@ import de.davidsw.diawars.stores.EventGameRules
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.DateTimeParser
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.PotionEffectParser
 import org.bukkit.Bukkit.broadcast
@@ -87,7 +88,7 @@ class EventManager(private val plugin: Diawars) {
         player.inventory.clear()
         player.enderChest.clear()
 
-        return Result.Success("<green>Event <gold>$name</gold> wurde erstellt! Du wurdest in die Event-Welt teleportiert.</green>")
+        return Result.Success("<green>Event <gold>${escape(name)}</gold> wurde erstellt! Du wurdest in die Event-Welt teleportiert.</green>")
     }
 
     fun resumeBuilding(player: Player): Result {
@@ -120,7 +121,7 @@ class EventManager(private val plugin: Diawars) {
 
         applyTimeConfig(event.id)
 
-        return Result.Success("<green>Du bist zu deinem Event <gold>${event.name}</gold> zurückgekehrt.</green>")
+        return Result.Success("<green>Du bist zu deinem Event <gold>${escape(event.name)}</gold> zurückgekehrt.</green>")
     }
 
     fun submitEvent(player: Player): Result {
@@ -137,7 +138,7 @@ class EventManager(private val plugin: Diawars) {
 
         leaveWorld(player)
 
-        return Result.Success("<green>Dein Event <gold>${event.name}</gold> wurde zur Prüfung eingereicht!</green>")
+        return Result.Success("<green>Dein Event <gold>${escape(event.name)}</gold> wurde zur Prüfung eingereicht!</green>")
     }
 
     fun cancelEvent(player: Player): Result {
@@ -192,7 +193,7 @@ class EventManager(private val plugin: Diawars) {
         admin.teleport(world.spawnLocation)
         admin.gameMode = GameMode.SPECTATOR
 
-        return Result.Success("<green>Du prüfst nun das Event <gold>${event.name}</gold>. Mit <yellow>/event leave</yellow> beendest du die Prüfung.</green>")
+        return Result.Success("<green>Du prüfst nun das Event <gold>${escape(event.name)}</gold>. Mit <yellow>/event leave</yellow> beendest du die Prüfung.</green>")
     }
 
     fun acceptEvent(id: String, startEpoch: Long, endEpoch: Long): Result {
@@ -219,10 +220,10 @@ class EventManager(private val plugin: Diawars) {
 
         plugin.messageManager.sendOrQueue(
             event.creator,
-            "<green>Dein Event <gold>${event.name}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>"
+            "<green>Dein Event <gold>${escape(event.name)}</gold> wurde angenommen! Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>"
         )
 
-        return Result.Success("<green>Event <gold>${event.name}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: $rewardAmount Diamant(en).</green>")
+        return Result.Success("<green>Event <gold>${escape(event.name)}</gold> wurde angenommen. Start: $startText, Ende: $endText. Belohnung: $rewardAmount Diamant(en).</green>")
     }
 
     fun rejectEvent(id: String, reason: String): Result {
@@ -236,11 +237,11 @@ class EventManager(private val plugin: Diawars) {
 
         plugin.messageManager.sendOrQueue(
             event.creator,
-            "<red>Dein Event <gold>${event.name}</gold> wurde abgelehnt: <white>$reason</white></red>\n" +
+            "<red>Dein Event <gold>${escape(event.name)}</gold> wurde abgelehnt: <white>${escape(reason)}</white></red>\n" +
                     "<gray>Nutze <yellow>/event resume</yellow> um weiterzubauen und es erneut einzureichen.</gray>"
         )
 
-        return Result.Success("<yellow>Event <gold>${event.name}</gold> wurde abgelehnt und zurück in die Bearbeitung versetzt.</yellow>")
+        return Result.Success("<yellow>Event <gold>${escape(event.name)}</gold> wurde abgelehnt und zurück in die Bearbeitung versetzt.</yellow>")
     }
 
     // ------------------------------------------------------------------
@@ -293,7 +294,7 @@ class EventManager(private val plugin: Diawars) {
 
         applyWorldConfig(event)
 
-        broadcast(mm("<gold><bold>Das Event <yellow>${event.name}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
+        broadcast(mm("<gold><bold>Das Event <yellow>${escape(event.name)}</yellow> ist jetzt live!</bold></gold> <gray>Beitreten mit</gray> <yellow>/event join ${event.id}</yellow>"))
     }
 
     fun endEvent(id: String) {
@@ -310,7 +311,7 @@ class EventManager(private val plugin: Diawars) {
             } else {
                 sessions.remove(uuid)
             }
-            plugin.messageManager.sendOrQueue(uuid, "<gray>Das Event <gold>${event.name}</gold> ist zu Ende.</gray>")
+            plugin.messageManager.sendOrQueue(uuid, "<gray>Das Event <gold>${escape(event.name)}</gold> ist zu Ende.</gray>")
         }
 
         getWorld(event.worldName)?.let { world ->
@@ -356,7 +357,7 @@ class EventManager(private val plugin: Diawars) {
         }
         applyConfiguredEffects(player, config)
 
-        return Result.Success("<green>Du bist dem Event <gold>${event.name}</gold> beigetreten!</green>")
+        return Result.Success("<green>Du bist dem Event <gold>${escape(event.name)}</gold> beigetreten!</green>")
     }
 
     fun leaveEvent(player: Player): Result {

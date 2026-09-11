@@ -2,6 +2,7 @@ package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.Team
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
 import org.bukkit.Bukkit.getOfflinePlayer
@@ -144,7 +145,7 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
 
         claims.ban(claim.vaultId, targetId)
-        player.sendMessage(mm("<yellow>✓ <gold>${args[1]}</gold> wurde aus deinem Vault entfernt!</yellow>"))
+        player.sendMessage(mm("<yellow>✓ <gold>${escape(args[1])}</gold> wurde aus deinem Vault entfernt!</yellow>"))
         plugin.messageManager.sendOrQueue(
             targetId,
             "<red>Du wurdest aus dem Vault von <gold>${player.name}</gold> entfernt!</red>",

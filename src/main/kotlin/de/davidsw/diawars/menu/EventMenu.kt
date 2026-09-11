@@ -6,6 +6,7 @@ import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MenuUtils.item
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.Material
@@ -80,7 +81,7 @@ class EventMenu(private val plugin: Diawars) {
                 material = Material.BOOK,
                 name = "<yellow><bold>Weiterbauen</bold></yellow>",
                 lore = if (canResume) listOf(
-                    mm("<gray>Event: </gray><gold>${building.name}</gold>"),
+                    mm("<gray>Event: </gray><gold>${escape(building.name)}</gold>"),
                     mm(""),
                     mm("<yellow>Klicken zum Fortsetzen</yellow>"),
                 ) else listOf(mm("<dark_gray>Du hast kein Event in Bearbeitung</dark_gray>")),
@@ -154,8 +155,8 @@ class EventMenu(private val plugin: Diawars) {
         val lore = mutableListOf(
             mm("<gray>Sitzung: </gray><white>${sessionLabel(session)}</white>"),
         )
-        if (building != null) lore += mm("<gray>In Bearbeitung: </gray><gold>${building.name}</gold>")
-        if (submitted != null) lore += mm("<gray>Zur Prüfung eingereicht: </gray><gold>${submitted.name}</gold>")
+        if (building != null) lore += mm("<gray>In Bearbeitung: </gray><gold>${escape(building.name)}</gold>")
+        if (submitted != null) lore += mm("<gray>Zur Prüfung eingereicht: </gray><gold>${escape(submitted.name)}</gold>")
 
         inv.setItem(
             SLOT_STATUS, item(
@@ -185,7 +186,7 @@ class EventMenu(private val plugin: Diawars) {
             inv.setItem(
                 ACTIVE_SLOTS[index], item(
                     material = Material.LIME_CONCRETE,
-                    name = mm("<green><bold>${event.name}</bold></green>"),
+                    name = mm("<green><bold>${escape(event.name)}</bold></green>"),
                     lore = listOf(
                         mm("<gray>ID: </gray><white>${event.id}</white>"),
                         mm(""),
@@ -225,7 +226,7 @@ class EventMenu(private val plugin: Diawars) {
             val endText = DateTimeParser.parseToString(event.endTime) ?: "Unbekannt"
             inv.setItem(UPCOMING_SLOTS[index], item(
                 material = Material.CLOCK,
-                name = mm("<aqua><bold>${event.name}</bold></aqua>"),
+                name = mm("<aqua><bold>${escape(event.name)}</bold></aqua>"),
                 lore = listOf(
                     mm("<gray>ID: </gray><white>${event.id}</white>"),
                     mm("<gray>Start: </gray><yellow>$startText</yellow>"),
@@ -265,7 +266,7 @@ class EventMenu(private val plugin: Diawars) {
             inv.setItem(
                 PENDING_SLOTS[index], item(
                     material = Material.WRITTEN_BOOK,
-                    name = mm("<yellow><bold>${event.name}</bold></yellow>"),
+                    name = mm("<yellow><bold>${escape(event.name)}</bold></yellow>"),
                     lore = listOf(
                         mm("<gray>ID: </gray><white>${event.id}</white>"),
                         mm("<gray>Ersteller: </gray><white>$creatorName</white>"),
@@ -346,7 +347,7 @@ class EventMenu(private val plugin: Diawars) {
                 val startText = DateTimeParser.parseToString(event.startTime) ?: "Unbekannt"
                 val endText = DateTimeParser.parseToString(event.endTime) ?: "Unbekannt"
                 player.sendMessage(mm(
-                    "<gold>${event.name}</gold> <gray>startet am</gray> <yellow>$startText</yellow> " +
+                    "<gold>${escape(event.name)}</gold> <gray>startet am</gray> <yellow>$startText</yellow> " +
                             "<gray>und endet am</gray> <yellow>$endText</yellow>"
                 ))
             }

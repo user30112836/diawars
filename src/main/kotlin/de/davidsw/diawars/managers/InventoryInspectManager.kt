@@ -2,6 +2,7 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MenuUtils.item
+import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -75,7 +76,7 @@ class InventoryInspectManager(private val plugin: Diawars) {
             Snapshot(saved.inventory, saved.armor, saved.offHand)
         }
 
-        openSnapshot(admin, "<gold>Event-Inventar</gold> <gray>(</gray><white>${event.name}</white><gray>)</gray>", snapshot)
+        openSnapshot(admin, "<gold>Event-Inventar</gold> <gray>(</gray><white>${escape(event.name)}</white><gray>)</gray>", snapshot)
     }
 
     fun openEnderChest(admin: Player, target: OfflinePlayer, eventId: String? = null) {
@@ -99,7 +100,7 @@ class InventoryInspectManager(private val plugin: Diawars) {
                 }
             }
 
-            openChestOnly(admin, "<light_purple>Enderkiste</light_purple> <gray>(</gray><white>${event.name}</white><gray>)</gray>", contents)
+            openChestOnly(admin, "<light_purple>Enderkiste</light_purple> <gray>(</gray><white>${escape(event.name)}</white><gray>)</gray>", contents)
             return
         }
 
