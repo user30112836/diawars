@@ -23,7 +23,7 @@ class BugManager(private val plugin: Diawars) {
         plugin.server.onlinePlayers
             .filter { it.hasPermission("diawars.admin") }
             .forEach {
-                it.sendMessage(mm("<yellow>⚠ <gold>${player.name}</gold> hat einen neuen Bug gemeldet (ID: <white>${bug.id}</white>). Nutze <white>/bug list</white> für Details.</yellow>"))
+                it.sendMessage(mm("<yellow>⚠ <gold>${player.name}</gold> hat einen neuen Bug gemeldet (ID: <white>${bug.id}</white>). Nutze <white>/admin bug list</white> für Details.</yellow>"))
             }
 
         return Result.Success("<green>✓ Danke! Dein Bug wurde gemeldet (ID: <gold>${bug.id}</gold>).</green>")
@@ -55,7 +55,7 @@ class BugManager(private val plugin: Diawars) {
         if (!admin.hasPermission("diawars.admin")) return
         if (store.hasUnread(admin.uniqueId)) {
             val count = store.getUnresolved().size
-            admin.sendMessage(mm("<yellow>⚠ Es gibt <gold>$count</gold> offene(n) Bug-Report(s). Nutze <white>/bug list</white> um sie anzusehen.</yellow>"))
+            admin.sendMessage(mm("<yellow>⚠ Es gibt <gold>$count</gold> offene(n) Bug-Report(s). Nutze <white>/admin bug list</white> um sie anzusehen.</yellow>"))
         }
     }
 }

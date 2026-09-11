@@ -271,7 +271,7 @@ class EventMenu(private val plugin: Diawars) {
                         mm("<gray>Ersteller: </gray><white>$creatorName</white>"),
                         mm(""),
                         mm("<yellow>Klicken zum Prüfen</yellow>"),
-                        mm("<dark_gray>Annehmen/Ablehnen: /event accept|reject ${event.id}</dark_gray>"),
+                        mm("<dark_gray>Annehmen/Ablehnen: /admin event accept|reject ${event.id}</dark_gray>"),
                     ),
                 )
             )
@@ -282,7 +282,7 @@ class EventMenu(private val plugin: Diawars) {
                 PENDING_SLOTS.last(), item(
                     material = Material.PAPER,
                     name = mm("<gray>+$rest weitere Events</gray>"),
-                    lore = listOf(mm("<dark_gray>Nutze /event list pending für die volle Liste</dark_gray>")),
+                    lore = listOf(mm("<dark_gray>Nutze /admin event list pending für die volle Liste</dark_gray>")),
                 )
             )
         }

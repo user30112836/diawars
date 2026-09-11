@@ -29,7 +29,7 @@ commands:
     permission: diawars.use
   event:
     description: Event-System des Plugins
-    usage: /<command> <create|resume|submit|cancel|join|leave|list|review|accept|reject|reward|config>
+    usage: /<command> <create|resume|submit|cancel|join|leave|list|config>
     permission: diawars.use
   lobby:
     description: Betritt oder verlässt die Lobby
@@ -43,17 +43,13 @@ commands:
     description: Vault-Beanspruchung und Verwaltung
     usage: /<command> <claim|unclaim|invite|ban|info|list>
     permission: diawars.use
-  log:
-    description: Zeigt die neusten Diamond-Log-Einträge
-    usage: /<command> [amount]
-    permission: diawars.admin
   bug:
-    description: Meldet oder verwaltet Bugs
-    usage: /<command> <report|list|resolve>
+    description: Meldet Bugs
+    usage: /<command> <report>
     permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload und Inventar-Inspektion)
-    usage: /<command> <reload|inv>
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event- und PvP-Verwaltung)
+    usage: /<command> <reload|inv|log|bug|event|pvp>
     permission: diawars.admin
 
 permissions:

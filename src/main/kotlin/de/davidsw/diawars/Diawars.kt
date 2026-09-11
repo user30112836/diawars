@@ -5,7 +5,6 @@ import de.davidsw.diawars.commands.BugCommand
 import de.davidsw.diawars.commands.EventCommand
 import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
-import de.davidsw.diawars.commands.LogCommand
 import de.davidsw.diawars.commands.MenuCommand
 import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ScoresCommand
@@ -247,7 +246,6 @@ class Diawars : JavaPlugin() {
         getCommand("lobby")?.setExecutor(LobbyCommand(this))
         getCommand("inv")?.setExecutor(InvCommand(this))
         getCommand("vault")?.setExecutor(VaultCommand(this))
-        getCommand("log")?.setExecutor(LogCommand(this))
         getCommand("bug")?.setExecutor(BugCommand(this))
         getCommand("admin")?.setExecutor(AdminCommand(this))
 

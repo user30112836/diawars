@@ -9,7 +9,6 @@ import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import de.davidsw.diawars.util.PotionEffectParser
-import org.bukkit.Bukkit.getOfflinePlayer
 import org.bukkit.GameMode
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
@@ -63,62 +62,6 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
             "config" -> handleConfig(sender, args)
 
-            "review" -> {
-                if (!requireAdmin(sender)) return true
-                if (args.size < 2) {
-                    sender.sendMessage(mm("<red>Verwendung: /event review &lt;id&gt;</red>"))
-                    return true
-                }
-                respond(sender, plugin.eventManager.reviewEvent(sender, args[1]))
-            }
-
-            "accept" -> {
-                if (!requireAdmin(sender)) return true
-                if (args.size < 4) {
-                    sender.sendMessage(mm("<red>Verwendung: /event accept &lt;id&gt; &lt;start-in-minuten&gt; &lt;dauer-in-minuten&gt;</red>"))
-                    return true
-                }
-                val startEpoch = DateTimeParser.parseToEpochSeconds(args[2])
-                val endEpoch = DateTimeParser.parseToEpochSeconds(args[3])
-                if (startEpoch == null || endEpoch == null) {
-                    sender.sendMessage(mm("<red>Ungültiges Datum/Uhrzeit! Format: ${DateTimeParser.FORMAT_HINT} (z.B. 10.07.2026-18:00)</red>"))
-                    return true
-                }
-                respond(sender, plugin.eventManager.acceptEvent(args[1], startEpoch, endEpoch))
-            }
-
-            "reject" -> {
-                if (!requireAdmin(sender)) return true
-                if (args.size < 3) {
-                    sender.sendMessage(mm("<red>Verwendung: /event reject &lt;id&gt; &lt;grund&gt;</red>"))
-                    return true
-                }
-                respond(sender, plugin.eventManager.rejectEvent(args[1], args.slice(2 until args.size).joinToString(" ")))
-            }
-
-            "reward" -> {
-                if (!requireAdmin(sender)) return true
-                if (args.size < 3) {
-                    sender.sendMessage(mm("<red>Verwendung: /event reward &lt;spieler&gt; &lt;anzahl&gt;</red>"))
-                    return true
-                }
-                val amount = args[2].toIntOrNull()
-                if (amount == null || amount <= 0) {
-                    sender.sendMessage(mm("<red>Die Anzahl der Diamanten muss positiv sein!</red>"))
-                    return true
-                }
-                val target = getOfflinePlayer(args[1])
-                if ((!target.hasPlayedBefore() && !target.isOnline)) {
-                    sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
-                    return true
-                }
-
-                plugin.rewardManager.grantDiamondReward(target.uniqueId, amount)
-
-                val targetName = target.name
-                sender.sendMessage(mm("<green>✓ <gold>$amount Diamant(en)</gold> wurden an <gold>$targetName</gold> vergeben!</green>"))
-            }
-
             else -> sendHelp(sender)
         }
 
@@ -128,14 +71,10 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
     private fun handleList(sender: Player, args: Array<out String>) {
         val filter = args.getOrNull(1)?.lowercase()
         val state = when (filter) {
-            "pending" -> {
-                if (!requireAdmin(sender)) return
-                EventState.SUBMITTED
-            }
             "accepted" -> EventState.ACCEPTED
             "active", null -> EventState.ACTIVE
             else -> {
-                sender.sendMessage(mm("<red>Verwendung: /event list &lt;pending|accepted|active&gt;</red>"))
+                sender.sendMessage(mm("<red>Verwendung: /event list &lt;accepted|active&gt;</red>"))
                 return
             }
         }
@@ -156,12 +95,19 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         sender.sendMessage(mm(lines.joinToString("\n")))
     }
 
-    private fun requireAdmin(sender: Player): Boolean {
-        if (!sender.hasPermission("diawars.admin")) {
-            sender.sendMessage("No Permission!")
-            return false
-        }
-        return true
+    private fun sendHelp(player: Player) {
+        val lines = mutableListOf(
+            "<gold>=== Event-Befehle ===</gold>",
+            "<yellow>/event create <name></yellow><gray> - Neues Event erstellen</gray>",
+            "<yellow>/event config <option></yellow><gray> - Event während des Bauens konfigurieren</gray>",
+            "<yellow>/event resume</yellow><gray> - Weiterbauen an deinem Event</gray>",
+            "<yellow>/event submit</yellow><gray> - Event zur Prüfung einreichen</gray>",
+            "<yellow>/event cancel</yellow><gray> - Event abbrechen und löschen</gray>",
+            "<yellow>/event join <id></yellow><gray> - Aktivem Event beitreten</gray>",
+            "<yellow>/event leave</yellow><gray> - Event verlassen</gray>",
+            "<yellow>/event list <accepted|active></yellow><gray> - Events auflisten</gray>",
+        )
+        player.sendMessage(mm(lines.joinToString("\n")))
     }
 
     private fun handleConfig(player: Player, args: Array<out String>) {
@@ -335,27 +281,6 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
     }
 
-    private fun sendHelp(player: Player) {
-        val lines = mutableListOf(
-            "<gold>=== Event-Befehle ===</gold>",
-            "<yellow>/event create <name></yellow><gray> - Neues Event erstellen</gray>",
-            "<yellow>/event config <option></yellow><gray> - Event während des Bauens konfigurieren</gray>",
-            "<yellow>/event resume</yellow><gray> - Weiterbauen an deinem Event</gray>",
-            "<yellow>/event submit</yellow><gray> - Event zur Prüfung einreichen</gray>",
-            "<yellow>/event cancel</yellow><gray> - Event abbrechen und löschen</gray>",
-            "<yellow>/event join <id></yellow><gray> - Aktivem Event beitreten</gray>",
-            "<yellow>/event leave</yellow><gray> - Event verlassen</gray>",
-            "<yellow>/event list <pending|accepted|active></yellow><gray> - Events auflisten</gray>",
-        )
-        if (player.hasPermission("diawars.admin")) {
-            lines += "<yellow>/event review <id></yellow><gray> - Eingereichtes Event prüfen</gray>"
-            lines += "<yellow>/event accept <id> <start> <ende></yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>"
-            lines += "<yellow>/event reject <id> <grund></yellow><gray> - Event ablehnen</gray>"
-            lines += "<yellow>/event reward <spieler> <anzahl></yellow><gray> - Diamanten an Spieler vergeben</gray>"
-        }
-        player.sendMessage(mm(lines.joinToString("\n")))
-    }
-
     override fun onTabComplete(
         sender: CommandSender,
         command: Command,
@@ -364,9 +289,6 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
     ): List<String> {
         if (args.size == 1) {
             val subs = mutableListOf("create", "resume", "submit", "cancel", "join", "leave", "list", "config")
-            if (sender.hasPermission("diawars.admin")) {
-                subs += listOf("review", "accept", "reject", "reward")
-            }
             return subs.filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -375,22 +297,9 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                 "join" -> return plugin.eventManager.listByState(EventState.ACTIVE).map { it.id }
                     .filter { it.startsWith(args[1].lowercase()) }
 
-                "review", "accept", "reject" -> {
-                    if (!sender.hasPermission("diawars.admin")) return emptyList()
-                    return plugin.eventManager.listByState(EventState.SUBMITTED).map { it.id }
-                        .filter { it.startsWith(args[1].lowercase()) }
-                }
-
-                "reward" -> {
-                    if (!sender.hasPermission("diawars.admin")) return emptyList()
-                    return plugin.server.onlinePlayers.map { it.name }
-                        .filter { it.startsWith(args[1], ignoreCase = true) }
-                }
-
                 "list" -> {
-                    val options = mutableListOf("accepted", "active")
-                    if (sender.hasPermission("diawars.admin")) options += "pending"
-                    return options.filter { it.startsWith(args[1].lowercase()) }
+                    return listOf("accepted", "active")
+                        .filter { it.startsWith(args[1].lowercase()) }
                 }
 
                 "config" -> return listOf("info", "gamemode", "time", "gamerule", "effect", "inventory")
