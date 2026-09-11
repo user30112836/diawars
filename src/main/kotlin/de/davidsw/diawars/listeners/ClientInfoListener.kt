@@ -1,5 +1,7 @@
 package de.davidsw.diawars.listeners
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.entity.Player
@@ -15,6 +17,8 @@ class ClientInfoListener(
 
     companion object {
         const val CHANNEL = "diawars:client_info"
+
+        private val GSON = Gson()
 
         private fun readVarIntPrefixedUtf8(bytes: ByteArray): String {
             var index = 0
@@ -65,6 +69,9 @@ class ClientInfoListener(
 
         try {
             val json = readVarIntPrefixedUtf8(message)
+
+            checkModWhitelist(player, json)
+
             plugin.store.clientInfoStore.saveFromJson(
                 player.uniqueId,
                 json
@@ -75,6 +82,64 @@ class ClientInfoListener(
                 "Invalid client info message from ${player.name}: ${e.message}"
             )
         }
+    }
+
+    private fun extractModIds(json: String): List<String> {
+        val root = GSON.fromJson(json, JsonObject::class.java) ?: return emptyList()
+        val modsArray = root.getAsJsonArray("mods") ?: return emptyList()
+
+        return modsArray.mapNotNull { element ->
+            if (!element.isJsonObject) return@mapNotNull null
+            element.asJsonObject.get("id")?.takeIf { it.isJsonPrimitive }?.asString
+        }
+    }
+
+    private fun checkModWhitelist(player: Player, json: String) {
+        if (player.hasPermission("diawars.admin")) return
+
+        val modIds = try {
+            extractModIds(json)
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not read mod list from client info for ${player.name}: ${e.message}")
+            plugin.server.scheduler.runTask(plugin, Runnable {
+                if (!player.isOnline) return@Runnable
+                player.kick(
+                    mm(
+                        "<red>Die Authentifizierung auf dem Server ist fehlgeschlagen. Bitte versuche es erneut!</red>"
+                    )
+                )
+            })
+            return
+        }
+
+        val disallowedMods = plugin.modWhitelistManager.findDisallowedMods(modIds)
+        if (disallowedMods.isEmpty()) return
+        val kickMessage = when (disallowedMods.size) {
+            1 -> {
+                val mod = disallowedMods.first()
+                mm(
+                    "<red>Die Mod <gold>$mod</gold> ist auf diesem Server nicht erlaubt! " +
+                            "Bitte entferne sie und verbinde dich erneut.</red>"
+                )
+            }
+            in 2..10 -> {
+                val modList = disallowedMods.joinToString(", ")
+                mm(
+                    "<red>Die folgenden Mods sind auf diesem Server nicht erlaubt: <gold>$modList</gold></red>"
+                )
+            }
+            else -> {
+                val modList = disallowedMods.take(5).joinToString(", ")
+                mm(
+                    "<red>Die folgenden Mods sind auf diesem Server nicht erlaubt: <gold>$modList</gold> + ${disallowedMods.size}</red>"
+                )
+            }
+        }
+
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            if (!player.isOnline) return@Runnable
+            player.kick(kickMessage)
+        })
     }
 
     @EventHandler

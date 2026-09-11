@@ -44,6 +44,7 @@ import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.ManualManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
+import de.davidsw.diawars.managers.ModWhitelistManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.RewardManager
@@ -144,6 +145,7 @@ class Diawars : JavaPlugin() {
     lateinit var bugManager: BugManager
     lateinit var inventoryInspectManager: InventoryInspectManager
     lateinit var manualManager: ManualManager
+    lateinit var modWhitelistManager: ModWhitelistManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -191,6 +193,7 @@ class Diawars : JavaPlugin() {
         bugManager = BugManager(this)
         inventoryInspectManager = InventoryInspectManager(this)
         manualManager = ManualManager(this)
+        modWhitelistManager = ModWhitelistManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),

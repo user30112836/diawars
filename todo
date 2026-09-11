@@ -14,7 +14,8 @@ Performance:
 
 Anti-Cheat:
 - Create a client-side mod for Forge
-- Create a white list for mods
+- In game reload for whitelist config
+- Additional mods in the default mod_whitelist.yml
 
 Manual:
 - Default contents of the manual should be tuned

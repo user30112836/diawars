@@ -1,0 +1,8 @@
+# Hinweis: fabric-api / fabricloader / minecraft werden vom Client bereits
+# vorgefiltert und tauchen hier nicht auf, müssen also nicht gelistet werden.
+mods:
+  - "sodium"
+  - "lithium"
+  - "iris"
+  - "modmenu"
+  - "cloth-config"
