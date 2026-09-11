@@ -1,6 +1,6 @@
 package de.davidsw.diawars
 
-import de.davidsw.diawars.commands.AdminInvCommand
+import de.davidsw.diawars.commands.AdminCommand
 import de.davidsw.diawars.commands.BugCommand
 import de.davidsw.diawars.commands.EventCommand
 import de.davidsw.diawars.commands.InvCommand
@@ -249,7 +249,7 @@ class Diawars : JavaPlugin() {
         getCommand("vault")?.setExecutor(VaultCommand(this))
         getCommand("log")?.setExecutor(LogCommand(this))
         getCommand("bug")?.setExecutor(BugCommand(this))
-        getCommand("admininv")?.setExecutor(AdminInvCommand(this))
+        getCommand("admin")?.setExecutor(AdminCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()
@@ -266,6 +266,20 @@ class Diawars : JavaPlugin() {
     private fun startStoreFlushTask() {
         val intervalTicks = config.getInt("storage.flush-interval-seconds", 30).coerceAtLeast(1) * 20L
         server.scheduler.runTaskTimer(this, Runnable { store.flushDirty() }, intervalTicks, intervalTicks)
+    }
+
+    fun reloadPluginConfigs() {
+        reloadConfig()
+        teamManager.loadTeamsFromConfig()
+        vaultManager.loadFromConfig()
+        manualManager.loadFromConfig()
+        modWhitelistManager.loadFromConfig()
+
+        if (config.getBoolean("border.enabled", true)) {
+            borderManager.startBorderDisplay()
+        } else {
+            borderManager.stopBorderDisplay()
+        }
     }
 
     override fun onDisable() {

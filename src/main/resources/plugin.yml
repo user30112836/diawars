@@ -51,9 +51,9 @@ commands:
     description: Meldet oder verwaltet Bugs
     usage: /<command> <report|list|resolve>
     permission: diawars.use
-  admininv:
-    description: Ermöglicht die Inspection von Spieler-Inventaren
-    usage: /<command> <main|event|enderchest>
+  admin:
+    description: Admin-Befehle (Reload und Inventar-Inspektion)
+    usage: /<command> <reload|inv>
     permission: diawars.admin
 
 permissions:
