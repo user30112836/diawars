@@ -5,13 +5,25 @@ overview:
       <aqua><bold>Diawars</bold></aqua>
       <gray>Kurzübersicht</gray>
 
-      <dark_gray>Diawars ist ein teambasiertes
-      Diamanten-PvP Spiel. Sammle
-      Diamanten, verteidige deine Zone
-      und greife die gegnerische an!</dark_gray>
+      <dark_gray>Diawars ist ein Teamspiel um Diamanten. Diamanten sind Punkte und Währung zugleich. Sammle, verteidige und sichere sie als Blöcke im Vault.</dark_gray>
+    - |
+      <aqua><bold>Zonen</bold></aqua>
 
-      <gold>/menu</gold> <gray>öffnet das
-      Hauptmenü mit allen Funktionen.</gray>
+      <dark_gray>Die Hauptwelt ist bei X=0 geteilt: westlich liegt die Zone von Team A, östlich die von Team B. Der Kompass im Menü verrät dir, ob du zu Hause bist.</dark_gray>
+    - |
+      <aqua><bold>Diamanten</bold></aqua>
+
+      <dark_gray>Nimmst du mehr als 32 Diamanten auf, fällt der Rest beim ausloggen vor deine Füße. Kills geben +2, alle 30 Min Spielzeit +1 Diamanten. Gedroppte Diamanten lösen sich nach 10 Min auf.</dark_gray>
+    - |
+      <aqua><bold>Gegnerzone</bold></aqua>
+
+      <dark_gray>Blöcke reagieren dort nicht auf Rechts- oder Linksklicks. Essen, Trinken, Werfen und Angreifen geht normal. Diamantblöcke aus Gegner-Vaults darfst du abbauen.</dark_gray>
+    - |
+      <aqua><bold>Menü</bold></aqua>
+
+      <dark_gray>Alles läuft über das Menü (</dark_gray><gold>/menu</gold><dark_gray>).</dark_gray>
+
+      <dark_gray>Steckst du fest, töte dich mit Selfkill im Menü. Zum Pausieren gehe in die Lobby: dort bist du sicher. Fehler meldest du über das Buch im Menü. Etc.</dark_gray>
 
 rules:
   title: "Serverregeln"
@@ -19,58 +31,76 @@ rules:
     - |
       <aqua><bold>Serverregeln</bold></aqua>
 
-      <red>1.</red> <dark_gray>Kein Bug-Abuse.
-      Gefundene Fehler bitte über
-      /bug report melden.</dark_gray>
+      <red>1.</red> <dark_gray>Kein Bug-Abuse. Gefundene Fehler bitte über das Menü oder /bug report melden.</dark_gray>
 
-      <red>2.</red> <dark_gray>Kein Spam bei
-      Bug-Reports oder im Chat.</dark_gray>
+      <red>2.</red> <dark_gray>Kein Spam bei Bug-Reports oder im Chat.</dark_gray>
 
-      <red>3.</red> <dark_gray>Kein Griefing
-      außerhalb der Gegnerzone.</dark_gray>
+      <red>3.</red> <dark_gray>Kein Griefing außerhalb der Gegnerzone.</dark_gray>
     - |
       <aqua><bold>Serverregeln</bold></aqua>
 
-      <red>4.</red> <dark_gray>Kein Einsatz von
-      Cheats, Hacks oder unerlaubten
-      Modifikationen.</dark_gray>
+      <red>4.</red> <dark_gray>Kein Einsatz von Cheats, Hacks oder unerlaubten Modifikationen.</dark_gray>
 
-      <red>5.</red> <dark_gray>Respektvoller
-      Umgang mit anderen Spielern.</dark_gray>
+      <red>5.</red> <dark_gray>Respektvoller Umgang mit anderen Spielern.</dark_gray>
+    - |
+      <aqua><bold>Serverregeln</bold></aqua>
 
-      <red>6.</red> <dark_gray>Anweisungen der
-      Admins sind zu befolgen.</dark_gray>
+      <red>6.</red> <dark_gray>Anweisungen der Admins sind zu befolgen.</dark_gray>
 
-      <gray>Verstöße können zu Verwarnungen
-      oder Bans führen.</gray>
+      <gray>Verstöße können zu Verwarnungen oder Bans führen.</gray>
 
 segments:
-  pvp:
-    title: "PvP-System"
+  diamanten:
+    title: "Diamanten & Punkte"
     pages:
       - |
-        <aqua><bold>PvP-System</bold></aqua>
+        <aqua><bold>Diamanten</bold></aqua>
 
-        <dark_gray>Mit </dark_gray><gold>/pvp</gold>
-        <dark_gray>schaltest du PvP an oder
-        aus. Änderungen greifen erst nach
-        5 Minuten Verzögerung.</dark_gray>
-
-        <dark_gray>Während eines Kampfes kannst
-        du deinen PvP-Status nicht ändern
-        und solltest nicht ausloggen!</dark_gray>
+        <dark_gray>Diamanten sind alles: Währung und Punktestand zugleich. Sie leuchten am Boden und zeigen wie lange sie noch daliegen. 
+        
+        Gedroppte Diamanten lösen sich nach 10 Min. auf.</dark_gray>
       - |
-        <aqua><bold>PvP-System</bold></aqua>
+        <aqua><bold>Limit</bold></aqua>
 
-        <gold>/pvp status</gold>
-        <gray>Zeigt deinen aktuellen Status</gray>
+        <dark_gray>Nimmst du mehr als 32 Diamanten auf, fällt der Rest beim ausloggen vor deine Füße. 
+        
+        Diamanten können nicht auf normalem Weg gefunden werden.</dark_gray>
+      - |
+        <aqua><bold>Lagerung</bold></aqua>
 
-        <gold>/pvp cancel</gold>
-        <gray>Bricht eine wartende Änderung ab</gray>
+        <dark_gray>Kisten, Shulker, Endertruhen und andere Kontainer mit Diamanten explodieren. Die Diamanten fallen dabei heraus.</dark_gray>
 
-        <dark_gray>Beim Töten eines Gegners
-        erhältst du Diamanten als
-        Belohnung.</dark_gray>
+        <dark_gray>Trage sie im Inventar oder sichere sie als Block im Vault.</dark_gray>
+      - |
+        <aqua><bold>Nachschub</bold></aqua>
+
+        <dark_gray>Statt dessen gibt der Server dir bei bestimmten Ereignissen Diamanten als Belohnung. Kills geben +2, alle 30 Min. Spielzeit +1. Ist dein Inventar voll, wird der Rest nachgeliefert, sobald Platz frei ist.</dark_gray>
+      - |
+        <aqua><bold>Punktestand</bold></aqua>
+
+        <dark_gray>Der Diamant im Menü zeigt deine und die Team-Diamanten, Vault-Inhalte zählen mit. Sidebar stellst du im Menü ein.</dark_gray>
+
+        <dark_gray>Jede Bewegung landet im Log und ist für Admins einsehbar.</dark_gray>
+
+  pvp:
+    title: "PvP"
+    pages:
+      - |
+        <aqua><bold>PvP</bold></aqua>
+
+        <dark_gray>PvP ist standardmäßig aktiviert. Im Menü schaltest du es um. Jede Änderung greift erst nach </dark_gray><gold>5 Min.</gold><dark_gray> Verzögerung.</dark_gray>
+
+        <dark_gray>Eine wartende Änderung brichst du dort mit einem weiteren Klick wieder ab.</dark_gray>
+      - |
+        <aqua><bold>Kampfregeln</bold></aqua>
+
+        <dark_gray>Nach jedem Treffer giltst du 2 Min. als im Kampf: Dein Status lässt sich nicht ändern und eine wartende Änderung verfällt sofort. 
+        
+        Loggst du dich im Kampf aus, lässt du alle Diamanten fallen!</dark_gray>
+      - |
+        <aqua><bold>Selfkill</bold></aqua>
+
+        <dark_gray>Festgefahren oder verloren? Der Knochen im Menü tötet dich sofort. Im Kampf ist Selfkill gesperrt. Dein Inventar bleibt dank Keep-Inventory erhalten, aber Kills verschenken Diamanten an den Gegner.</dark_gray>
 
   vaults:
     title: "Vaults"
@@ -78,30 +108,25 @@ segments:
       - |
         <aqua><bold>Vaults</bold></aqua>
 
-        <dark_gray>Jedes Team besitzt Vaults,
-        in denen Diamantblöcke sicher
-        gelagert werden können.</dark_gray>
-
-        <gold>/vault claim</gold>
-        <gray>Beansprucht ein Vault in
-        deiner Nähe</gray>
-
-        <gold>/vault invite &lt;spieler&gt;</gold>
-        <gray>Lädt ein Teammitglied ein</gray>
+        <dark_gray>Jedes Team besitzt Vault-Gebiete. Nur dort kannst du Diamantblöcke platzieren. Jeder Block im Vault zählt </dark_gray><gold>9 Diamanten</gold><dark_gray> für dein Team.</dark_gray>
       - |
-        <aqua><bold>Vaults</bold></aqua>
+        <aqua><bold>Beanspruchen</bold></aqua>
 
-        <gold>/vault ban &lt;spieler&gt;</gold>
-        <gray>Entfernt einen eingeladenen
-        Spieler</gray>
+        <dark_gray>Stelle dich in die Nähe eines freien Vaults deines Teams und beanspruche es über das Menü. Jeder Spieler hält höchstens ein Vault.</dark_gray>
 
-        <gold>/vault info</gold> <gray>/</gray>
-        <gold>/vault list</gold>
-        <gray>Zeigt deine bzw. alle Vaults</gray>
+        <dark_gray>Nur du und eingeladene Spieler dürfen dort Blöcke setzen und abbauen.</dark_gray>
+      - |
+        <aqua><bold>Einladungen</bold></aqua>
 
-        <dark_gray>Nur du und eingeladene
-        Spieler können in deinem Vault
-        Diamantblöcke platzieren.</dark_gray>
+        <dark_gray>Lade im Vault-Menü mit Spieler einladen Teammitglieder ein. Gib dann den Namen an.</dark_gray>
+
+        <dark_gray>Eingeladene dürfen dort Blöcke setzen und abbauen wie du. Du bleibst Besitzer und kannst die wieder ausladen.</dark_gray>
+      - |
+        <aqua><bold>Raub</bold></aqua>
+
+        <dark_gray>Achtung: Gegner können die Blöcke in deinem Vault stehlen.</dark_gray>
+
+        <dark_gray>Umgekehrt darfst du auch Diamantblöcke aus Gegner-Vaults abbauen und für dein Team mitnehmen.</dark_gray>
 
   events:
     title: "Events"
@@ -109,100 +134,85 @@ segments:
       - |
         <aqua><bold>Events</bold></aqua>
 
-        <dark_gray>Spieler können eigene
-        Minigame-Events bauen und zur
-        Prüfung einreichen.</dark_gray>
-
-        <gold>/event create &lt;name&gt;</gold>
-        <gray>Erstellt ein neues Event</gray>
-
-        <gold>/event submit</gold>
-        <gray>Reicht dein Event ein</gray>
+        <dark_gray>Events sind Minispiele von Spielern. Du baust in einer eigenen Kreativ-Welt, reichst es ein, Admins prüfen es und geben es mit Start- und Endzeit frei. Zum Starttermin geht das Event automatisch live.</dark_gray>
       - |
-        <aqua><bold>Events</bold></aqua>
+        <aqua><bold>Mitmachen</bold></aqua>
 
-        <gold>/event join &lt;id&gt;</gold>
-        <gray>Tritt einem aktiven Event bei</gray>
+        <dark_gray>Aktive und anstehende Events findest du im Menü unter Events. Mit einem Klick tritts du bei.</dark_gray>
 
-        <gold>/event list</gold>
-        <gray>Zeigt verfügbare Events</gray>
+        <dark_gray>Während eines Events gelten dessen eigene Regeln. Verlassen geht jederzeit über das Menü.</dark_gray>
+      - |
+        <aqua><bold>Selbst bauen</bold></aqua>
 
-        <dark_gray>Angenommene Events werden
-        automatisch zur Startzeit
-        aktiviert.</dark_gray>
+        <dark_gray>Lege im Event-Menü ein Event an und baue los. Reiche es ein, sobald es fertig ist. Angenommene Events bringen dir </dark_gray><gold>5 Dias</gold><dark_gray>.</dark_gray>
 
-  zones:
+        <dark_gray>Spielmodus, Tageszeit, Gamerules, Effekte und Startinventar stellst du als Ersteller im Menü ein.</dark_gray>
+      - |
+        <aqua><bold>Belohnungen</bold></aqua>
+
+        <dark_gray>Nach dem Event meldest du als Ersteller die Gewinner an einen Admin. Nur gemeldete Spieler bekommen eine Belohnung.</dark_gray>
+
+        <dark_gray>Der Admin gibt den Gewinnern dann ihre Diamanten.</dark_gray>
+
+  zonen:
     title: "Zonen & Border"
     pages:
       - |
-        <aqua><bold>Zonen & Border</bold></aqua>
+        <aqua><bold>Zonen</bold></aqua>
 
-        <dark_gray>Die Welt ist bei X=0 in
-        zwei Team-Zonen geteilt. Die
-        Grenze wird durch Partikel
-        dargestellt.</dark_gray>
+        <dark_gray>Die Hauptwelt ist bei X=0 geteilt. Westlich davon liegt die Zone von Team A, östlich die von Team B. Beim Übertritt meldet sich das Spiel.</dark_gray>
 
-        <gold>/teamzones info</gold>
-        <gray>Zeigt deinen Zonen-Status</gray>
+        <dark_gray>Ob du gerade zu Hause bist, verrät die Sidebar oder der Kompass im Menü.</dark_gray>
       - |
-        <aqua><bold>Zonen & Border</bold></aqua>
+        <aqua><bold>Gegnerzone</bold></aqua>
 
-        <gold>/teamzones border</gold>
-        <gray>Passt Partikel, Farbe,
-        Sichtweite und Dichte der
-        Grenze an</gray>
+        <dark_gray>Blöcke reagieren dort nicht auf Rechts- oder Linksklicks. Essen, Trinken, Werfen und Angreifen geht normal.</dark_gray>
 
-        <dark_gray>In der Gegnerzone kannst
-        du nur mit deinem Item in der
-        Hand interagieren.</dark_gray>
+        <dark_gray>Diamantblöcke aus Gegner-Vaults darfst du abbauen.</dark_gray>
+      - |
+        <aqua><bold>Border</bold></aqua>
 
-  scoreboard:
-    title: "Scoreboard & Anzeige"
+        <dark_gray>Die Grenze bei X=0 ist eine Partikellinie in der Luft. Im Menü unter Border stellst du die Partikel ein.</dark_gray>
+
+        <dark_gray>Achtung: Mit wenigen Partikeln, Texture-Packs oder Shadern siehst du sie eventuell nicht.</dark_gray>
+
+  menue:
+    title: "Menü, Lobby & Extras"
     pages:
       - |
-        <aqua><bold>Scoreboard</bold></aqua>
+        <aqua><bold>Das Menü</bold></aqua>
 
-        <gold>/scores info</gold>
-        <gray>Zeigt den aktuellen
-        Punktestand</gray>
+        <dark_gray>Das Menü ist deine Schaltzentrale: PvP, Selfkill, Border, Sidebar, Punktestand, Zonen-Info, Events, Vault, Handbuch, Bug-Meldung, Inventar und Lobby.</dark_gray>
 
-        <gold>/scores sidebar</gold>
-        <gray>Schaltet die Sidebar an
-        oder aus</gray>
-      - |
-        <aqua><bold>Scoreboard</bold></aqua>
-
-        <dark_gray>Über das Menü kannst du
-        einzelne Anzeige-Komponenten wie
-        Team-Diamanten oder deinen
-        Vault-Stand ein- und
-        ausblenden.</dark_gray>
-
-  lobby:
-    title: "Lobby"
-    pages:
+        <dark_gray>Du öffnest es mit </dark_gray><gold>/menu</gold><dark_gray>.</dark_gray>
       - |
         <aqua><bold>Lobby</bold></aqua>
 
-        <gold>/lobby</gold>
-        <gray>Betritt oder verlässt die
-        Lobby</gray>
+        <dark_gray>Die Lobby ist eine sichere Wartewelt: kein Schaden, kein Abbauen, kein Bauen.</dark_gray>
 
-        <dark_gray>In der Lobby kannst du
-        keinen Schaden nehmen und
-        keine Blöcke abbauen oder
-        platzieren.</dark_gray>
+        <dark_gray>Im Kampf oder während eines Events kannst du nicht in die Lobby.</dark_gray>
+      - |
+        <aqua><bold>Kisten & AFK</bold></aqua>
 
-  bugs:
-    title: "Bug-Reports"
+        <dark_gray>Halte eine Shulker-Box oder Enderkiste in der Hand und öffne sie direkt über das Menü, ganz ohne Platzieren. Dies ist praktisch in der gegnerischen Zone wo du keine Blöcke platzieren oder abbauen kannst.</dark_gray>
+
+      - |
+        <aqua><bold>AFK</bold></aqua>
+        
+        <dark_gray>Nach </dark_gray><gold>5 Min.</gold><dark_gray> ohne Eingabe giltst du als AFK. Nachrichten an dich warten dann auf deine Rückkehr und du erhältst keine Belohnung für Spielzeit.</dark_gray>
+
+  hilfe:
+    title: "Hilfe & Bugs"
     pages:
       - |
-        <aqua><bold>Bug-Reports</bold></aqua>
+        <aqua><bold>Fehler melden</bold></aqua>
 
-        <gold>/bug report &lt;beschreibung&gt;</gold>
-        <gray>Meldet einen gefundenen
-        Fehler</gray>
+        <dark_gray>Etwas kaputt? Melde es über das Buch im Menü oder mit </dark_gray><gold>/bug report</gold><dark_gray>.</dark_gray>
 
-        <dark_gray>Bitte beschreibe Fehler so
-        genau wie möglich und melde
-        jeden Bug nur einmal.</dark_gray>
+        <dark_gray>Beschreibe genau, was du getan hast und was passiert ist. Jeden Fehler bitte nur einmal melden.</dark_gray>
+      - |
+        <aqua><bold>Bug-Abuse</bold></aqua>
+
+        <dark_gray>Gefundene Fehler auszunutzen ist verboten und wird bestraft, siehe Regeln.</dark_gray>
+
+        <dark_gray>Wer fair meldet, hilft dem Server. Danke dafür!</dark_gray>
