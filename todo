@@ -5,7 +5,6 @@ Improvements:
 === Empty ===
 
 Performance:
--2 Many particles for the border
 -3 Each lockup for spawn points takes a disk read
 
 Anti-Cheat:

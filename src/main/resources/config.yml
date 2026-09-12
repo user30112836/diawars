@@ -19,6 +19,8 @@ border:
   particle-type: "REDSTONE" # REDSTONE, FLAME, GLOW, END_ROD
   color: "YELLOW"
   amount: 1
+  vertical-below: 10 # how far below the player the wall reaches
+  vertical-above: 24 # how far above the player the wall reaches
   density:
     horizontal: 2 # (1=dense, 8=parse)
     vertical: 3 # (1=dense, 8=parse)

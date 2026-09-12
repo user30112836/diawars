@@ -10,7 +10,6 @@ import kotlin.math.abs
 
 class BorderManager(private val plugin: Diawars) {
     private var borderTask: BukkitRunnable? = null
-    private val particleHeight = 128.0
 
     fun startBorderDisplay() {
         stopBorderDisplay()
@@ -46,40 +45,47 @@ class BorderManager(private val plugin: Diawars) {
         val playerZ = playerLocation.blockZ
         val renderDistance = pref.renderDistance
 
-        if (abs(playerX) > renderDistance) return
+        if (abs(playerX - ZoneManager.ZONE_BOUNDARY) > renderDistance) return
 
         val particleType = plugin.store.borderPreferencesStore.parseParticleType(pref.particleType) ?: Particle.DUST
         val color = pref.color
+        val horizontalStep = pref.density.horizontal.coerceAtLeast(1)
+        val verticalStep = pref.density.vertical.coerceAtLeast(1)
         val startZ = playerZ - renderDistance
         val endZ = playerZ + renderDistance
 
-        for (z in startZ..endZ step pref.density.horizontal) {
-            for (yOffset in 0..particleHeight.toInt() step pref.density.vertical) {
-                val location = Location(
-                    world,
-                    ZoneManager.ZONE_BOUNDARY,
-                    playerLocation.y - 10 + yOffset,
-                    z.toDouble()
-                )
+        val below = plugin.config.getInt("border.vertical-below", 10).coerceIn(0, 64)
+        val above = plugin.config.getInt("border.vertical-above", 24).coerceIn(0, 128)
+        val minY = maxOf(world.minHeight, playerLocation.blockY - below)
+        val maxY = minOf(world.maxHeight - 1, playerLocation.blockY + above)
+        val location = Location(world, ZoneManager.ZONE_BOUNDARY, minY.toDouble(), startZ.toDouble())
 
-                if (world.isChunkLoaded(location.blockX shr 4, location.blockZ shr 4)) {
-                    when (particleType) {
-                        Particle.DUST -> {
-                            val dustOptions = Particle.DustOptions(color, 1.0f)
-                            player.spawnParticle(
-                                Particle.DUST,
-                                location,
-                                pref.amount,
-                                0.0, 0.0, 0.0,
-                                0.0,
-                                dustOptions
-                            )
-                        }
-                        else -> {
-                            player.spawnParticle(particleType, location, 1, 0.0, 0.0, 0.0, 0.0)
-                        }
+        for (z in startZ..endZ step horizontalStep) {
+            if (!world.isChunkLoaded(location.blockX shr 4, z shr 4)) continue
+            location.z = z.toDouble()
+
+            var y = minY
+            while (y <= maxY) {
+                location.y = y.toDouble()
+
+                when (particleType) {
+                    Particle.DUST -> {
+                        val dustOptions = Particle.DustOptions(color, 1.0f)
+                        player.spawnParticle(
+                            Particle.DUST,
+                            location,
+                            pref.amount,
+                            0.0, 0.0, 0.0,
+                            0.0,
+                            dustOptions
+                        )
+                    }
+                    else -> {
+                        player.spawnParticle(particleType, location, 1, 0.0, 0.0, 0.0, 0.0)
                     }
                 }
+
+                y += verticalStep
             }
         }
     }
