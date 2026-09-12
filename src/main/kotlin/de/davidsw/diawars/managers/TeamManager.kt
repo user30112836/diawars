@@ -18,6 +18,7 @@ enum class Team(val configKey: String, var displayName: String) {
 
 class TeamManager(private val plugin: Diawars) {
     private val playerTeams = mutableMapOf<UUID, Team>()
+    private val teamSpawns = mutableMapOf<Team, CachedTeamSpawn>()
     private val teamsFile = ConfigFiles.resolve(plugin, "teams.yml")
 
     init {
@@ -41,12 +42,27 @@ class TeamManager(private val plugin: Diawars) {
 
     fun loadTeamsFromConfig() {
         playerTeams.clear()
+        teamSpawns.clear()
 
         val config = YamlConfiguration.loadConfiguration(teamsFile)
         loadTeamFromConfig(config, Team.TEAM_A)
         loadTeamFromConfig(config, Team.TEAM_B)
+        loadSpawnFromConfig(config, Team.TEAM_A)
+        loadSpawnFromConfig(config, Team.TEAM_B)
 
         plugin.logger.info("Loaded teams: ${playerTeams.values}")
+    }
+
+    private fun loadSpawnFromConfig(config: YamlConfiguration, team: Team) {
+        val section = config.getConfigurationSection("${team.configKey}.spawn-point") ?: return
+        teamSpawns[team] = CachedTeamSpawn(
+            worldName = section.getString("world"),
+            x = section.getDouble("x"),
+            y = section.getDouble("y"),
+            z = section.getDouble("z"),
+            yaw = section.getDouble("yaw").toFloat(),
+            pitch = section.getDouble("pitch").toFloat(),
+        )
     }
 
     fun getPlayerTeam(playerId: UUID): Team? {
@@ -64,16 +80,20 @@ class TeamManager(private val plugin: Diawars) {
     fun getTeamMembers(team: Team): Set<UUID> = playerTeams.filterValues { it == team }.keys
 
     fun getSpawnLocation(team: Team): Location? {
-        val config = YamlConfiguration.loadConfiguration(teamsFile)
-        val section = config.getConfigurationSection("${team.configKey}.spawn-point") ?: return null
+        val cached = teamSpawns[team] ?: return null
+        val world = cached.worldName?.let { plugin.server.getWorld(it) }
+            ?: plugin.server.worlds.firstOrNull()
+            ?: return null
 
-        return Location(
-            plugin.server.worlds.first(),
-            section.getDouble("x"),
-            section.getDouble("y"),
-            section.getDouble("z"),
-            section.getDouble("yaw").toFloat(),
-            section.getDouble("pitch").toFloat(),
-        )
+        return Location(world, cached.x, cached.y, cached.z, cached.yaw, cached.pitch)
     }
+
+    private data class CachedTeamSpawn(
+        val worldName: String?,
+        val x: Double,
+        val y: Double,
+        val z: Double,
+        val yaw: Float,
+        val pitch: Float,
+    )
 }

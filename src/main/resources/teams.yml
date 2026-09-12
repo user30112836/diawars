@@ -2,6 +2,8 @@
 team-a:
   display-name: "Team A"
   spawn-point:
+    # Optional: world name. If omitted, the first loaded world is used.
+    # world: "world"
     x: 10
     y: 64
     z: 0
@@ -16,6 +18,8 @@ team-a:
 team-b:
   display-name: "Team B"
   spawn-point:
+    # Optional: world name. If omitted, the first loaded world is used.
+    # world: "world"
     x: -10
     y: 64
     z: 0
