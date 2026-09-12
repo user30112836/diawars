@@ -42,8 +42,8 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
     fun getByWorld(worldName: String): GameEvent? = cache.values.firstOrNull { it.worldName == worldName }
 
     fun generateId(name: String): String {
-        val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { throw Error("Das Event braucht einen Namen!") }
-        if (id in usedIds) throw Error("Der Name des Events ist bereits vergeben!")
+        val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { throw IllegalArgumentException("Das Event braucht einen Namen!") }
+        if (id in usedIds) throw IllegalArgumentException("Der Name des Events ist bereits vergeben!")
         return id
     }
 

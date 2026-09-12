@@ -60,11 +60,10 @@ class EventManager(private val plugin: Diawars) {
             return Result.Error("<red>Du hast bereits ein Event in Bearbeitung oder zur Prüfung eingereicht!</red>")
         }
 
-        lateinit var id: String
-        try {
-            id = store.generateId(name)
-        } catch (e: Error) {
-            return Result.Error("<red>${e.message}</red>")
+        val id = try {
+            store.generateId(name)
+        } catch (e: IllegalArgumentException) {
+            return Result.Error("<red>${e.message ?: "Ungültiger Event-Name!"}</red>")
         }
 
         val worldName = "event_$id"

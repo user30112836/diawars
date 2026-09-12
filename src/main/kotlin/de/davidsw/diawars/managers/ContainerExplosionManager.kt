@@ -50,10 +50,13 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val world = loc.world
         val inventory = player.openInventory.topInventory
 
-        inventory.forEach { item ->
+        inventory.contents.forEachIndexed { index, item ->
             if (item?.type in MaterialSets.DIAMOND_ITEMS) {
-                world.dropItemNaturally(loc, item ?: return@forEach)
-                item.amount = 0
+                // Drop a copy and clear the slot: zeroing the live stack after
+                // handing it to the drop risks voiding the diamonds depending on
+                // whether the implementation clones, and leaves ghost stacks.
+                world.dropItemNaturally(loc, item!!.clone())
+                inventory.setItem(index, null)
             }
         }
 
@@ -68,10 +71,11 @@ class ContainerExplosionManager(private val plugin: Diawars) {
         val loc = block.location.add(0.5, 0.5, 0.5)
         val world = loc.world
 
-        holder.inventory.contents.forEach { item ->
+        holder.inventory.contents.forEachIndexed { index, item ->
             if (item?.type in MaterialSets.DIAMOND_ITEMS) {
-                world.dropItemNaturally(loc, item ?: return@forEach)
-                item.amount = 0
+                // See explodeEnderChest: drop a copy, then clear the slot.
+                world.dropItemNaturally(loc, item!!.clone())
+                holder.inventory.setItem(index, null)
             }
         }
 

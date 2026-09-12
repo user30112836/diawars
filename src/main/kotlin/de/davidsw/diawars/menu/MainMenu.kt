@@ -36,21 +36,36 @@ class MainMenu(private val plugin: Diawars) {
 
         // PvP toggle
         if (hasPending) {
+            // hasPending implies a cached destination; default to true so a raced
+            // cache miss can never abort the whole menu render mid-way (?: return).
+            val destination = plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: true
             inv.setItem(SLOT_PVP_TOGGLE, item(
                 material = Material.BARRIER,
-                name = mm(if (plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: return) "<yellow><bold>PvP Aktivierung abbrechen</bold></yellow>" else "<yellow><bold>PvP Aktivierung</bold></yellow>"),
+                name = mm(if (destination) "<yellow><bold>PvP Aktivierung abbrechen</bold></yellow>" else "<yellow><bold>PvP Aktivierung</bold></yellow>"),
                 lore = formatPvPToggleCancelLore(player),
                 glow = false,
             ))
         } else {
             if (!plugin.pvpManager.isInFight(player.uniqueId)) {
+                val delayMinutes = plugin.config.getInt("pvp-toggle.delay-seconds", 300) / 60
                 inv.setItem(SLOT_PVP_TOGGLE, item(
                     material = if (pvpEnabled) Material.RED_WOOL else Material.GREEN_WOOL,
                     name = mm(if (pvpEnabled) "<red><bold>PvP deaktivieren</bold></red>" else "<green><bold>PvP aktivieren</bold></green>"),
                     lore = listOf(
                         mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
                         mm("<gray>Klicken zum Umschalten</gray>"),
-                        mm("<gray>(5 Min. Verzögerung)</gray>"),
+                        mm("<gray>($delayMinutes Min. Verzögerung)</gray>"),
+                    ),
+                    glow = false,
+                ))
+            } else {
+                // Render a disabled slot while in combat instead of leaving the
+                // previous (now misleading) toggle item in place.
+                inv.setItem(SLOT_PVP_TOGGLE, item(
+                    material = Material.BARRIER,
+                    name = mm("<gray><bold>PvP</bold></gray>"),
+                    lore = listOf(
+                        mm("<gray>Im Kampf nicht verfügbar</gray>"),
                     ),
                     glow = false,
                 ))

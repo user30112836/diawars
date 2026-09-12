@@ -16,6 +16,10 @@ data class BorderDensity(
     companion object {
         const val MIN = 1
         const val MAX = 8
+
+        /** Normalizes any externally supplied values (config, disk, callers). */
+        fun clamped(horizontal: Int, vertical: Int) =
+            BorderDensity(horizontal.coerceIn(MIN, MAX), vertical.coerceIn(MIN, MAX))
     }
 }
 
@@ -29,6 +33,13 @@ data class BorderPreference(
 )
 
 class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_preferences.yml") {
+    companion object {
+        const val RENDER_DISTANCE_MIN = 8
+        const val RENDER_DISTANCE_MAX = 64
+        const val AMOUNT_MIN = 0
+        const val AMOUNT_MAX = 10
+    }
+
     private val preferences = mutableMapOf<UUID, BorderPreference>()
 
     init {
@@ -44,6 +55,10 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
     }
 
     fun setParticleType(playerId: UUID, particleType: String) {
+        if (ParticleParser.parse(particleType) == null) {
+            plugin.logger.warning("Ignoring invalid border particle type '$particleType' for $playerId")
+            return
+        }
         update(playerId) { it.copy(particleType = particleType) }
     }
 
@@ -52,11 +67,11 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
     }
 
     fun setRenderDistance(playerId: UUID, renderDistance: Int) {
-        update(playerId) { it.copy(renderDistance = renderDistance) }
+        update(playerId) { it.copy(renderDistance = renderDistance.coerceIn(RENDER_DISTANCE_MIN, RENDER_DISTANCE_MAX)) }
     }
 
     fun setDensity(playerId: UUID, density: BorderDensity) {
-        update(playerId) { it.copy(density = density) }
+        update(playerId) { it.copy(density = BorderDensity.clamped(density.horizontal, density.vertical)) }
     }
 
     fun setHorizontalDensity(playerId: UUID, horizontal: Int) {
@@ -70,7 +85,7 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
     }
 
     fun setAmount(playerId: UUID, amount: Int) {
-        update(playerId) { it.copy(amount = amount.coerceAtLeast(0)) }
+        update(playerId) { it.copy(amount = amount.coerceIn(AMOUNT_MIN, AMOUNT_MAX)) }
     }
 
     fun resetToDefault(playerId: UUID) {
@@ -90,12 +105,13 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
             enabled = plugin.config.getBoolean("border.enabled", true),
             particleType = plugin.config.getString("border.particle-type", "REDSTONE") ?: "REDSTONE",
             color = ColorParser.parseOrDefault(plugin.config.getString("border.color", "YELLOW") ?: "YELLOW"),
-            renderDistance = plugin.config.getInt("border.render-distance", 32),
-            density = BorderDensity(
+            renderDistance = plugin.config.getInt("border.render-distance", 32)
+                .coerceIn(RENDER_DISTANCE_MIN, RENDER_DISTANCE_MAX),
+            density = BorderDensity.clamped(
                 horizontal = plugin.config.getInt("border.density.horizontal", 2),
                 vertical = plugin.config.getInt("border.density.vertical", 3)
             ),
-            amount = plugin.config.getInt("border.amount", 1),
+            amount = plugin.config.getInt("border.amount", 1).coerceIn(AMOUNT_MIN, AMOUNT_MAX),
         )
     }
 
@@ -107,14 +123,15 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
 
                 preferences[uuid] = BorderPreference(
                     enabled = section.getBoolean("enabled", true),
-                    particleType = section.getString("particle-type") ?: "REDSTONE",
+                    particleType = section.getString("particle-type")?.takeIf { ParticleParser.parse(it) != null } ?: "REDSTONE",
                     color = ColorParser.parseOrDefault(section.getString("color") ?: "YELLOW"),
-                    renderDistance = section.getInt("render-distance", 32),
-                    density = BorderDensity(
+                    renderDistance = section.getInt("render-distance", 32)
+                        .coerceIn(RENDER_DISTANCE_MIN, RENDER_DISTANCE_MAX),
+                    density = BorderDensity.clamped(
                         horizontal = section.getInt("density.horizontal", 2),
                         vertical   = section.getInt("density.vertical", 3),
                     ),
-                    amount = section.getInt("amount", 1),
+                    amount = section.getInt("amount", 1).coerceIn(AMOUNT_MIN, AMOUNT_MAX),
                 )
             } catch (e: Exception) {
                 plugin.logger.warning("An error occurred while loading the border-settings for $key: ${e.message}")

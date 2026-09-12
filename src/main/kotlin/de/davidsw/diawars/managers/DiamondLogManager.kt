@@ -21,8 +21,13 @@ class DiamondLogManager(private val plugin: Diawars) {
     private val fileNameFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 
+    private val logLock = Any()
+    private val pendingLines = ArrayDeque<String>()
+    @Volatile
+    private var flushScheduled = false
+
     init {
-        LogFiles.resolve(plugin, "").parentFile.mkdir()
+        LogFiles.resolve(plugin, "").parentFile?.mkdirs()
     }
 
     private fun currentLogFile(): File {
@@ -37,7 +42,28 @@ class DiamondLogManager(private val plugin: Diawars) {
 
     fun getRecentEntries(limit: Int = 15): List<String> {
         return try {
-            currentLogFile().readLines().takeLast(limit)
+            val cap = limit.coerceAtLeast(1)
+            val window = ArrayDeque<String>(cap)
+            val file = currentLogFile()
+            if (file.exists()) {
+                // Stream with a sliding window instead of materialising the whole
+                // daily file to return a handful of lines.
+                file.bufferedReader().useLines { lines ->
+                    lines.forEach { line ->
+                        if (window.size >= cap) window.removeFirst()
+                        window.addLast(line)
+                    }
+                }
+            }
+            // Newest entries may still sit in the async queue; include them so
+            // /admin log reflects the latest events.
+            synchronized(logLock) {
+                for (line in pendingLines) {
+                    if (window.size >= cap) window.removeFirst()
+                    window.addLast(line)
+                }
+            }
+            window.toList()
         } catch (e: Exception) {
             plugin.logger.severe("Could not read diamond log: ${e.message}")
             emptyList()
@@ -70,10 +96,58 @@ class DiamondLogManager(private val plugin: Diawars) {
         }
 
         try {
-            currentLogFile().appendText(line + System.lineSeparator())
+            enqueueLine(line)
         } catch (e: Exception) {
             plugin.logger.severe("Could not write to diamond log: ${e.message}")
         }
+    }
+
+    /** Queues a line and ensures exactly one async flush is scheduled. */
+    private fun enqueueLine(line: String) {
+        synchronized(logLock) { pendingLines.addLast(line) }
+        scheduleFlush()
+    }
+
+    private fun scheduleFlush() {
+        synchronized(logLock) {
+            if (flushScheduled) return
+            flushScheduled = true
+        }
+        try {
+            plugin.server.scheduler.runTaskAsynchronously(plugin, Runnable { flushQueue() })
+        } catch (e: IllegalStateException) {
+            // Scheduler unavailable (shutdown): write synchronously instead of losing lines.
+            flushQueue()
+        } catch (e: IllegalArgumentException) {
+            flushQueue()
+        }
+    }
+
+    private fun flushQueue() {
+        val batch: List<String>
+        synchronized(logLock) {
+            if (pendingLines.isEmpty()) {
+                flushScheduled = false
+                return
+            }
+            batch = pendingLines.toList()
+            pendingLines.clear()
+        }
+        try {
+            currentLogFile().appendText(batch.joinToString(System.lineSeparator()) + System.lineSeparator())
+        } catch (e: Exception) {
+            plugin.logger.severe("Could not write to diamond log: ${e.message}")
+        }
+        synchronized(logLock) {
+            flushScheduled = false
+            // Lines may have arrived while writing; flush again instead of losing them.
+            if (pendingLines.isNotEmpty()) scheduleFlush()
+        }
+    }
+
+    /** Synchronously persists everything still queued. Call from onDisable before tasks are cancelled. */
+    fun flushSync() {
+        flushQueue()
     }
 
     fun log(

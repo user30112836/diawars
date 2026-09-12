@@ -138,8 +138,12 @@ class VaultCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             return
         }
 
-        val targetId = getOfflinePlayer(args[1]).uniqueId
-        if (targetId !in claim.invited) {
+        // Match against invited UUIDs via the non-blocking UUID lookup instead of
+        // the deprecated blocking getOfflinePlayer(String).
+        val targetId = claim.invited.firstOrNull { id ->
+            getOfflinePlayer(id).name.equals(args[1], ignoreCase = true)
+        }
+        if (targetId == null) {
             player.sendMessage(mm("<red>Dieser Spieler ist nicht zu deinem Vault eingeladen!</red>"))
             return
         }

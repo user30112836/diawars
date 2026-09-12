@@ -60,6 +60,11 @@ class ClientInfoStore(
     plugin: Diawars,
 ) : YamlStore(plugin, "client_info.yml") {
 
+    companion object {
+        /** Cap for every previous-* history list so client_info.yml cannot grow forever. */
+        const val MAX_HISTORY = 50
+    }
+
     private val cache = mutableMapOf<UUID, ClientInfo>()
     private val gson = Gson()
     private val reportedPlayers = mutableSetOf<UUID>()
@@ -176,7 +181,7 @@ class ClientInfoStore(
             return oldInfo?.previousLoaders.orEmpty()
         }
 
-        return (oldInfo.previousLoaders + oldInfo.activeLoader).distinct()
+        return (oldInfo.previousLoaders + oldInfo.activeLoader).distinct().takeLast(MAX_HISTORY)
     }
 
     private fun buildPreviousMods(
@@ -202,7 +207,7 @@ class ClientInfoStore(
             )
         }
 
-        return (oldInfo.previousMods + oldEntries).distinct()
+        return (oldInfo.previousMods + oldEntries).distinct().takeLast(MAX_HISTORY)
     }
 
     private fun buildPreviousResourcePacks(
@@ -219,7 +224,7 @@ class ClientInfoStore(
         return (
                 oldInfo.previousResourcePacks +
                         oldInfo.activeResourcePacks
-                ).distinct()
+                ).distinct().takeLast(MAX_HISTORY)
     }
 
     private fun buildPreviousShaderPacks(
@@ -240,7 +245,7 @@ class ClientInfoStore(
         return (
                 oldInfo.previousShaderPacks +
                         oldShaderPack
-                ).distinct()
+                ).distinct().takeLast(MAX_HISTORY)
     }
 
     override fun writeTo(yaml: YamlConfiguration) {
@@ -390,11 +395,11 @@ class ClientInfoStore(
 
             activeLoader = activeLoader,
 
-            previousLoaders = loadPreviousLoaders(section),
+            previousLoaders = loadPreviousLoaders(section).takeLast(MAX_HISTORY),
 
             activeMods = loadModEntries(section),
 
-            previousMods = loadPreviousMods(section),
+            previousMods = loadPreviousMods(section).takeLast(MAX_HISTORY),
 
             activeResourcePacks = section
                 .getStringList("active-resource-packs")
@@ -403,7 +408,7 @@ class ClientInfoStore(
                 },
 
             previousResourcePacks =
-                section.getStringList("previous-resource-packs"),
+                section.getStringList("previous-resource-packs").takeLast(MAX_HISTORY),
 
             shaderModInstalled =
                 section.getBoolean("shader-mod-installed", false),
@@ -427,7 +432,7 @@ class ClientInfoStore(
                 section.getString("active-shader-pack"),
 
             previousShaderPacks =
-                section.getStringList("previous-shader-packs"),
+                section.getStringList("previous-shader-packs").takeLast(MAX_HISTORY),
 
             reportedAt =
                 section.getLong("reported-at", 0L),

@@ -29,7 +29,9 @@ class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inv
             offHand = player.inventory.itemInOffHand.clone(),
             enderChest = player.enderChest.contents.map { it?.clone() },
         )
-        saveImmediately()
+        // Custody transfer (leaveWorld/saveActiveInventories): persist synchronously
+        // so a crash cannot resurrect a stale snapshot and duplicate inventories.
+        flushNow()
     }
 
     fun getInventory(eventId: String, playerId: UUID) = cache[eventId]?.get(playerId)
@@ -46,7 +48,7 @@ class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inv
     }
 
     fun clearEvent(eventId: String) {
-        if (cache.remove(eventId) != null) saveImmediately()
+        if (cache.remove(eventId) != null) flushNow()
     }
 
     override fun writeTo(yaml: YamlConfiguration) {

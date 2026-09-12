@@ -141,25 +141,27 @@ class DiamondScoreboardManager(private val plugin: Diawars) {
         val showOwnVault = ScoreboardComponent.OWN_VAULT in components
 
         val lines = mutableListOf<Component>()
+        // Separator entries must be unique strings: scoreboard entries are keyed by
+        // text, so identical " " lines would overwrite each other and collapse.
         lines += mm.deserialize(" ")
 
         if (showTeam || showOpponents) {
             lines += mm.deserialize("<white>Team</white>")
             if (showTeam) lines += mm.deserialize("  <$teamColor>$teamLabel</$teamColor> <gray>|</gray> <aqua>$teamDiamonds</aqua>")
             if (showOpponents) lines += mm.deserialize("  <$opponentsColor>$opponentsLabel</$opponentsColor> <gray>|</gray> <aqua>$opponentsDiamonds</aqua>")
-            lines += mm.deserialize(" ")
+            lines += mm.deserialize("  ")
         }
 
         if (showPlayer) {
             lines += mm.deserialize("<white>Deine Diamanten</white>")
             lines += mm.deserialize("  <$playerColor>$playerDiamonds / $limit</$playerColor>")
-            lines += mm.deserialize(" ")
+            lines += mm.deserialize("   ")
         }
 
         if (showOwnVault && ownVaultDiamonds != null) {
             lines += mm.deserialize("<white>Dein Vault</white>")
             lines += mm.deserialize("  <aqua>$ownVaultDiamonds</aqua>")
-            lines += mm.deserialize(" ")
+            lines += mm.deserialize("    ")
         }
 
         if (showZone) {

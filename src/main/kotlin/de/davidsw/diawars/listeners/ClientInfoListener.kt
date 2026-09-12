@@ -70,7 +70,23 @@ class ClientInfoListener(
         try {
             val json = readVarIntPrefixedUtf8(message)
 
-            checkModWhitelist(player, json)
+            // Parse once here; saveFromJson re-parses into its DTO shape.
+            val modIds = try {
+                extractModIds(json)
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not read mod list from client info for ${player.name}: ${e.message}")
+                plugin.server.scheduler.runTask(plugin, Runnable {
+                    if (!player.isOnline) return@Runnable
+                    player.kick(
+                        mm(
+                            "<red>Die Authentifizierung auf dem Server ist fehlgeschlagen. Bitte versuche es erneut!</red>"
+                        )
+                    )
+                })
+                return
+            }
+
+            checkModWhitelist(player, modIds)
 
             plugin.store.clientInfoStore.saveFromJson(
                 player.uniqueId,
@@ -94,23 +110,8 @@ class ClientInfoListener(
         }
     }
 
-    private fun checkModWhitelist(player: Player, json: String) {
+    private fun checkModWhitelist(player: Player, modIds: List<String>) {
         if (player.hasPermission("diawars.admin")) return
-
-        val modIds = try {
-            extractModIds(json)
-        } catch (e: Exception) {
-            plugin.logger.warning("Could not read mod list from client info for ${player.name}: ${e.message}")
-            plugin.server.scheduler.runTask(plugin, Runnable {
-                if (!player.isOnline) return@Runnable
-                player.kick(
-                    mm(
-                        "<red>Die Authentifizierung auf dem Server ist fehlgeschlagen. Bitte versuche es erneut!</red>"
-                    )
-                )
-            })
-            return
-        }
 
         val disallowedMods = plugin.modWhitelistManager.findDisallowedMods(modIds)
         if (disallowedMods.isEmpty()) return
@@ -131,7 +132,7 @@ class ClientInfoListener(
             else -> {
                 val modList = disallowedMods.take(5).joinToString(", ")
                 mm(
-                    "<red>Die folgenden Mods sind auf diesem Server nicht erlaubt: <gold>$modList</gold> + ${disallowedMods.size}</red>"
+                    "<red>Die folgenden Mods sind auf diesem Server nicht erlaubt: <gold>$modList</gold> + ${disallowedMods.size - 5}</red>"
                 )
             }
         }
@@ -146,6 +147,9 @@ class ClientInfoListener(
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
+        // Generous grace period: slow/modded clients can need several seconds
+        // before their client_info packet arrives; kicking after 2.5s caused
+        // false kicks on slow logins.
         plugin.server.scheduler.runTaskLater(plugin, Runnable {
             if (
                 player.isOnline &&
@@ -159,7 +163,7 @@ class ClientInfoListener(
                     )
                 )
             }
-        }, 50L)
+        }, 200L)
     }
 
     @EventHandler

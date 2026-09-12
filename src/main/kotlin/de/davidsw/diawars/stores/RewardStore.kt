@@ -15,12 +15,15 @@ class RewardStore(plugin: Diawars) : YamlStore(plugin, "rewards.yml") {
 
     fun addPending(playerId: UUID, amount: Int) {
         cache[playerId] = getPending(playerId) + amount
-        saveImmediately()
+        // Small file, infrequent writes: persist synchronously so a crash cannot
+        // lose owed diamonds or (after clear-then-grant) pay them out twice.
+        flushNow()
     }
 
     fun clearPending(playerId: UUID) {
-        cache.remove(playerId)
-        saveImmediately()
+        // Durable removal BEFORE the payout in checkPendingPlayer: crash after this
+        // point must not find the balance on disk again (second payout).
+        if (cache.remove(playerId) != null) flushNow()
     }
 
     override fun writeTo(yaml: YamlConfiguration) {

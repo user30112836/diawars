@@ -7,7 +7,8 @@ import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit.getOfflinePlayer
+import org.bukkit.Bukkit
+import org.bukkit.OfflinePlayer
 import org.bukkit.command.Command
 import org.bukkit.command.CommandExecutor
 import org.bukkit.command.CommandSender
@@ -43,6 +44,18 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     // reload
     // ------------------------------------------------------------------
 
+    /**
+     * Non-blocking player resolution: online players first, then the local
+     * UserCache. Never triggers a (blocking) Mojang profile lookup like the
+     * deprecated getOfflinePlayer(String) does. Returns null for unknown names.
+     */
+    private fun resolveKnownPlayer(name: String): OfflinePlayer? {
+        Bukkit.getPlayerExact(name)?.let { return it }
+        val cached = Bukkit.getOfflinePlayerIfCached(name) ?: return null
+        if (!cached.hasPlayedBefore() && !cached.isOnline) return null
+        return cached
+    }
+
     private fun handleReload(sender: CommandSender) {
         try {
             plugin.reloadPluginConfigs()
@@ -67,8 +80,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             return
         }
 
-        val target = getOfflinePlayer(args[1])
-        if (!target.hasPlayedBefore() && !target.isOnline) {
+        val target = resolveKnownPlayer(args[1])
+        if (target == null) {
             sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
             return
         }
@@ -225,8 +238,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                     sender.sendMessage(mm("<red>Die Anzahl der Diamanten muss positiv sein!</red>"))
                     return
                 }
-                val target = getOfflinePlayer(args[1])
-                if (!target.hasPlayedBefore() && !target.isOnline) {
+                val target = resolveKnownPlayer(args[1])
+                if (target == null) {
                     sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
                     return
                 }

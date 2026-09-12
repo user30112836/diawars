@@ -55,14 +55,19 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
             exp = player.exp,
             level = player.level,
         )
-        saveImmediately()
+        // Custody transfer: the live inventory is cleared/teleported right after this
+        // call, so persist synchronously. An async write could still be in flight on
+        // crash, resurrecting the snapshot and duplicating items on restore.
+        flushNow()
     }
 
     fun getState(playerId: UUID) = cache[playerId]
 
     fun restoreState(player: Player, minimal: Boolean = false): Boolean {
         val state = cache.remove(player.uniqueId) ?: return false
-        saveImmediately()
+        // Durable removal BEFORE granting items back: a crash after this point must
+        // not find the snapshot on disk again (second restore = duplicated items).
+        flushNow()
 
         if (!minimal) {
             player.inventory.clear()
@@ -90,8 +95,7 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
     }
 
     fun clearState(playerId: UUID) {
-        cache.remove(playerId)
-        saveImmediately()
+        if (cache.remove(playerId) != null) flushNow()
     }
 
     override fun writeTo(yaml: YamlConfiguration) {

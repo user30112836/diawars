@@ -114,7 +114,7 @@ class Store(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
-        vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore,
+        vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -283,6 +283,7 @@ class Diawars : JavaPlugin() {
     override fun onDisable() {
         eventManager.saveActiveInventories()
         store.flushAllNow()
+        diamondLogManager.flushSync()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
     }

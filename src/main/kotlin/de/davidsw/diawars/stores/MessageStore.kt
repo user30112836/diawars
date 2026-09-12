@@ -23,7 +23,9 @@ class MessageStore(plugin: Diawars) : YamlStore(plugin, "pending_messages.yml") 
 
     fun clearPending(playerId: UUID) {
         if (cache.remove(playerId) != null) {
-            saveImmediately()
+            // Deliver-then-clear in deliverPending: persist synchronously so a crash
+            // cannot redeliver the same messages on next join.
+            flushNow()
         }
     }
 

@@ -29,7 +29,9 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
         val id = (nextId++).toString()
         val bug = BugReport(id, reporter, description, System.currentTimeMillis() / 1000)
         cache[id] = bug
-        saveImmediately()
+        // Infrequent player-facing writes: persist synchronously so reports and
+        // resolutions survive a crash instead of resurrecting as unresolved.
+        flushNow()
         return bug
     }
 
@@ -37,7 +39,7 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
         val bug = cache[id] ?: return false
         if (bug.resolved) return false
         bug.resolved = true
-        saveImmediately()
+        flushNow()
         return true
     }
 
@@ -48,7 +50,7 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
 
     fun markRead(adminId: UUID) {
         adminReads[adminId] = System.currentTimeMillis() / 1000
-        saveImmediately()
+        flushNow()
     }
 
     override fun writeTo(yaml: YamlConfiguration) {

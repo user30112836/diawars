@@ -42,14 +42,17 @@ class ShulkerAccessManager {
         if (openEnderChest.remove(player.uniqueId) || openSessions.containsKey(player.uniqueId)) {
             val loc = player.location
             val world = loc.world
-            val inventory = player.openInventory.topInventory
+            // Use the closed inventory: player.openInventory.topInventory may already
+            // point at the next/previous view during InventoryCloseEvent.
+            val inventory = event.inventory
 
             var found  = 0
-            inventory.forEach { item ->
+            inventory.contents.forEachIndexed { index, item ->
                 if (item?.type in MaterialSets.DIAMOND_ITEMS) {
-                    world.dropItemNaturally(loc, item ?: return@forEach)
+                    // Drop a copy and clear the slot (see ContainerExplosionManager).
+                    world.dropItemNaturally(loc, item!!.clone())
                     found += DiamondCounter.countInItem(item)
-                    item.amount = 0
+                    inventory.setItem(index, null)
                 }
             }
             when (found) {
