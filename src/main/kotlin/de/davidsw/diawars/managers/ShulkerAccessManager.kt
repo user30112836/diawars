@@ -4,7 +4,6 @@ import de.davidsw.diawars.util.DiamondCounter
 import de.davidsw.diawars.util.MaterialSets
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit.createInventory
-import org.bukkit.Material
 import org.bukkit.block.ShulkerBox
 import org.bukkit.entity.Player
 import org.bukkit.event.inventory.InventoryCloseEvent

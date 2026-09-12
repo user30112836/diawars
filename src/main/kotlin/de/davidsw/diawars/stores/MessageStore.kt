@@ -13,12 +13,12 @@ class MessageStore(plugin: Diawars) : YamlStore(plugin, "pending_messages.yml") 
 
     fun getPending(playerId: UUID): List<String> = cache[playerId] ?: emptyList()
 
-    fun hasPending(playerId: UUID): Boolean = !cache[playerId].isNullOrEmpty()
-
     fun addPending(playerId: UUID, message: String) {
         val messages = cache.getOrPut(playerId) { mutableListOf() }
         messages.add(message)
-        saveImmediately()
+        // Chat-frequency path: defer persistence to the periodic flush instead of
+        // serializing the whole file per queued message. Delivery reads memory.
+        markDirty()
     }
 
     fun clearPending(playerId: UUID) {

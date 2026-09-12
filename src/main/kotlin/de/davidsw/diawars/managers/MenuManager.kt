@@ -85,7 +85,10 @@ class MenuManager(private val plugin: Diawars) {
     private fun startUpdater(func: () -> Unit, player: Player) {
         stopUpdater(player)
         func()
-        taskId[player.uniqueId] = plugin.server.scheduler.runTaskTimer(plugin, Runnable { func() }, 0L, 20L).taskId // 20 Ticks = 1 Second
+        // 40 ticks = 2 seconds (matches the scoreboard cadence): every open menu
+        // re-renders all slots, so 1Hz doubled the cost of team sums, name
+        // lookups and MiniMessage builds per viewer for no visible benefit.
+        taskId[player.uniqueId] = plugin.server.scheduler.runTaskTimer(plugin, Runnable { func() }, 0L, 40L).taskId
     }
 
     fun stopUpdater(player: Player) {
@@ -94,6 +97,14 @@ class MenuManager(private val plugin: Diawars) {
             plugin.server.scheduler.cancelTask(playerTaskId)
             taskId[player.uniqueId] = -1
         }
+    }
+
+    /** Removes all per-player menu state. Call on quit: logout may skip the close event. */
+    fun cleanupPlayer(playerId: UUID) {
+        taskId.remove(playerId)?.takeIf { it != -1 }?.let { plugin.server.scheduler.cancelTask(it) }
+        position.remove(playerId)
+        history.remove(playerId)
+        menuInvSwap.remove(playerId)
     }
 
     fun navigate(player: Player, slot: Int) {

@@ -13,6 +13,11 @@ data class BugReport(
 )
 
 class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
+    companion object {
+        /** Cap for per-admin read marks so departed admins don't grow the file forever. */
+        const val MAX_ADMIN_READS = 100
+    }
+
     private val cache = mutableMapOf<String, BugReport>()
     private val adminReads = mutableMapOf<UUID, Long>()
     private var nextId = 1
@@ -20,8 +25,6 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
     init {
         load()
     }
-
-    fun getById(id: String): BugReport? = cache[id]
 
     fun getUnresolved(): List<BugReport> = cache.values.filter { !it.resolved }.sortedBy { it.reportedAt }
 
@@ -50,6 +53,10 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
 
     fun markRead(adminId: UUID) {
         adminReads[adminId] = System.currentTimeMillis() / 1000
+        // Evict stalest read marks beyond the cap (admin action rate: negligible cost).
+        while (adminReads.size > MAX_ADMIN_READS) {
+            adminReads.minByOrNull { it.value }?.key?.let { adminReads.remove(it) } ?: break
+        }
         flushNow()
     }
 

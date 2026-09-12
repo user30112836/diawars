@@ -94,10 +94,6 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
         return true
     }
 
-    fun clearState(playerId: UUID) {
-        if (cache.remove(playerId) != null) flushNow()
-    }
-
     override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, state) in cache) {
             val key = uuid.toString()

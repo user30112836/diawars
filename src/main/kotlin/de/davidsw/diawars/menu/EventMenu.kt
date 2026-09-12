@@ -8,7 +8,7 @@ import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit.getOfflinePlayer
+import de.davidsw.diawars.util.PlayerNameCache
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -37,6 +37,13 @@ class EventMenu(private val plugin: Diawars) {
     private val activeEventsCache = mutableMapOf<UUID, List<GameEvent>>()
     private val upcomingEventsCache = mutableMapOf<UUID, List<GameEvent>>()
     private val pendingEventsCache = mutableMapOf<UUID, List<GameEvent>>()
+
+    /** Drops per-player view state. Call on quit: logout may skip the close event. */
+    fun clearCache(playerId: UUID) {
+        activeEventsCache.remove(playerId)
+        upcomingEventsCache.remove(playerId)
+        pendingEventsCache.remove(playerId)
+    }
 
     fun populateEventMenu(inv: Inventory, player: Player) {
         ALL_SLOTS.forEach { inv.setItem(it, null) }
@@ -262,7 +269,7 @@ class EventMenu(private val plugin: Diawars) {
 
         val shown = pending.take(if (pending.size > PENDING_SLOTS.size) PENDING_SLOTS.size - 1 else PENDING_SLOTS.size)
         shown.forEachIndexed { index, event ->
-            val creatorName = getOfflinePlayer(event.creator).name ?: "Unbekannt"
+            val creatorName = PlayerNameCache.nameOf(event.creator)
             inv.setItem(
                 PENDING_SLOTS[index], item(
                     material = Material.WRITTEN_BOOK,

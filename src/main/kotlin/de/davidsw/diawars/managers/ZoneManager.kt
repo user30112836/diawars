@@ -44,7 +44,6 @@ class ZoneManager(private val plugin: Diawars) {
     }
 
     fun hasCrossedBoundary(from: Location, to: Location): Boolean {
-        if (!isZoneWorld(to.world)) return false
-        return (from.x > ZONE_BOUNDARY) != (to.x > ZONE_BOUNDARY)
+        return isZoneWorld(to.world) && (from.x > ZONE_BOUNDARY) != (to.x > ZONE_BOUNDARY)
     }
 }

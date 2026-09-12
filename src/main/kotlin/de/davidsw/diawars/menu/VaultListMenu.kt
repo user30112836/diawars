@@ -4,7 +4,7 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.VaultRegion
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit.getOfflinePlayer
+import de.davidsw.diawars.util.PlayerNameCache
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -28,6 +28,12 @@ class VaultListMenu(private val plugin: Diawars) {
     private val currentPage = mutableMapOf<UUID, Int>()
 
     private val pageCache = mutableMapOf<UUID, List<VaultRegion>>()
+
+    /** Drops per-player view state. Call on quit: logout may skip the close event. */
+    fun clearCache(playerId: UUID) {
+        currentPage.remove(playerId)
+        pageCache.remove(playerId)
+    }
 
     fun resetPage(player: Player) {
         currentPage[player.uniqueId] = 0
@@ -60,7 +66,7 @@ class VaultListMenu(private val plugin: Diawars) {
                 val teamColor = teamColor(vault.team)
 
                 val statusLore = if (claim != null) {
-                    val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
+                    val ownerName = PlayerNameCache.nameOf(claim.owner)
                     mm("<gray>Status: </gray><green>Beansprucht</green> <gray>von</gray> <white>$ownerName</white>")
                 } else {
                     mm("<gray>Status: </gray><yellow>Frei</yellow>")
@@ -131,7 +137,7 @@ class VaultListMenu(private val plugin: Diawars) {
                 val teamColor = teamColor(vault.team)
 
                 val statusText = if (claim != null) {
-                    val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
+                    val ownerName = PlayerNameCache.nameOf(claim.owner)
                     "<green>Beansprucht</green> <gray>von</gray> <white>$ownerName</white>"
                 } else {
                     "<yellow>Frei</yellow>"

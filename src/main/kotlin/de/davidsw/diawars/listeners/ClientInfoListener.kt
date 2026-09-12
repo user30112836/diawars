@@ -70,7 +70,6 @@ class ClientInfoListener(
         try {
             val json = readVarIntPrefixedUtf8(message)
 
-            // Parse once here; saveFromJson re-parses into its DTO shape.
             val modIds = try {
                 extractModIds(json)
             } catch (e: Exception) {

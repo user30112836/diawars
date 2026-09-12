@@ -23,6 +23,11 @@ class ManualMenu(private val plugin: Diawars) {
 
     private val segmentCache = mutableMapOf<UUID, List<ManualSegment>>()
 
+    /** Drops per-player view state. Call on quit: logout may skip the close event. */
+    fun clearCache(playerId: UUID) {
+        segmentCache.remove(playerId)
+    }
+
     fun populateManualMenu(inv: Inventory, player: Player) {
         ALL_SLOTS.forEach { inv.setItem(it, null) }
 

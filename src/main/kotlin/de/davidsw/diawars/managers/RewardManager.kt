@@ -18,7 +18,9 @@ class RewardManager(private val plugin: Diawars) {
         if (!plugin.config.getBoolean("playtime-reward.enabled", false)) return
         if (!plugin.teamManager.isPlayerInTeam(player.uniqueId)) return
 
-        val intervalTicks = plugin.config.getInt("playtime-reward.interval-minutes", 30) * 60 * 20L
+        // Guard against a zero/negative interval: a 0-period task throws.
+        val intervalMinutes = plugin.config.getInt("playtime-reward.interval-minutes", 30).coerceAtLeast(1)
+        val intervalTicks = intervalMinutes * 60 * 20L
         taskId[player.uniqueId] = plugin.server.scheduler.runTaskTimer(plugin, Runnable {
             val amount = plugin.config.getInt("playtime-reward.amount", 1)
             grantDiamondReward(player, amount)
@@ -43,6 +45,9 @@ class RewardManager(private val plugin: Diawars) {
     fun grantDiamondReward(player: Player, amount: Int) = grantDiamondReward(player.uniqueId, amount)
 
     fun grantDiamondReward(playerId: UUID, amount: Int) {
+        // Non-positive amounts must never reach the pending balance (a negative
+        // addPending would silently reduce what the player is owed).
+        if (amount <= 0) return
         val player = plugin.server.getPlayer(playerId)
         if (player != null && player.isOnline && !plugin.eventManager.isEventWorld(player.world.name)) {
             giveDiamonds(player, amount)
@@ -53,8 +58,16 @@ class RewardManager(private val plugin: Diawars) {
 
     private fun giveDiamonds(player: Player, amount: Int) {
         if (amount <= 0) return
-        val glowingStack = DiamondGlow.applyGlow(ItemStack(Material.DIAMOND, amount))
-        val leftover = player.inventory.addItem(glowingStack).values.sumOf { it.amount }
+        // Split into legal max-stacks: a single oversized ItemStack exceeds the
+        // 64 max-stack size and can throw before addItem ever sees it.
+        var rest = amount
+        var leftover = 0
+        while (rest > 0) {
+            val stackSize = minOf(rest, Material.DIAMOND.maxStackSize)
+            val glowingStack = DiamondGlow.applyGlow(ItemStack(Material.DIAMOND, stackSize))
+            leftover += player.inventory.addItem(glowingStack).values.sumOf { it.amount }
+            rest -= stackSize
+        }
         val given = amount - leftover
         if (given > 0) {
             plugin.diamondLogManager.log(DiamondAction.REWARD, Material.DIAMOND, given, player)

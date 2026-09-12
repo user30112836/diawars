@@ -48,7 +48,6 @@ class ManualManager(private val plugin: Diawars) {
     fun getOverview(): ManualSegment = overview
     fun getRules(): ManualSegment = rules
     fun getSegments(): List<ManualSegment> = segments
-    fun getSegment(id: String): ManualSegment? = segments.firstOrNull { it.id == id }
 
     fun getFullManual(): ManualSegment {
         val pages = segments.flatMap { segment ->

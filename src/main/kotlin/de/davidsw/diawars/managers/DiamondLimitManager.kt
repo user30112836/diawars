@@ -18,6 +18,16 @@ import java.util.UUID
 class DiamondLimitManager(private val plugin: Diawars) {
     val trackedDiamonds = mutableMapOf<UUID, DiamondData>()
 
+    // Display thresholds, refreshed from config once per tracking run (and on
+    // event-driven tracking) instead of per item per second.
+    private var yellowThreshold = 3000
+    private var redThreshold = 1200
+
+    private fun refreshTimerThresholds() {
+        yellowThreshold = plugin.config.getInt("dia-timer.yellow", 3000)
+        redThreshold = plugin.config.getInt("dia-timer.red", 1200)
+    }
+
     data class DiamondData(
         val item: Item,
         val textDisplay: TextDisplay,
@@ -78,6 +88,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
         if (item.uniqueId in trackedDiamonds) return
 
         item.isGlowing = true
+        refreshTimerThresholds()
 
         val textDisplay = item.location.world.spawn(item.location.clone().add(0.0, 0.6, 0.0), TextDisplay::class.java) { display ->
             display.text(formatTimer(getTicksLived(item)))
@@ -98,8 +109,8 @@ class DiamondLimitManager(private val plugin: Diawars) {
         val minutes = secondsLeft / 60
         val seconds = secondsLeft % 60
         val color = when {
-            ticks > plugin.config.getInt("dia-timer.yellow", 3000) -> NamedTextColor.GREEN // green
-            ticks > plugin.config.getInt("dia-timer.red", 1200) -> NamedTextColor.YELLOW // yellow
+            ticks > yellowThreshold -> NamedTextColor.GREEN // green
+            ticks > redThreshold -> NamedTextColor.YELLOW // yellow
             else -> NamedTextColor.RED // red
         }
         return Component.text("⏱ ${"%d:%02d".format(minutes, seconds)}", color)
@@ -108,6 +119,9 @@ class DiamondLimitManager(private val plugin: Diawars) {
     fun startTrackingTask() {
         object: BukkitRunnable() {
             override fun run() {
+                // Read once per run, not once per tracked item below.
+                refreshTimerThresholds()
+                val despawnTime = plugin.config.getInt("dia-timer.despawn-time", 6000)
                 val toRemove = mutableListOf<UUID>()
 
                 trackedDiamonds.forEach { (uuid, data) ->
@@ -120,7 +134,7 @@ class DiamondLimitManager(private val plugin: Diawars) {
                     }
 
                     val ticksLived = getTicksLived(item)
-                    val ticksLeft = plugin.config.getInt("dia-timer.despawn-time", 6000) - ticksLived
+                    val ticksLeft = despawnTime - ticksLived
 
                     if (ticksLeft <= 0) {
                         plugin.diamondLogManager.log(

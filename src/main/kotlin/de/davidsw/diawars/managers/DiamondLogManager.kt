@@ -46,8 +46,6 @@ class DiamondLogManager(private val plugin: Diawars) {
             val window = ArrayDeque<String>(cap)
             val file = currentLogFile()
             if (file.exists()) {
-                // Stream with a sliding window instead of materialising the whole
-                // daily file to return a handful of lines.
                 file.bufferedReader().useLines { lines ->
                     lines.forEach { line ->
                         if (window.size >= cap) window.removeFirst()
@@ -55,8 +53,6 @@ class DiamondLogManager(private val plugin: Diawars) {
                     }
                 }
             }
-            // Newest entries may still sit in the async queue; include them so
-            // /admin log reflects the latest events.
             synchronized(logLock) {
                 for (line in pendingLines) {
                     if (window.size >= cap) window.removeFirst()
@@ -145,7 +141,6 @@ class DiamondLogManager(private val plugin: Diawars) {
         }
     }
 
-    /** Synchronously persists everything still queued. Call from onDisable before tasks are cancelled. */
     fun flushSync() {
         flushQueue()
     }

@@ -5,7 +5,7 @@ import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.stores.VaultClaim
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import org.bukkit.Bukkit.getOfflinePlayer
+import de.davidsw.diawars.util.PlayerNameCache
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -100,7 +100,7 @@ class VaultMenu(private val plugin: Diawars) {
         if (ownClaim != null) {
             val vaultName = plugin.vaultManager.getVaultById(ownClaim.vaultId)?.displayName ?: ownClaim.vaultId
             val vaultDiamonds = diamonds.getVaultCount(ownClaim.vaultId)
-            val invitedNames = ownClaim.invited.map { getOfflinePlayer(it).name ?: "Unbekannt" }
+            val invitedNames = ownClaim.invited.map { PlayerNameCache.nameOf(it) }
 
             lore += mm("<gray>Dein Vault: </gray><gold>$vaultName</gold>")
             lore += mm("<gray>Diamanten: </gray><aqua>$vaultDiamonds</aqua>")
@@ -117,7 +117,7 @@ class VaultMenu(private val plugin: Diawars) {
             lore += mm("<gray>Eingeladen zu:</gray>")
             invitedClaims.forEach { claim ->
                 val vaultName = plugin.vaultManager.getVaultById(claim.vaultId)?.displayName ?: claim.vaultId
-                val ownerName = getOfflinePlayer(claim.owner).name ?: "Unbekannt"
+                val ownerName = PlayerNameCache.nameOf(claim.owner)
                 lore += mm("<gray>- </gray><gold>$vaultName</gold> <gray>(von <white>$ownerName</white>)</gray>")
             }
         }
@@ -193,7 +193,7 @@ class VaultMenu(private val plugin: Diawars) {
         }
         val existingClaim = claims.getClaim(vault.id)
         if (existingClaim != null) {
-            val owner = getOfflinePlayer(existingClaim.owner).name ?: "Unbekannt"
+            val owner = PlayerNameCache.nameOf(existingClaim.owner)
             player.sendMessage(mm("<red>Dieses Vault wurde bereits von <gold>$owner</gold> beansprucht!</red>"))
             return
         }

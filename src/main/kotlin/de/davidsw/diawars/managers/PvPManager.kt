@@ -20,7 +20,10 @@ class PvPManager(private val plugin: Diawars) {
 
     fun isInFight(playerId: UUID): Boolean {
         val lastFightTime = lastFight[playerId] ?: return false
-        return getCurrentTick() - lastFightTime < fightTime
+        if (getCurrentTick() - lastFightTime < fightTime) return true
+        // Opportunistic eviction: expired entries would otherwise live forever.
+        lastFight.remove(playerId)
+        return false
     }
 
     fun fightTimeRemaining(playerId: UUID): Int {
@@ -80,6 +83,7 @@ class PvPManager(private val plugin: Diawars) {
 
     fun cleanupPlayer(playerId: UUID) {
         cancelToggle(playerId)
+        lastFight.remove(playerId)
         stopActionbar(Bukkit.getPlayer(playerId) ?: return)
     }
 

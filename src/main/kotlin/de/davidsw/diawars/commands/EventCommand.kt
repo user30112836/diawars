@@ -193,7 +193,8 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     player.sendMessage(mm("<red>Verwendung: /event config effect add &lt;effekt&gt; [level]</red>"))
                     return
                 }
-                val amplifier = ((args.getOrNull(4)?.toIntOrNull() ?: 1) - 1).coerceAtLeast(0)
+                // Clamp to sane levels: unbounded input yields absurd amplifiers.
+                val amplifier = (args.getOrNull(4)?.toIntOrNull() ?: 1).coerceIn(1, 256) - 1
                 configStore.update(eventId) { config ->
                     val filtered = config.effects.filterNot { it.type == PotionEffectParser.name(type) }
                     config.copy(effects = filtered + EventPotionEffect(PotionEffectParser.name(type), amplifier))

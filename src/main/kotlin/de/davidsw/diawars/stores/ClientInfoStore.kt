@@ -85,10 +85,6 @@ class ClientInfoStore(
         reportedPlayers.remove(playerId)
     }
 
-    fun getInfo(playerId: UUID): ClientInfo? {
-        return cache[playerId]
-    }
-
     fun saveFromJson(playerId: UUID, json: String): Boolean {
         return try {
             val dto = gson.fromJson(json, ClientInfoDto::class.java)
@@ -162,7 +158,10 @@ class ClientInfoStore(
 
             cache[playerId] = updatedInfo
 
-            saveImmediately()
+            // Packet-frequency path: defer persistence to the periodic/shutdown
+            // flush instead of serializing the whole file per client packet.
+            // Lost entries are re-reported on next join anyway.
+            markDirty()
 
             true
         } catch (e: Exception) {

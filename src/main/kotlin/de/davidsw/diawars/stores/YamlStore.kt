@@ -42,12 +42,17 @@ abstract class YamlStore(protected val plugin: Diawars, fileName: String) {
         dirty = true
     }
 
+    /**
+     * Serializes on the caller (main) thread and writes the file off-thread.
+     * Serialization deliberately stays on the main thread because ItemStack/YAML
+     * serialization is not thread-safe; only the blocking file write is offloaded.
+     * Prefer [markDirty] on high-frequency paths to avoid an O(fileSize) serialize
+     * per mutation; use [flushNow] for custody transfers that must survive a crash.
+     */
     fun saveImmediately() {
         dirty = false
         write(serialize(isFinal = false), async = true)
     }
-
-    fun isDirty(): Boolean = dirty
 
     fun flushIfDirty(): Boolean {
         if (!dirty) return false

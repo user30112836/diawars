@@ -76,6 +76,10 @@ class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.ym
 
     override fun writeTo(yaml: YamlConfiguration) {
         for ((uuid, count) in cache) {
+            // Zero balances sum to nothing: skip them to keep the file (rewritten
+            // wholesale on every flush) bounded by active holders. Memory retains
+            // the zeros so snapshotIfChanged doesn't re-dirty on every refresh.
+            if (count == 0) continue
             val key = uuid.toString()
             yaml.set("$key.diamonds", count)
             yaml.set("$key.name", names[uuid] ?: "unknown")

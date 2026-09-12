@@ -63,11 +63,16 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
 
     @EventHandler
     fun onChunkLoad(event: ChunkLoadEvent) {
-        event.chunk.entities
+        // Snapshot now, track next tick: spawning a TextDisplay (+ NBT reads) per
+        // diamond inline stalls chunk loading and can cascade into lag.
+        val diamonds = event.chunk.entities
             .filterIsInstance<Item>()
             .filter { it.itemStack.type == Material.DIAMOND }
             .filter { it.uniqueId !in plugin.diamondLimitManager.trackedDiamonds }
-            .forEach { plugin.diamondLimitManager.trackDiamond(it) }
+        if (diamonds.isEmpty()) return
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            diamonds.forEach { plugin.diamondLimitManager.trackDiamond(it) }
+        })
     }
 
     @EventHandler

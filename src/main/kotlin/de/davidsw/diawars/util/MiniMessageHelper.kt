@@ -4,15 +4,13 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 
 object MiniMessageHelper {
-    fun mm(text: String): Component = miniMessage().deserialize(text)
+    private val shared = miniMessage()
+
+    fun mm(text: String): Component = shared.deserialize(text)
     fun pmm(text: String): Component {
         val prefix = "<dark_gray>[<gold>Plugin</gold>] </dark_gray>"
-        return miniMessage().deserialize(prefix + text)
+        return shared.deserialize(prefix + text)
     }
 
-    /** Escapes user-controlled input so it renders as literal text instead of MiniMessage tags. */
-    fun escape(text: String): String = miniMessage().escapeTags(text)
-
-    /** Renders untrusted input as plain literal text (no MiniMessage tags are interpreted). */
-    fun smm(text: String): Component = miniMessage().deserialize(escape(text))
+    fun escape(text: String): String = shared.escapeTags(text)
 }

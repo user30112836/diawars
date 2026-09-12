@@ -9,6 +9,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.player.PlayerQuitEvent
 
 class MenuListener(private val plugin: Diawars): Listener {
     private val clickHandlers: Map<Component, (InventoryClickEvent, Player, Int) -> Unit> = mapOf(
@@ -66,5 +67,16 @@ class MenuListener(private val plugin: Diawars): Listener {
         val player = event.player as Player
         plugin.menuManager.stopUpdater(player)
         plugin.menuManager.emptyHistory(player)
+    }
+
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        // Logout may skip InventoryCloseEvent: cancel the per-viewer updater and
+        // drop all per-player view state so neither tasks nor caches leak.
+        val playerId = event.player.uniqueId
+        plugin.menuManager.cleanupPlayer(playerId)
+        plugin.menu.manualMenu.clearCache(playerId)
+        plugin.menu.vaultListMenu.clearCache(playerId)
+        plugin.menu.eventMenu.clearCache(playerId)
     }
 }
