@@ -34,6 +34,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "bug" -> handleBug(sender, args.drop(1))
             "event" -> handleEvent(sender, args.drop(1))
             "pvp" -> handlePvp(sender, args.drop(1))
+            "lobby" -> handleLobby(sender, args.drop(1))
             else -> sendHelp(sender)
         }
 
@@ -377,6 +378,55 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     }
 
     // ------------------------------------------------------------------
+    // lobby lock
+    // ------------------------------------------------------------------
+
+    private fun handleLobby(sender: CommandSender, args: List<String>) {
+        when (args.getOrNull(0)?.lowercase()) {
+            "lock" -> {
+                if (plugin.lobbyManager.locked) {
+                    sender.sendMessage(mm("<yellow>Die Lobby ist bereits gesperrt!</yellow>"))
+                    return
+                }
+                plugin.lobbyManager.locked = true
+                sender.sendMessage(mm("<green>✓ Die Lobby wurde gesperrt! Spieler können sie nicht mehr verlassen.</green>"))
+                Bukkit.broadcast(mm("<red><bold>Die Lobby wurde von einem Admin gesperrt! Ihr könnt sie vorerst nicht verlassen.</bold></red>"))
+            }
+
+            "unlock" -> {
+                if (!plugin.lobbyManager.locked) {
+                    sender.sendMessage(mm("<yellow>Die Lobby ist derzeit nicht gesperrt!</yellow>"))
+                    return
+                }
+                plugin.lobbyManager.locked = false
+                sender.sendMessage(mm("<green>✓ Die Lobby wurde wieder freigegeben!</green>"))
+                Bukkit.broadcast(mm("<green>Die Lobby wurde wieder freigegeben!</green>"))
+            }
+
+            "status" -> {
+                val state = if (plugin.lobbyManager.locked) "<red>gesperrt</red>" else "<green>offen</green>"
+                val count = plugin.lobbyManager.lobbyPlayerCount()
+                sender.sendMessage(mm("<gray>Lobby-Status: $state <dark_gray>($count Spieler in der Lobby)</dark_gray></gray>"))
+            }
+
+            else -> sendLobbyHelp(sender)
+        }
+    }
+
+    private fun sendLobbyHelp(sender: CommandSender) {
+        sender.sendMessage(
+            mm(
+                """
+                <gold>=== Lobby-Administration ===</gold>
+                <yellow>/admin lobby lock</yellow><gray> - Lobby sperren (Spieler können nicht raus)</gray>
+                <yellow>/admin lobby unlock</yellow><gray> - Lobby wieder freigeben</gray>
+                <yellow>/admin lobby status</yellow><gray> - Sperrstatus anzeigen</gray>
+                """.trimIndent(),
+            ),
+        )
+    }
+
+    // ------------------------------------------------------------------
     // help
     // ------------------------------------------------------------------
 
@@ -398,6 +448,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten vergeben</gray>
                 <yellow>/admin event list &lt;pending|accepted|active&gt;</yellow><gray> - Events auflisten</gray>
                 <yellow>/admin pvp &lt;spieler|all&gt; &lt;on|off&gt;</yellow><gray> - PvP-Status setzen</gray>
+                <yellow>/admin lobby lock|unlock|status</yellow><gray> - Lobby sperren/freigeben</gray>
                 """.trimIndent(),
             ),
         )
@@ -414,7 +465,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "event", "pvp")
+            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -472,6 +523,12 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 }
                 if (args.size == 3) {
                     return listOf("on", "off").filter { it.startsWith(args[2].lowercase()) }
+                }
+            }
+
+            "lobby" -> {
+                if (args.size == 2) {
+                    return listOf("lock", "unlock", "status").filter { it.startsWith(args[1].lowercase()) }
                 }
             }
         }

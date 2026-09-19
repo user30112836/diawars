@@ -333,7 +333,9 @@ class MainMenu(private val plugin: Diawars) {
                 if (plugin.eventManager.getSession(player.uniqueId) != null) return
 
                 if (plugin.lobbyManager.isInLobby(player.uniqueId)) {
-                    if (plugin.lobbyManager.leaveLobby(player)) {
+                    if (plugin.lobbyManager.locked && !player.hasPermission("diawars.admin")) {
+                        player.sendMessage(mm("<red>Die Lobby ist derzeit gesperrt! Du kannst sie nicht verlassen.</red>"))
+                    } else if (plugin.lobbyManager.leaveLobby(player)) {
                         player.closeInventory()
                         player.sendMessage(mm("<green>Du hast die Lobby verlassen.</green>"))
                     }

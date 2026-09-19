@@ -20,7 +20,9 @@ class LobbyCommand(private val plugin: Diawars): CommandExecutor {
         }
 
         if (plugin.lobbyManager.isInLobby(sender.uniqueId)) {
-            if (plugin.lobbyManager.leaveLobby(sender)) {
+            if (plugin.lobbyManager.locked && !sender.hasPermission("diawars.admin")) {
+                sender.sendMessage(mm("<red>Die Lobby ist derzeit gesperrt! Du kannst sie nicht verlassen.</red>"))
+            } else if (plugin.lobbyManager.leaveLobby(sender)) {
                 sender.sendMessage(mm("<green>Du hast die Lobby verlassen.</green>"))
             }
         } else {

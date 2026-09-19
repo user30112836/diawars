@@ -20,6 +20,11 @@ class LobbyManager(private val plugin: Diawars) {
 
     fun isInLobby(playerId: UUID): Boolean = playerId in playersInLobby
 
+    /** When true, non-admin players cannot leave the lobby (admin lock). */
+    var locked = false
+
+    fun lobbyPlayerCount(): Int = playersInLobby.size
+
     /** Lobby spawn from config, or null when world/section are missing. */
     fun getSpawnLocation(): Location? {
         val world = getWorld(worldName)
@@ -70,6 +75,8 @@ class LobbyManager(private val plugin: Diawars) {
 
     fun leaveLobby(player: Player): Boolean {
         if (!isInLobby(player.uniqueId)) return false
+        // Locked lobby: regular players stay inside, admins always pass.
+        if (locked && !player.hasPermission("diawars.admin")) return false
         playersInLobby.remove(player.uniqueId)
 
         val onboarding = plugin.store.onboardingStore
