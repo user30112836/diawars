@@ -2,28 +2,49 @@ overview:
   title: "Kurzübersicht"
   pages:
     - |
-      <aqua><bold>Diawars</bold></aqua>
-      <gray>Kurzübersicht</gray>
+      <aqua><bold>Zonen & Gegnerzone</bold></aqua>
 
-      <dark_gray>Diawars ist ein Teamspiel um Diamanten. Diamanten sind Punkte und Währung zugleich. Sammle, verteidige und sichere sie als Blöcke im Vault.</dark_gray>
-    - |
-      <aqua><bold>Zonen</bold></aqua>
+      <dark_gray>Die Hauptwelt ist bei X=0 geteilt. Westlich davon liegt die Zone von Team A, östlich die von Team B.</dark_gray>
 
-      <dark_gray>Die Hauptwelt ist bei X=0 geteilt: westlich liegt die Zone von Team A, östlich die von Team B. Der Kompass im Menü verrät dir, ob du zu Hause bist.</dark_gray>
+      <dark_gray>In der Gegnerzone reagieren Blöcke nicht auf Rechts- oder Linksklicks.</dark_gray>
     - |
       <aqua><bold>Diamanten</bold></aqua>
 
-      <dark_gray>Nimmst du mehr als 32 Diamanten auf, fällt der Rest beim ausloggen vor deine Füße. Kills geben +2, alle 30 Min Spielzeit +1 Diamanten. Gedroppte Diamanten lösen sich nach 10 Min auf.</dark_gray>
+      <dark_gray>Diamanten sind alles: Währung und Punktestand zugleich.</dark_gray>
+
+      <dark_gray>Nimmst du mehr als 32 Diamanten auf, fällt der Rest beim Ausloggen vor deine Füße. Diamanten können nicht auf normalem Weg gefunden werden.</dark_gray>
     - |
-      <aqua><bold>Gegnerzone</bold></aqua>
+      <aqua><bold>Nachschub & PvP</bold></aqua>
 
-      <dark_gray>Blöcke reagieren dort nicht auf Rechts- oder Linksklicks. Essen, Trinken, Werfen und Angreifen geht normal. Diamantblöcke aus Gegner-Vaults darfst du abbauen.</dark_gray>
+      <dark_gray>Diamanten gibt der Server dir bei bestimmten Ereignissen als Belohnung: Kills geben +2, alle 30 Min. Spielzeit +1.</dark_gray>
+
+      <dark_gray>PvP ist standardmäßig aktiviert.</dark_gray>
     - |
-      <aqua><bold>Menü</bold></aqua>
+      <aqua><bold>Lagerung</bold></aqua>
 
-      <dark_gray>Alles läuft über das Menü (</dark_gray><gold>/menu</gold><dark_gray>).</dark_gray>
+      <dark_gray>Kisten, Shulker, Endertruhen und andere Container mit Diamanten explodieren. Die Diamanten fallen dabei heraus.</dark_gray>
 
-      <dark_gray>Steckst du fest, töte dich mit Selfkill im Menü. Zum Pausieren gehe in die Lobby: dort bist du sicher. Fehler meldest du über das Buch im Menü. Etc.</dark_gray>
+      <dark_gray>Trage sie im Inventar oder sichere sie als Block im Vault.</dark_gray>
+    - |
+      <aqua><bold>Vaults</bold></aqua>
+
+      <dark_gray>Jedes Team besitzt Vault-Gebiete. Nur dort kannst du Diamantblöcke platzieren.</dark_gray>
+
+      <dark_gray>Stelle dich in die Nähe eines freien Vaults deines Teams und beanspruche es über das Menü.</dark_gray>
+    - |
+      <aqua><bold>Kampfregeln</bold></aqua>
+
+      <dark_gray>Nach jedem Treffer giltst du 2 Min. als im Kampf: Dein Status lässt sich nicht ändern und eine wartende Änderung verfällt sofort.</dark_gray>
+      
+      <dark_gray>Loggst du dich im Kampf aus, lässt du alle Diamanten fallen!</dark_gray>
+    - |
+      <aqua><bold>Raub</bold></aqua>
+
+      <dark_gray>Achtung: Gegner können die Blöcke in deinem Vault stehlen. Umgekehrt darfst du auch Diamantblöcke aus Gegner-Vaults abbauen und für dein Team mitnehmen.</dark_gray>
+    - |
+      <aqua><bold>Events</bold></aqua>
+
+      <dark_gray>Events sind Minispiele von Spielern. Mehr dazu im Handbuch unter Events.</dark_gray>
 
 rules:
   title: "Serverregeln"
@@ -68,7 +89,7 @@ segments:
       - |
         <aqua><bold>Lagerung</bold></aqua>
 
-        <dark_gray>Kisten, Shulker, Endertruhen und andere Kontainer mit Diamanten explodieren. Die Diamanten fallen dabei heraus.</dark_gray>
+        <dark_gray>Kisten, Shulker, Endertruhen und andere Container mit Diamanten explodieren. Die Diamanten fallen dabei heraus.</dark_gray>
 
         <dark_gray>Trage sie im Inventar oder sichere sie als Block im Vault.</dark_gray>
       - |
