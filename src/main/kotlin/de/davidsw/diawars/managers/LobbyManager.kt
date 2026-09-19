@@ -20,6 +20,26 @@ class LobbyManager(private val plugin: Diawars) {
 
     fun isInLobby(playerId: UUID): Boolean = playerId in playersInLobby
 
+    /** Lobby spawn from config, or null when world/section are missing. */
+    fun getSpawnLocation(): Location? {
+        val world = getWorld(worldName)
+            ?: WorldCreator(worldName)
+                .type(WorldType.FLAT)
+                .generatorSettings("""{"layers":[],"biome":"minecraft:the_void"}""")
+                .generateStructures(false)
+                .createWorld()
+            ?: return null
+        val section = plugin.config.getConfigurationSection("lobby.spawn-point") ?: return null
+        return Location(
+            world,
+            section.getDouble("x"),
+            section.getDouble("y"),
+            section.getDouble("z"),
+            section.getDouble("yaw").toFloat(),
+            section.getDouble("pitch").toFloat(),
+        )
+    }
+
     fun ensureWorldLoaded() {
         val world = getWorld(worldName) ?: WorldCreator(worldName)
             .type(WorldType.FLAT)
@@ -39,23 +59,7 @@ class LobbyManager(private val plugin: Diawars) {
         // No escape to the safe lobby while tagged in a fight.
         if (plugin.pvpManager.isInFight(player.uniqueId)) return false
 
-        val world = getWorld(worldName)
-            ?: WorldCreator(worldName)
-                .type(WorldType.FLAT)
-                .generatorSettings("""{"layers":[],"biome":"minecraft:the_void"}""")
-                .generateStructures(false)
-                .createWorld()
-            ?: return false
-
-        val section = plugin.config.getConfigurationSection("lobby.spawn-point") ?: return false
-        val location = Location(
-            world,
-            section.getDouble("x"),
-            section.getDouble("y"),
-            section.getDouble("z"),
-            section.getDouble("yaw").toFloat(),
-            section.getDouble("pitch").toFloat(),
-        )
+        val location = getSpawnLocation() ?: return false
 
         states.saveState(player)
         player.teleport(location)
