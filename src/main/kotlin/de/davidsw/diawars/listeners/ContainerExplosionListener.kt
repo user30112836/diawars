@@ -4,7 +4,9 @@ import de.davidsw.diawars.Diawars
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.inventory.InventoryDragEvent
 import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.inventory.InventoryPickupItemEvent
 import org.bukkit.event.inventory.InventoryType
@@ -15,6 +17,16 @@ class ContainerExplosionListener(private val plugin: Diawars): Listener {
         Material.DIAMOND_BLOCK,
         Material.DIAMOND,
     )
+
+    @EventHandler
+    fun onInventoryClick(event: InventoryClickEvent) {
+        plugin.shulkerAccessManager.handleClick(event)
+    }
+
+    @EventHandler
+    fun onInventoryDrag(event: InventoryDragEvent) {
+        plugin.shulkerAccessManager.handleDrag(event)
+    }
 
     @EventHandler
     fun onInventoryClose(event: InventoryCloseEvent) {
