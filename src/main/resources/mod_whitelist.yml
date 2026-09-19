@@ -1,8 +1,80 @@
-# Hinweis: fabric-api / fabricloader / minecraft werden vom Client bereits
+# Hinweis: fabric-api / fabricloader / minecraft / forge werden vom Client bereits
 # vorgefiltert und tauchen hier nicht auf, müssen also nicht gelistet werden.
-mods:
-  - "sodium"
-  - "lithium"
-  - "iris"
-  - "modmenu"
+# Forge-Port (diawars-client-forge, Mod-Id "diawars_client") sendet dasselbe
+# diawars:client_info-Paket wie die Fabric-Mod und ist immer erlaubt.
+# Forge-Mods mit Underscore-Ids (z.B. "oculus" statt "iris", "cloth_config")
+# ggf. hier zusätzlich zur Fabric-Schreibweise eintragen.
+#
+# Die Liste ist zweigeteilt (beide Abschnitte bitte alphabetisch sortiert halten):
+# - allowed_mods: Mods, die Spieler selbst installieren. Daraus erzeugt das
+#   Plugin automatisch die „Erlaubte Mods"-Seiten der Serverregeln.
+# - libraries: Abhängigkeiten, die von den Mods oben automatisch mitgebracht
+#   werden. Spieler installieren diese nicht selbst; sie sind nur gelistet,
+#   damit der Check sie nicht blockiert.
+
+allowed_mods:
+  - "appleskin"
+  - "betterf3"
+  - "betterstats"
+  - "bobby"
   - "cloth-config"
+  - "clumps"
+  - "distanthorizons"
+  - "dynamic_fps"
+  - "entityculling"
+  - "fastipping"
+  - "ferritecore"
+  - "gammautils"
+  - "iris"
+  - "jade"
+  - "lithium"
+  - "modmenu"
+  - "oculus"
+  - "shulkerboxtooltip"
+  - "sodium"
+  - "tcdcommons"
+  - "voicechat"
+  - "worldeditcui"
+  - "xaerolib"
+  - "xaerominimap"
+  - "xaeroworldmap"
+  - "yet_another_config_lib_v3"
+  - "zoomify"
+
+libraries:
+  - "cloth-basic-math" # cloth-config
+  - "com_twelvemonkeys_common_common-image" # yet_another_config_lib
+  - "com_twelvemonkeys_common_common-io" # yet_another_config_lib
+  - "com_twelvemonkeys_common_common-lang" # yet_another_config_lib
+  - "com_twelvemonkeys_imageio_imageio-core" # yet_another_config_lib
+  - "com_twelvemonkeys_imageio_imageio-metadata" # yet_another_config_lib
+  - "com_twelvemonkeys_imageio_imageio-webp" # yet_another_config_lib
+  - "com_typesafe_config" # bobby
+  - "dynamic_fps_common" # dynamic_fps
+  - "io_github_douira_glsl-transformer" # iris
+  - "io_leangen_geantyref_geantyref" # bobby
+  - "net_lostluma_battery" # dynamic_fps
+  - "org_anarres_jcpp" # iris
+  - "org_antlr_antlr4-runtime" # iris
+  - "org_jetbrains_kotlin_kotlin-reflect"
+  - "org_jetbrains_kotlin_kotlin-stdlib"
+  - "org_jetbrains_kotlin_kotlin-stdlib-jdk7"
+  - "org_jetbrains_kotlin_kotlin-stdlib-jdk8"
+  - "org_jetbrains_kotlinx_atomicfu-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-coroutines-jdk8"
+  - "org_jetbrains_kotlinx_kotlinx-datetime-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-io-core-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-serialization-core-jvm"
+  - "org_jetbrains_kotlinx_kotlinx-serialization-json-jvm"
+  - "org_quiltmc_parsers_gson" # yet_another_config_lib
+  - "org_quiltmc_parsers_json" # yet_another_config_lib
+  - "org_spongepowered_configurate-core" # bobby
+  - "org_spongepowered_configurate-hocon" # bobby
+  - "placeholder-api" # appleskin
+  - "transition" # entityculling
+  - "trender" # entityculling
+  - "voicechat_api" # voicechat
+  - "worldeditcui_protocol" # worldeditcui

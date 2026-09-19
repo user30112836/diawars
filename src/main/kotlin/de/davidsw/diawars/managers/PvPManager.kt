@@ -28,7 +28,9 @@ class PvPManager(private val plugin: Diawars) {
 
     fun fightTimeRemaining(playerId: UUID): Int {
         val lastFightTime = lastFight[playerId] ?: return 0
-        return (fightTime - getCurrentTick() + lastFightTime).coerceAtLeast(0)
+        val ticksLeft = (fightTime - getCurrentTick() + lastFightTime).coerceAtLeast(0)
+        // Convert ticks to seconds (round up so the display ticks in 1s steps, e.g. 2:00, 1:59, ...).
+        return (ticksLeft + 19) / 20
     }
 
     fun storeFight(player: Player) {
