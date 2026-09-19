@@ -3,6 +3,7 @@ package de.davidsw.diawars.commands
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.BugManager
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.escape
@@ -35,6 +36,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "event" -> handleEvent(sender, args.drop(1))
             "pvp" -> handlePvp(sender, args.drop(1))
             "lobby" -> handleLobby(sender, args.drop(1))
+            "msg" -> handleMsg(sender, args.drop(1))
             else -> sendHelp(sender)
         }
 
@@ -427,6 +429,56 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     }
 
     // ------------------------------------------------------------------
+    // msg (server announcements to a player, a team or everyone)
+    // ------------------------------------------------------------------
+
+    private fun handleMsg(sender: CommandSender, args: List<String>) {
+        if (args.size < 2) {
+            sender.sendMessage(mm("<red>Verwendung: /admin msg &lt;spieler|team-a|team-b|all&gt; &lt;nachricht&gt;</red>"))
+            return
+        }
+
+        val text = args.drop(1).joinToString(" ")
+        // Same bracket style as the shared prefix helper, but tagged [Server].
+        val tagged = "<dark_gray>[<gold>Server</gold>]</dark_gray> $text"
+        val targetArg = args[0]
+
+        if (targetArg.equals("all", ignoreCase = true)) {
+            val count = plugin.server.onlinePlayers.size
+            Bukkit.broadcast(mm(tagged))
+            sender.sendMessage(mm("<green>✓ Nachricht an <gold>$count</gold> Spieler gesendet!</green>"))
+            return
+        }
+
+        resolveTeam(targetArg)?.let { team ->
+            var count = 0
+            plugin.server.onlinePlayers.forEach { online ->
+                if (plugin.teamManager.getPlayerTeam(online.uniqueId) == team) {
+                    online.sendMessage(mm(tagged))
+                    count++
+                }
+            }
+            sender.sendMessage(mm("<green>✓ Nachricht an <gold>$count</gold> Online-Spieler von <gold>${escape(team.displayName)}</gold> gesendet!</green>"))
+            return
+        }
+
+        val target = resolveKnownPlayer(targetArg)
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt! Verwende einen Spielernamen, team-a, team-b oder all.</red>"))
+            return
+        }
+        // Queued when the player is offline or AFK, like other admin messages.
+        plugin.messageManager.sendOrQueue(target.uniqueId, tagged)
+        sender.sendMessage(mm("<green>✓ Nachricht an <gold>${target.name}</gold> gesendet!</green>"))
+    }
+
+    private fun resolveTeam(arg: String): Team? = Team.entries.firstOrNull { team ->
+        arg.equals(team.configKey, ignoreCase = true) ||
+            arg.equals(team.displayName.replace(" ", ""), ignoreCase = true) ||
+            arg.equals(team.name.removePrefix("TEAM_"), ignoreCase = true)
+    }
+
+    // ------------------------------------------------------------------
     // help
     // ------------------------------------------------------------------
 
@@ -449,6 +501,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin event list &lt;pending|accepted|active&gt;</yellow><gray> - Events auflisten</gray>
                 <yellow>/admin pvp &lt;spieler|all&gt; &lt;on|off&gt;</yellow><gray> - PvP-Status setzen</gray>
                 <yellow>/admin lobby lock|unlock|status</yellow><gray> - Lobby sperren/freigeben</gray>
+                <yellow>/admin msg &lt;spieler|team-a|team-b|all&gt; &lt;nachricht&gt;</yellow><gray> - Nachricht mit [Server]-Tag senden</gray>
                 """.trimIndent(),
             ),
         )
@@ -465,7 +518,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby")
+            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -529,6 +582,14 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "lobby" -> {
                 if (args.size == 2) {
                     return listOf("lock", "unlock", "status").filter { it.startsWith(args[1].lowercase()) }
+                }
+            }
+
+            "msg" -> {
+                if (args.size == 2) {
+                    val names = plugin.server.onlinePlayers.map { it.name } +
+                        listOf("all", "team-a", "team-b")
+                    return names.filter { it.startsWith(args[1], ignoreCase = true) }
                 }
             }
         }

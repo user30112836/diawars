@@ -48,8 +48,8 @@ commands:
     usage: /<command> <report>
     permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event- und PvP-Verwaltung)
-    usage: /<command> <reload|inv|log|bug|event|pvp>
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten)
+    usage: /<command> <reload|inv|log|bug|event|pvp|lobby|msg>
     permission: diawars.admin
 
 permissions:
