@@ -338,7 +338,14 @@ class MainMenu(private val plugin: Diawars) {
                         player.sendMessage(mm("<green>Du hast die Lobby verlassen.</green>"))
                     }
                 } else {
-                    if (plugin.lobbyManager.sendToLobby(player)) {
+                    if (plugin.pvpManager.isInFight(player.uniqueId)) {
+                        val remaining = plugin.pvpManager.fightTimeRemainingText(player.uniqueId)
+                        player.sendMessage(mm("""
+                            <red>Du kannst die Lobby nicht während eines Kampfes betreten!</red>
+
+                            <gray>Verbleibende Zeit:</gray><yellow>$remaining</yellow>
+                        """.trimIndent()))
+                    } else if (plugin.lobbyManager.sendToLobby(player)) {
                         player.closeInventory()
                         player.sendMessage(mm("<green>Willkommen in der Lobby!</green>"))
                     } else {

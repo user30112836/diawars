@@ -33,6 +33,14 @@ class PvPManager(private val plugin: Diawars) {
         return (ticksLeft + 19) / 20
     }
 
+    /** Remaining fight time formatted as M:SS (e.g. 2:00, 1:05, 42), for block messages. */
+    fun fightTimeRemainingText(playerId: UUID): String {
+        val total = fightTimeRemaining(playerId)
+        val minutes = total / 60
+        val seconds = total % 60
+        return if (minutes != 0) "$minutes:${if (seconds < 10) "0$seconds" else "$seconds"}" else "$seconds"
+    }
+
     fun storeFight(player: Player) {
         lastFight[player.uniqueId] = getCurrentTick()
         if (store.hasPendingToggle(player.uniqueId)) {

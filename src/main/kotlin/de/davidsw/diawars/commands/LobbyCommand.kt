@@ -24,6 +24,15 @@ class LobbyCommand(private val plugin: Diawars): CommandExecutor {
                 sender.sendMessage(mm("<green>Du hast die Lobby verlassen.</green>"))
             }
         } else {
+            if (plugin.pvpManager.isInFight(sender.uniqueId)) {
+                val remaining = plugin.pvpManager.fightTimeRemainingText(sender.uniqueId)
+                sender.sendMessage(mm("""
+                    <red>Du kannst die Lobby nicht während eines Kampfes betreten!</red>
+
+                    <gray>Verbleibende Zeit:</gray><yellow>$remaining</yellow>
+                """.trimIndent()))
+                return true
+            }
             if (plugin.lobbyManager.sendToLobby(sender)) {
                 sender.sendMessage(mm("<green>Willkommen in der Lobby!</green>"))
             } else {

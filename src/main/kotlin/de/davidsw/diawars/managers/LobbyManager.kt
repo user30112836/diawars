@@ -36,6 +36,8 @@ class LobbyManager(private val plugin: Diawars) {
     fun sendToLobby(player: Player): Boolean {
         if (isInLobby(player.uniqueId)) return false
         if (plugin.eventManager.getSession(player.uniqueId) != null) return false
+        // No escape to the safe lobby while tagged in a fight.
+        if (plugin.pvpManager.isInFight(player.uniqueId)) return false
 
         val world = getWorld(worldName)
             ?: WorldCreator(worldName)

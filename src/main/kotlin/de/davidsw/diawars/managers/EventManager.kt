@@ -41,6 +41,20 @@ class EventManager(private val plugin: Diawars) {
     fun getSession(playerId: UUID): Session? = sessions[playerId]
     fun isEventWorld(worldName: String): Boolean = store.getByWorld(worldName) != null
 
+    /**
+     * Returns an error when [player] is tagged in a fight and therefore must neither
+     * enter nor leave an event world, or null when travel is allowed.
+     */
+    private fun fightBlock(player: Player, entering: Boolean): Result.Error? {
+        if (!plugin.pvpManager.isInFight(player.uniqueId)) return null
+        val remaining = plugin.pvpManager.fightTimeRemainingText(player.uniqueId)
+        val action = if (entering) "betreten" else "verlassen"
+        return Result.Error(
+            "<red>Du kannst eine Event-Welt während eines Kampfes nicht $action!</red>\n" +
+                "<gray>Verbleibende Zeit:</gray><yellow>$remaining</yellow>"
+        )
+    }
+
     // ------------------------------------------------------------------
     // Creation / building
     // ------------------------------------------------------------------
@@ -49,6 +63,7 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+        fightBlock(player, entering = true)?.let { return it }
         val limit = plugin.config.getInt("diamond-limit", 32)
         if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
             return Result.Error("<red>Du hast zu viele Diamanten im Inventar!</red>")
@@ -94,6 +109,7 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+        fightBlock(player, entering = true)?.let { return it }
         val limit = plugin.config.getInt("diamond-limit", 32)
         if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
             return Result.Error("<red>Du hast zu viele Diamanten im Inventar!</red>")
@@ -132,6 +148,8 @@ class EventManager(private val plugin: Diawars) {
         val event = store.getEvent(session.eventId)
             ?: return Result.Error("<red>Dieses Event existiert nicht mehr!</red>")
 
+        fightBlock(player, entering = false)?.let { return it }
+
         event.state = EventState.SUBMITTED
         store.markDirty()
 
@@ -146,6 +164,7 @@ class EventManager(private val plugin: Diawars) {
         if (session.mode != SessionMode.BUILD) {
             return Result.Error("<red>Du kannst nur ein Event abbrechen, an dem du gerade baust!</red>")
         }
+        fightBlock(player, entering = false)?.let { return it }
         val event = store.getEvent(session.eventId)
 
         leaveWorld(player)
@@ -177,6 +196,7 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(admin.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+        fightBlock(admin, entering = true)?.let { return it }
         val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
         if (event.state != EventState.SUBMITTED) {
             return Result.Error("<red>Dieses Event wartet nicht auf eine Prüfung!</red>")
@@ -329,6 +349,7 @@ class EventManager(private val plugin: Diawars) {
         if (sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich bereits in einem Event!</red>")
         }
+        fightBlock(player, entering = true)?.let { return it }
 
         val limit = plugin.config.getInt("diamond-limit", 32)
         if (plugin.diamondLimitManager.countDiamonds(player) > limit) {
@@ -363,6 +384,7 @@ class EventManager(private val plugin: Diawars) {
         if (!sessions.containsKey(player.uniqueId)) {
             return Result.Error("<red>Du befindest dich in keinem Event!</red>")
         }
+        fightBlock(player, entering = false)?.let { return it }
         leaveWorld(player)
         return Result.Success("<green>Du hast das Event verlassen.</green>")
     }

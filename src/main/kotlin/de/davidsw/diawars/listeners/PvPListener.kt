@@ -25,13 +25,20 @@ class PvPListener(private val plugin: Diawars): Listener {
         manager.startActionbar(event.player)
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     fun onEntityDamage(event: EntityDamageByEntityEvent) {
         val attacker = resolveAttacker(event.damager) ?: return
         val victim = event.entity as? Player ?: return
 
         // Arrows bouncing back at the shooter are not PvP and must not start a fight timer.
         if (attacker.uniqueId == victim.uniqueId) return
+
+        // No fight detection in the lobby (LobbyListener cancels the damage separately).
+        // Check both the lobby session and the world: the session covers players tracked as
+        // in-lobby, the world check covers anyone standing in the lobby world regardless
+        // of session state (e.g. after restarts or admin teleports).
+        if (plugin.lobbyManager.isInLobby(attacker.uniqueId) || plugin.lobbyManager.isInLobby(victim.uniqueId)) return
+        if (plugin.lobbyManager.isLobbyWorld(attacker.world.name) || plugin.lobbyManager.isLobbyWorld(victim.world.name)) return
 
         if (pvpAllowed(attacker.uniqueId, victim.uniqueId)) {
             manager.storeFight(victim)
@@ -75,7 +82,13 @@ class PvPListener(private val plugin: Diawars): Listener {
 
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        manager.cleanupPlayer(event.player.uniqueId)
+        val player = event.player
+        // Combat logging must drop dias BEFORE cleanupPlayer erases the fight tag:
+        // DiamondLimitListener runs afterwards and would otherwise see no fight.
+        if (manager.isInFight(player.uniqueId)) {
+            plugin.diamondLimitManager.dropAll(player)
+        }
+        manager.cleanupPlayer(player.uniqueId)
         plugin.diamondScoreboardManager.clearPlayer(event.player)
         plugin.afkManager.cleanupPlayer(event.player.uniqueId)
     }
