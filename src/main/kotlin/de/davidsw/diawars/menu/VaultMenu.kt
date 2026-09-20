@@ -12,11 +12,11 @@ import org.bukkit.inventory.Inventory
 
 class VaultMenu(private val plugin: Diawars) {
     companion object {
-        private const val SLOT_VAULT_LIST   = 23
+        private const val SLOT_VAULT_LIST   = 22
         private const val SLOT_CLAIM        = 38
         private const val SLOT_INVITE       = 39
         private const val SLOT_BAN          = 40
-        private const val SLOT_STATUS       = 42
+        private const val SLOT_STATUS       = 41
 
         private val ALL_SLOTS = listOf(SLOT_CLAIM, SLOT_INVITE, SLOT_BAN, SLOT_STATUS)
     }

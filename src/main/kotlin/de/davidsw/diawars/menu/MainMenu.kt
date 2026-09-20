@@ -14,10 +14,10 @@ import org.bukkit.inventory.Inventory
 
 class MainMenu(private val plugin: Diawars) {
     companion object {
-        private const val SLOT_VAULT        = 13
-        private const val SLOT_PVP_TOGGLE   = 20
-        private const val SLOT_SELF_KILL    = 22
-        private const val SLOT_SCOREBOARD   = 24
+        private const val SLOT_VAULT        = 12
+        private const val SLOT_PVP_TOGGLE   = 19
+        private const val SLOT_SELF_KILL    = 21
+        private const val SLOT_SCOREBOARD   = 23
         private const val SLOT_BORDER       = 29
         private const val SLOT_SCORES       = 31
         private const val SLOT_ZONE_INFO    = 33
@@ -25,7 +25,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_EVENTS       = 40
         private const val SLOT_LOBBY        = 42
         private const val SLOT_BUG_REPORT   = 25
-        private const val SLOT_MANUAL       = 16
+        private const val SLOT_MANUAL       = 14
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {

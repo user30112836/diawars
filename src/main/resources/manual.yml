@@ -16,7 +16,7 @@ overview:
     - |
       <aqua><bold>Nachschub & PvP</bold></aqua>
 
-      <dark_gray>Diamanten gibt der Server dir bei bestimmten Ereignissen als Belohnung: Kills geben +2, alle 30 Min. Spielzeit +1.</dark_gray>
+      <dark_gray>Diamanten gibt der Server dir bei bestimmten Ereignissen als Belohnung: Zum Start erhältst du einmalig 32, Kills geben +2, alle 30 Min. Spielzeit +1.</dark_gray>
 
       <dark_gray>PvP ist standardmäßig aktiviert.</dark_gray>
     - |
@@ -95,7 +95,7 @@ segments:
       - |
         <aqua><bold>Nachschub</bold></aqua>
 
-        <dark_gray>Statt dessen gibt der Server dir bei bestimmten Ereignissen Diamanten als Belohnung. Kills geben +2, alle 30 Min. Spielzeit +1. Ist dein Inventar voll, wird der Rest nachgeliefert, sobald Platz frei ist.</dark_gray>
+        <dark_gray>Statt dessen gibt der Server dir bei bestimmten Ereignissen Diamanten als Belohnung. Zum Start erhältst du einmalig 32, Kills geben +2, alle 30 Min. Spielzeit +1. Ist dein Inventar voll, wird der Rest nachgeliefert, sobald Platz frei ist.</dark_gray>
       - |
         <aqua><bold>Punktestand</bold></aqua>
 

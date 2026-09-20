@@ -134,6 +134,23 @@ class LobbyManager(private val plugin: Diawars) {
         }
 
         sendWelcomeMessage(player)
+        grantStarterDiamonds(player)
+    }
+
+    /** One-time starter grant on first join. Marked before granting so a rejoin
+     * before leaving the lobby cannot pay out twice; a full inventory or event
+     * world is covered by RewardManager's pending balance. */
+    private fun grantStarterDiamonds(player: Player) {
+        val onboarding = plugin.store.onboardingStore
+        if (onboarding.hasReceivedStarterDiamonds(player.uniqueId)) return
+        // Players without a team are kicked on join: don't consume their
+        // one-time reward, they receive it on the join after being added.
+        if (!plugin.teamManager.isPlayerInTeam(player.uniqueId) && !player.isOp) return
+        onboarding.markStarterDiamondsReceived(player.uniqueId)
+        val amount = plugin.config.getInt("starter-diamonds", 32)
+        if (amount > 0) {
+            plugin.rewardManager.grantDiamondReward(player, amount)
+        }
     }
 
     private fun sendPlayerToOwnZone(player: Player): Boolean {

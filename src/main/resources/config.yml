@@ -36,6 +36,7 @@ dia-timer:
 
 diamond-limit: 32
 diamonds-per-kill: 2
+starter-diamonds: 32 # one-time grant on first join
 
 event:
   accept-reward-diamonds: 5
