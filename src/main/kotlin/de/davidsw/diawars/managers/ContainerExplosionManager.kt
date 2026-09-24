@@ -3,6 +3,7 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.MaterialSets
 import org.bukkit.Material
+import org.bukkit.block.DoubleChest
 import org.bukkit.entity.Entity
 import org.bukkit.entity.HumanEntity
 import org.bukkit.inventory.BlockInventoryHolder
@@ -12,7 +13,12 @@ class ContainerExplosionManager(private val plugin: Diawars) {
 
     fun explodeHolder(holder: InventoryHolder) {
         when (holder) {
+            is DoubleChest -> explodeDoubleChest(holder)
             is BlockInventoryHolder -> explodeContainer(holder)
+            // Players hold diamonds normally: exploding them on inventory close
+            // would kill legit play. Only non-player entities (minecarts, mules, ...)
+            // are containers that must explode.
+            is HumanEntity -> return
             is Entity -> explodeEntity(holder)
             else -> {
                 plugin.logger.warning("[ContainerExplosion] Unhandled InventoryHolder type: ${holder::class.simpleName}")
@@ -22,6 +28,18 @@ class ContainerExplosionManager(private val plugin: Diawars) {
 
     fun explodeEntity(entity: Entity) {
         val loc = entity.location.add(0.5, 0.5, 0.5)
+        val world = loc.world
+
+        plugin.server.scheduler.runTask(plugin, Runnable {
+            world.createExplosion(loc, 4f)
+        })
+    }
+
+    fun explodeDoubleChest(holder: DoubleChest) {
+        // DoubleChest is the holder for two joined chests: neither half alone
+        // represents the opened 54-slot inventory, so explode once at the
+        // combined location instead of one explosion per half.
+        val loc = (holder.inventory.location ?: holder.location).add(0.5, 0.5, 0.5)
         val world = loc.world
 
         plugin.server.scheduler.runTask(plugin, Runnable {

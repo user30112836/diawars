@@ -2,6 +2,9 @@ package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
 import org.bukkit.Material
+import org.bukkit.block.DoubleChest
+import org.bukkit.entity.Entity
+import org.bukkit.entity.HumanEntity
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -40,10 +43,17 @@ class ContainerExplosionListener(private val plugin: Diawars): Listener {
             plugin.containerExplosionManager.explodeEnderChest(event.player)
             return
         }
-        if (holder !is BlockInventoryHolder) return
+        // A double chest reports a DoubleChest holder (not BlockInventoryHolder),
+        // so it must be accepted explicitly. Non-player entities (chest minecarts,
+        // mules, ...) are containers too; player holders must never explode.
+        val isExplodable = holder is BlockInventoryHolder ||
+            holder is DoubleChest ||
+            (holder is Entity && holder !is HumanEntity)
+        if (!isExplodable) return
 
+        val target = holder
         plugin.server.scheduler.runTask(plugin, Runnable {
-            plugin.containerExplosionManager.explodeHolder(inventory.holder ?: return@Runnable)
+            plugin.containerExplosionManager.explodeHolder(target)
         })
     }
 

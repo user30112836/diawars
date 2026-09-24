@@ -38,7 +38,7 @@ class MessageListener(private val plugin: Diawars): Listener {
             mm("<$playerColor>${player.name}</$playerColor>")
         }
 
-        event.renderer(ChatRenderer.viewerUnaware { _, message, _ ->
+        event.renderer(ChatRenderer.viewerUnaware { _, _, message ->
             prefix.append(Component.text(": ")).append(message)
         })
     }
