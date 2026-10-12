@@ -401,6 +401,16 @@ class EventManager(private val plugin: Diawars) {
             player.gameMode = GameMode.SURVIVAL
             player.teleport(plugin.server.worlds.first().spawnLocation)
         }
+        // Pending diamonds (e.g. playtime or accept rewards earned inside the event
+        // world) are owed as soon as the player is back in the main world/lobby.
+        // PlayerChangedWorldEvent in RewardListener is the primary payout trigger;
+        // this delayed check is a fallback for teleports that don't fire a world
+        // change (same-world restore, teleport edge cases).
+        plugin.server.scheduler.runTaskLater(plugin, Runnable {
+            if (player.isOnline && !isEventWorld(player.world.name)) {
+                plugin.rewardManager.checkPendingPlayer(player)
+            }
+        }, 1L)
     }
 
     // ------------------------------------------------------------------

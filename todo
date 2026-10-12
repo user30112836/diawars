@@ -1,15 +1,85 @@
 Bugs:
-- PvP logic is reversed (Might be fixed)
-
-Improvements:
-=== Empty ===
+1. Dias currently aren't being rewarded to the players when they where in event worlds and leave them they receive them when rejoining the server
+   whilst they should receive them as soon as they are in the main world (or lobby) again
+2. Somehow players are able to bug items out of the event worlds into the main world
+3. Players can earn advancement inside of event world which should not be possible
+4. The in fight message has a bad spacing
 
 Performance:
 === Empty ===
 
-Anti-Cheat:
-- Create a client-side mod for Forge
-- Additional mods in the default mod_whitelist.yml
+--------------------------------------------------
 
-Manual:
-=== Empty ===
+Countdown:
+This countdown indicates to the player how long it is till the server starts. During this time the players should be locked into the lobby. When the
+countdown reaches zero the a start sequence should be run (something like reset time and wether) and the players should now be allowed to leave the
+lobby. The countdown can be startet by an admin and should also be persistant towards server restarts.
+
+Playertime counter:
+The plugin should count the playtime of the players and also categorize it by sessions and world (main, different event worlds, lobby, etc). With
+this data the server should create a statistical overview which the players can look up if they want. Also the admins should be able to look up 
+individual player playtime and there also should be a general overview over overall server statistics like, how many players are online over time.
+Also the admin should be able to output a list of the players sortet by things like their overall playtime, longest session or last recorded session.
+
+Editable menus:
+Make it so the players are able to edit the layout of their menus themselves. They should be able to change the position of different buttons on the
+menu and also hide irrelevant content. They should not be able to move items from one menu into another and also not the general controls (back,
+close, forward). These edits shall be made through a gui being enabled by a new button in the menu which is in the bottom right corner of the menu
+(inside the outer ring).
+
+Night vision toggle:
+There should be a toggle for the players to enable or disable night vision. If night vision is enbaled the player should receive the night vision
+effect (without any particles). Every player has his individual toggle. The toggle should be accessable via a menu button or the /nightvision 
+command. In the config.yml there should he a field "night-vision-toggle". This field should receive a boolean which determines whether players can
+use the toggle or not. If not every player has night vision disabled. Admins should also be able to change the setting with "/admin config
+night-vision-toggle true|false". This should also change the state in the config file.
+
+Event inspect:
+Admins should be able to go into event world in spectator mode during the building phase. When the admin tipes "/admin event inspect <world>" the 
+admin should be teleported into the event world in spectator mode (like "/admin event review <world>" just with building world instead of submitted
+ones).
+
+Event settings:
+Additionally to the current settings the builder has in event worlds there should be some new ones. First the player should be able to set the pvp
+status of the paticipants. This should set the participants into the set pvp status overriding the server default and also interupting any pending
+change. Also the players should not be able to change their pvp status inside of event worlds. When players leave the event world they should get 
+the status back they had before joining the world. If they had a change pending this change won't be startet again automatically and the status will
+be set to whatever it was before the pending got initiated. The builder should also be able to set a spawn point inside the event world. This can be
+done by standing at the spawn location and then hitting a button in the menu or typing a command. Every player that joins the event should spawn at
+at this set location and it should also serve as respawn point (as long as there is no other point determined by things like beds). Also the builder
+should be able to change their own gamemode inside of event worlds through the menu and a command.
+
+Event organizer:
+When the event is active the builder should still be able to change every setting and these settings should also be applied to every player 
+instantly, of them having to rejoin the event for the changes to take effect.
+
+Event tools:
+The builders should be able to build with special operator blocks. Since they aren't admin on the server they normally don't have acces to these 
+items. Therefore in the menu there should be a new submenu where there is a list of these items and when the player clicks one of them he should
+receive them. If his inventory is full he should receive an error message advising him to clear an inventory slot. The player should also be able to 
+receive the items via "/event item <item>". This functionallity should obviously only be accessible inside of event world during the building phase.
+The items players should be able to receive through this are: Barrier, Structure Void, Debug Stick, Light (every level), Painting (Earth, Fire,
+Water, Wind).
+
+Player World:
+When players are in event worlds the diamond amount in the tab bar should be replaced with the event name. This name should also be colored in
+regards to the current state of the event. BUILDING -> yellow, ACTIVE -> green, REVIEW -> gray. If the name is longer than 15 symbols, only the first
+12 should be shown followed by "...".
+
+Image Upload:
+Players should be able to create maps of images. This should be possible through the player being able to select a file on their local file system 
+through the client mod and then send this image to the the server through diawars:image payload. Before the image is send the client should resize 
+the image to 128x128 pixels and then send it to the server. For this the image should be split in parts and send part by part so the every payload
+end up being not to large. In the menu there should be a new submenu where the uploaded images are listet and the player can receive a map with the
+image by clicking on the right one. Every player should only see their own images and also only be able the get the maps with their own images 
+(Exchanging the items afterwards it of course fine). Instead of having to use the gui the player should also be able to get their images by using
+"/image <file>". Every player should only be able to upload 20 full images to the server. When exceeding this limit the player gets and error telling
+him to ask an admin to increase his limit when trying to upload any additional images. Admins can increase or decrease the limits of idividual 
+players by using "/admin image limit inc|dec <player>". The command changes the limit by 10 images. If the new new limit is lower than the current
+amount of uploaded images the images are kept and new uploads are just treated as if the limit is full. The limit obviously can't go under 0. Admins
+should also be able to get a list of every player with their current amount of uploaded images and their limit by using "/admin image list". This
+list should exclude every player whose image count is zero (exept if their limit is also 0). Admins should also be able to inspect individual images
+of players. For this they should type "/admin image list <player>" to get a list of the images the player currently has stored. Then the admin can
+inspect individual images by typing "/admin image inspect <player> <file>". Also admins can remove images by using "/admin image remove <player>
+<file>" or by using "/admin image remove <player> all". Therefore files can't be named "all" and also not named the same as files already uploaded
+by the player. Identical file names between different players should be allowed because internally the files should be saved in different folders.
