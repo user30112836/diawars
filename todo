@@ -1,8 +1,4 @@
 Bugs:
-1. Dias currently aren't being rewarded to the players when they where in event worlds and leave them they receive them when rejoining the server
-   whilst they should receive them as soon as they are in the main world (or lobby) again
-2. Somehow players are able to bug items out of the event worlds into the main world
-3. Players can earn advancement inside of event world which should not be possible
 4. The in fight message has a bad spacing
 
 Performance:
@@ -83,3 +79,4 @@ of players. For this they should type "/admin image list <player>" to get a list
 inspect individual images by typing "/admin image inspect <player> <file>". Also admins can remove images by using "/admin image remove <player>
 <file>" or by using "/admin image remove <player> all". Therefore files can't be named "all" and also not named the same as files already uploaded
 by the player. Identical file names between different players should be allowed because internally the files should be saved in different folders.
+[Additional context: For this change you also have to change the fabric and forge client side mod which can be found in the parent dir]

@@ -98,6 +98,10 @@ class PvPListener(private val plugin: Diawars): Listener {
         val victim = event.entity
         val killer = victim.killer ?: return
         if (plugin.teamManager.arePlayersInSameTeam(killer.uniqueId, victim.uniqueId)) return
+        // Event-world PvP must not mint main-world currency: kills there use
+        // event inventories and a separate progression.
+        if (plugin.eventManager.isEventWorld(killer.world.name)) return
+        if (plugin.eventManager.getSession(killer.uniqueId) != null) return
         plugin.rewardManager.grantDiamondReward(killer, plugin.config.getInt("diamonds-per-kill", 2))
     }
 }

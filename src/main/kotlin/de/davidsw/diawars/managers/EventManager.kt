@@ -16,9 +16,11 @@ import org.bukkit.Bukkit.getWorldContainer
 import org.bukkit.Bukkit.unloadWorld
 import org.bukkit.GameMode
 import org.bukkit.GameRules
+import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import java.io.File
 import java.util.UUID
@@ -40,6 +42,15 @@ class EventManager(private val plugin: Diawars) {
 
     fun getSession(playerId: UUID): Session? = sessions[playerId]
     fun isEventWorld(worldName: String): Boolean = store.getByWorld(worldName) != null
+
+    /**
+     * Expected world name for the player's active event session, or null when
+     * they have no session or the event no longer exists.
+     */
+    fun getSessionWorldName(playerId: UUID): String? {
+        val session = sessions[playerId] ?: return null
+        return store.getEvent(session.eventId)?.worldName
+    }
 
     /**
      * Returns an error when [player] is tagged in a fight and therefore must neither
@@ -84,6 +95,7 @@ class EventManager(private val plugin: Diawars) {
         val worldName = "event_$id"
         val world = WorldCreator(worldName).generateStructures(false).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht erstellt werden!</red>")
+        suppressAdvancementAnnounce(world)
 
         val event = GameEvent(
             id = id,
@@ -121,6 +133,7 @@ class EventManager(private val plugin: Diawars) {
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
+        suppressAdvancementAnnounce(world)
         states.saveState(player)
         sessions[player.uniqueId] = Session(event.id, SessionMode.BUILD)
 
@@ -206,6 +219,7 @@ class EventManager(private val plugin: Diawars) {
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
+        suppressAdvancementAnnounce(world)
         states.saveState(admin)
         sessions[admin.uniqueId] = Session(event.id, SessionMode.REVIEW)
 
@@ -365,6 +379,7 @@ class EventManager(private val plugin: Diawars) {
             ?: WorldCreator(event.worldName).createWorld()
             ?: return Result.Error("<red>Die Event-Welt konnte nicht geladen werden!</red>")
 
+        suppressAdvancementAnnounce(world)
         states.saveState(player)
         sessions[player.uniqueId] = Session(event.id, SessionMode.PLAY)
 
@@ -389,7 +404,13 @@ class EventManager(private val plugin: Diawars) {
         return Result.Success("<green>Du hast das Event verlassen.</green>")
     }
 
-    private fun leaveWorld(player: Player) {
+    /**
+     * Safe exit from an event world: persists the event inventory, then restores
+     * the pre-event main-world state. Public so world-change safety nets
+     * (teleport/portal guards) can convert an illegal exit into a legal one
+     * instead of leaking event items into the main world.
+     */
+    fun leaveWorld(player: Player) {
         val session = sessions.remove(player.uniqueId)
         if (session != null && session.mode != SessionMode.REVIEW) {
             plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
@@ -398,6 +419,9 @@ class EventManager(private val plugin: Diawars) {
             player.activePotionEffects.toList().forEach { player.removePotionEffect(it.type) }
         }
         if (!states.restoreState(player)) {
+            // No saved main-world state (wiped storage, desync): never carry the
+            // live event inventory into the main world - clear it first.
+            clearLiveInventory(player)
             player.gameMode = GameMode.SURVIVAL
             player.teleport(plugin.server.worlds.first().spawnLocation)
         }
@@ -422,9 +446,28 @@ class EventManager(private val plugin: Diawars) {
             if (sessions.containsKey(player.uniqueId)) {
                 leaveWorld(player)
             } else {
-                player.teleport(plugin.server.worlds.first().spawnLocation)
+                // Untracked player inside an event world (admin TP, portal glitch):
+                // try a proper state restore, otherwise strip the live inventory so
+                // no event items ride along into the main world.
+                if (!states.restoreState(player)) {
+                    clearLiveInventory(player)
+                    player.gameMode = GameMode.SURVIVAL
+                    player.teleport(plugin.server.worlds.first().spawnLocation)
+                }
             }
         }
+    }
+
+    /**
+     * Strips everything a player could carry across worlds: storage, armor,
+     * offhand and ender chest. Used whenever someone ends up outside an event
+     * world without a restorable main-world snapshot.
+     */
+    private fun clearLiveInventory(player: Player) {
+        player.inventory.clear()
+        player.inventory.armorContents = arrayOf<ItemStack?>(null, null, null, null)
+        player.inventory.setItemInOffHand(ItemStack(Material.AIR))
+        player.enderChest.clear()
     }
 
     private fun deleteEventWorld(event: GameEvent): Boolean {
@@ -489,7 +532,17 @@ class EventManager(private val plugin: Diawars) {
         EventGameRules.CONFIGURABLE.forEach { (key, rule) ->
             world.setGameRule(rule, config.gameRules[key] ?: EventGameRules.DEFAULTS[key] ?: true)
         }
+        suppressAdvancementAnnounce(world)
         applyTimeConfig(event.id)
+    }
+
+    /**
+     * Advancements must never be earned inside event worlds (separate progression):
+     * hide the chat announcements. The actual grant is revoked by the
+     * advancement guard in EventListener.
+     */
+    private fun suppressAdvancementAnnounce(world: World) {
+        world.setGameRule(GameRules.SHOW_ADVANCEMENT_MESSAGES, false)
     }
 
     private fun applyStartingInventory(player: Player, config: EventConfig) {

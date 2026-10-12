@@ -2,6 +2,7 @@ package de.davidsw.diawars.listeners
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.DiamondAction
+import de.davidsw.diawars.managers.EventManager
 import org.bukkit.GameRules
 import org.bukkit.Material
 import org.bukkit.entity.Item
@@ -18,6 +19,17 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         val player = event.player
+        val session = plugin.eventManager.getSession(player.uniqueId)
+        if (session != null || plugin.eventManager.isEventWorld(player.world.name)) {
+            // Inside an event world the live inventory is the event inventory:
+            // persist it for the next join instead of enforcing the main-world
+            // diamond limit on it or snapshotting event dias as main score.
+            // REVIEW sessions hold no event inventory (spectator), nothing to save.
+            if (session != null && session.mode != EventManager.SessionMode.REVIEW) {
+                plugin.store.eventInventoryStore.saveInventory(session.eventId, player)
+            }
+            return
+        }
         val limit = if (plugin.pvpManager.isInFight(player.uniqueId)) 0 else plugin.config.getInt("diamond-limit", 32)
         plugin.diamondLimitManager.enforceLimit(player, limit)
         plugin.store.playerDiamondStore.snapshot(player)
@@ -77,6 +89,10 @@ class DiamondLimitListener(private val plugin: Diawars): Listener {
 
     @EventHandler
     fun onPlayerDeath(event: PlayerDeathEvent) {
+        // Event-world deaths must not touch the main-world diamond score, and the
+        // main-world drop-on-death rule does not apply to event inventories
+        // (governed by the event's own keep-inventory gamerule instead).
+        if (plugin.eventManager.isEventWorld(event.player.world.name)) return
         if (!(event.player.world.getGameRuleValue(GameRules.KEEP_INVENTORY))) return
         val player = event.entity
         plugin.diamondLimitManager.dropAll(player)
