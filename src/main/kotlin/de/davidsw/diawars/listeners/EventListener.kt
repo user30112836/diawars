@@ -5,6 +5,7 @@ import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityPortalEvent
 import org.bukkit.event.player.PlayerAdvancementDoneEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -86,6 +87,28 @@ class EventListener(private val plugin: Diawars): Listener {
     private fun isIllegalEntry(playerId: UUID, toWorld: String): Boolean {
         if (plugin.eventManager.getSession(playerId) != null) return false
         return plugin.eventManager.isEventWorld(toWorld)
+    }
+
+    /**
+     * No mob/item smuggling through portals (nether, end, gateway): cancel any
+     * non-player entity crossing an event-world border in either direction.
+     * Same-world hops (e.g. enderman) are unaffected. This also stops dropped
+     * items from being pushed through portals to bypass the inventory swap.
+     */
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    fun onEntityPortal(event: EntityPortalEvent) {
+        val from = event.from.world ?: return
+        val toWorld = event.to?.world
+        // Destination not computed yet (portal will create it): still crossing
+        // out of the event world, so block it.
+        if (toWorld == null) {
+            if (plugin.eventManager.isEventWorld(from.name)) event.isCancelled = true
+            return
+        }
+        if (from.name == toWorld.name) return
+        if (plugin.eventManager.isEventWorld(from.name) || plugin.eventManager.isEventWorld(toWorld.name)) {
+            event.isCancelled = true
+        }
     }
 
     // ------------------------------------------------------------------
