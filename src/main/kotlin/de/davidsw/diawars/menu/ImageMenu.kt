@@ -56,7 +56,7 @@ class ImageMenu(private val plugin: Diawars) {
                     mm("<gray>Lade Bilder über die Diawars-Client-Mod hoch</gray>"),
                     mm("<gray>(Datei wählen, wird auf 128x128 skaliert)</gray>"),
                     mm(""),
-                    mm("<gray>Oder nutze <yellow>/image &lt;datei&gt;</yellow><gray> für vorhandene Bilder</gray>"),
+                    mm("<gray>Oder nutze <yellow>/image upload</yellow></gray>"),
                 ),
             ))
         } else {
@@ -95,7 +95,7 @@ class ImageMenu(private val plugin: Diawars) {
             name = mm("<green><bold>Bild hochladen</bold></green>"),
             lore = listOf(
                 mm("<gray>Öffnet den Upload der Client-Mod</gray>"),
-                mm("<gray>(Taste <white>U</white> oder <white>/diawarsimage</white>)</gray>"),
+                mm("<gray>Alternativ: <white>/image upload</white></gray>"),
                 mm(""),
                 mm("<yellow>Klicken zum Öffnen</yellow>"),
             ),

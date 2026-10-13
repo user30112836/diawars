@@ -49,7 +49,7 @@ commands:
     permission: diawars.use
   image:
     description: Gibt eine Karte mit einem hochgeladenen Bild
-    usage: /<command> <datei>
+    usage: /<command> <get|upload>
     permission: diawars.use
   admin:
     description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder)

@@ -17,27 +17,57 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             return true
         }
 
-        if (args.isEmpty()) {
-            val images = plugin.imageManager.listImages(sender.uniqueId)
-            if (images.isEmpty()) {
-                sender.sendMessage(mm("<gray>Du hast noch keine Bilder hochgeladen. Nutze die Diawars-Client-Mod zum Hochladen.</gray>"))
-            } else {
-                sender.sendMessage(mm("<gold>=== Deine Bilder ===</gold>\n<gray>${images.joinToString(", ") { escape(it) }}</gray>\n<gray>Verwendung: /image &lt;datei&gt;</gray>"))
+        when (args.getOrNull(0)?.lowercase()) {
+            null -> listImages(sender)
+
+            "upload" -> {
+                if (args.size > 1) {
+                    sendUsage(sender)
+                    return true
+                }
+                plugin.imageManager.requestUploadUi(sender)
             }
-            return true
-        }
 
-        if (args.size > 1) {
-            sender.sendMessage(mm("<red>Verwendung: /image &lt;datei&gt;</red>"))
-            return true
-        }
+            "get" -> {
+                val file = args.getOrNull(1)
+                if (file == null || args.size > 2) {
+                    sendUsage(sender)
+                    return true
+                }
+                respond(sender, plugin.imageManager.giveImage(sender, sender.uniqueId, file))
+            }
 
-        val result = plugin.imageManager.giveImage(sender, sender.uniqueId, args[0])
-        when (result) {
-            is ImageManager.Result.Success -> sender.sendMessage(mm(result.message))
-            is ImageManager.Result.Error -> sender.sendMessage(mm(result.message))
+            else -> sendUsage(sender)
         }
         return true
+    }
+
+    private fun listImages(player: Player) {
+        val images = plugin.imageManager.listImages(player.uniqueId)
+        if (images.isEmpty()) {
+            player.sendMessage(mm("<gray>Du hast noch keine Bilder hochgeladen. Nutze <yellow>/image upload</yellow> oder das Bilder-Menü.</gray>"))
+        } else {
+            player.sendMessage(mm("<gold>=== Deine Bilder ===</gold>\n<gray>${images.joinToString(", ") { escape(it) }}</gray>\n<gray>Verwendung: /image get &lt;datei&gt;</gray>"))
+        }
+    }
+
+    private fun respond(player: Player, result: ImageManager.Result) {
+        when (result) {
+            is ImageManager.Result.Success -> player.sendMessage(mm(result.message))
+            is ImageManager.Result.Error -> player.sendMessage(mm(result.message))
+        }
+    }
+
+    private fun sendUsage(player: Player) {
+        player.sendMessage(
+            mm(
+                """
+                <gold>=== Bilder-Befehle ===</gold>
+                <yellow>/image get &lt;datei&gt;</yellow><gray> - Karte mit deinem Bild erhalten</gray>
+                <yellow>/image upload</yellow><gray> - Bild über die Client-Mod hochladen</gray>
+                """.trimIndent(),
+            ),
+        )
     }
 
     override fun onTabComplete(
@@ -48,8 +78,11 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     ): List<String> {
         if (sender !is Player) return emptyList()
         if (args.size == 1) {
+            return listOf("get", "upload").filter { it.startsWith(args[0].lowercase()) }
+        }
+        if (args.size == 2 && args[0].equals("get", ignoreCase = true)) {
             return plugin.imageManager.listImages(sender.uniqueId)
-                .filter { it.startsWith(args[0], ignoreCase = true) }
+                .filter { it.startsWith(args[1], ignoreCase = true) }
         }
         return emptyList()
     }

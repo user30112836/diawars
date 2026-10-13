@@ -242,7 +242,7 @@ class ImageManager(private val plugin: Diawars) {
             val newCount = getImageCount(player.uniqueId)
             val newLimit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
             val safeFile = escape(file)
-            Result.Success("<green>✓ Bild <gold>$safeFile</gold> hochgeladen! ($newCount/$newLimit) Nutze <yellow>/image $safeFile</yellow> oder das Bilder-Menü.</green>")
+            Result.Success("<green>✓ Bild <gold>$safeFile</gold> hochgeladen! ($newCount/$newLimit) Nutze <yellow>/image get $safeFile</yellow> oder das Bilder-Menü.</green>")
         } catch (e: Exception) {
             plugin.logger.warning("Could not save image $file for ${player.name}: ${e.message}")
             Result.Error("<red>Das Bild konnte nicht gespeichert werden!</red>")
@@ -324,7 +324,7 @@ class ImageManager(private val plugin: Diawars) {
             player.sendPluginMessage(plugin, ImageListener.OPEN_CHANNEL, ByteArray(0))
         } catch (e: Exception) {
             plugin.logger.warning("Could not request image upload UI for ${player.name}: ${e.message}")
-            player.sendMessage(mm("<red>Der Upload konnte nicht geöffnet werden! Nutze die Taste <gold>U</gold> oder <yellow>/diawarsimage</yellow> (Client-Mod).</red>"))
+            player.sendMessage(mm("<red>Der Upload konnte nicht geöffnet werden! Stelle sicher, dass du die Diawars-Client-Mod installiert hast.</red>"))
         }
     }
 }
