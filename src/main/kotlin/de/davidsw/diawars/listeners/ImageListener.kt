@@ -17,6 +17,7 @@ class ImageListener(
 
     companion object {
         const val CHANNEL = "diawars:image"
+        const val OPEN_CHANNEL = "diawars:image_open"
 
         private val GSON = Gson()
 

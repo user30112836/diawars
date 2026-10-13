@@ -1,6 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Bukkit
@@ -309,6 +310,21 @@ class ImageManager(private val plugin: Diawars) {
         } else {
             player.world.dropItemNaturally(player.location, stack)
             Result.Success("<green>✓ Karte <gold>$safeFile</gold> erhalten! (Inventar war voll, Karte liegt am Boden.)</green>")
+        }
+    }
+
+    /**
+     * Asks the player's client mod to open the image upload UI (via the
+     * [ImageListener.OPEN_CHANNEL] signal). Every player needs the mod anyway,
+     * so clients without it simply ignore the packet.
+     */
+    fun requestUploadUi(player: Player) {
+        player.closeInventory()
+        try {
+            player.sendPluginMessage(plugin, ImageListener.OPEN_CHANNEL, ByteArray(0))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not request image upload UI for ${player.name}: ${e.message}")
+            player.sendMessage(mm("<red>Der Upload konnte nicht geöffnet werden! Nutze die Taste <gold>U</gold> oder <yellow>/diawarsimage</yellow> (Client-Mod).</red>"))
         }
     }
 }

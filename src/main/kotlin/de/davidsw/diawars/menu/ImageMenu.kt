@@ -20,8 +20,9 @@ class ImageMenu(private val plugin: Diawars) {
         private const val SLOT_PREV_PAGE = 37
         private const val SLOT_PAGE_INFO = 40
         private const val SLOT_NEXT_PAGE = 43
+        private const val SLOT_UPLOAD = 39
 
-        private val ALL_SLOTS = LIST_SLOTS + listOf(SLOT_PREV_PAGE, SLOT_PAGE_INFO, SLOT_NEXT_PAGE)
+        private val ALL_SLOTS = LIST_SLOTS + listOf(SLOT_PREV_PAGE, SLOT_PAGE_INFO, SLOT_NEXT_PAGE, SLOT_UPLOAD)
         private val PAGE_SIZE = LIST_SLOTS.size
     }
 
@@ -89,6 +90,16 @@ class ImageMenu(private val plugin: Diawars) {
             material = if (page < totalPages - 1) Material.ARROW else Material.GRAY_DYE,
             name = if (page < totalPages - 1) mm("<yellow><bold>Nächste Seite ►</bold></yellow>") else mm("<dark_gray>Letzte Seite</dark_gray>"),
         ))
+        inv.setItem(SLOT_UPLOAD, item(
+            material = Material.MAP,
+            name = mm("<green><bold>Bild hochladen</bold></green>"),
+            lore = listOf(
+                mm("<gray>Öffnet den Upload der Client-Mod</gray>"),
+                mm("<gray>(Taste <white>U</white> oder <white>/diawarsimage</white>)</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+        ))
     }
 
     fun handleImageClick(player: Player, slot: Int, inv: Inventory) {
@@ -112,6 +123,8 @@ class ImageMenu(private val plugin: Diawars) {
                     populateImageMenu(inv, player)
                 }
             }
+
+            SLOT_UPLOAD -> plugin.imageManager.requestUploadUi(player)
 
             in LIST_SLOTS -> {
                 val files = pageCache[player.uniqueId] ?: return
