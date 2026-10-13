@@ -47,9 +47,13 @@ commands:
     description: Meldet Bugs
     usage: /<command> <report>
     permission: diawars.use
+  image:
+    description: Gibt eine Karte mit einem hochgeladenen Bild
+    usage: /<command> <datei>
+    permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten)
-    usage: /<command> <reload|inv|log|bug|event|pvp|lobby|msg>
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder)
+    usage: /<command> <reload|inv|log|bug|event|pvp|lobby|msg|image>
     permission: diawars.admin
 
 permissions:

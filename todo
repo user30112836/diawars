@@ -61,22 +61,3 @@ Player World:
 When players are in event worlds the diamond amount in the tab bar should be replaced with the event name. This name should also be colored in
 regards to the current state of the event. BUILDING -> yellow, ACTIVE -> green, REVIEW -> gray. If the name is longer than 15 symbols, only the first
 12 should be shown followed by "...".
-
-Image Upload:
-Players should be able to create maps of images. This should be possible through the player being able to select a file on their local file system 
-through the client mod and then send this image to the the server through diawars:image payload. Before the image is send the client should resize 
-the image to 128x128 pixels and then send it to the server. For this the image should be split in parts and send part by part so the every payload
-end up being not to large. In the menu there should be a new submenu where the uploaded images are listet and the player can receive a map with the
-image by clicking on the right one. Every player should only see their own images and also only be able the get the maps with their own images 
-(Exchanging the items afterwards it of course fine). Instead of having to use the gui the player should also be able to get their images by using
-"/image <file>". Every player should only be able to upload 20 full images to the server. When exceeding this limit the player gets and error telling
-him to ask an admin to increase his limit when trying to upload any additional images. Admins can increase or decrease the limits of idividual 
-players by using "/admin image limit inc|dec <player>". The command changes the limit by 10 images. If the new new limit is lower than the current
-amount of uploaded images the images are kept and new uploads are just treated as if the limit is full. The limit obviously can't go under 0. Admins
-should also be able to get a list of every player with their current amount of uploaded images and their limit by using "/admin image list". This
-list should exclude every player whose image count is zero (exept if their limit is also 0). Admins should also be able to inspect individual images
-of players. For this they should type "/admin image list <player>" to get a list of the images the player currently has stored. Then the admin can
-inspect individual images by typing "/admin image inspect <player> <file>". Also admins can remove images by using "/admin image remove <player>
-<file>" or by using "/admin image remove <player> all". Therefore files can't be named "all" and also not named the same as files already uploaded
-by the player. Identical file names between different players should be allowed because internally the files should be saved in different folders.
-[Additional context: For this change you also have to change the fabric and forge client side mod which can be found in the parent dir]

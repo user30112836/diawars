@@ -26,6 +26,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_LOBBY        = 42
         private const val SLOT_BUG_REPORT   = 25
         private const val SLOT_MANUAL       = 14
+        private const val SLOT_IMAGE        = 16
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -259,6 +260,22 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Images
+        val imageCount = plugin.imageManager.getImageCount(player.uniqueId)
+        val imageLimit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
+        inv.setItem(SLOT_IMAGE, item(
+            material = Material.FILLED_MAP,
+            name = mm("<white><bold>Bilder</bold></white>"),
+            lore = listOf(
+                mm("<gray>Deine hochgeladenen Bilder: </gray><white>$imageCount/$imageLimit</white>"),
+                mm("<gray>Karte per Klick erhalten</gray>"),
+                mm("<gray>Upload über die Client-Mod</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -300,6 +317,8 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
 
             SLOT_MANUAL -> plugin.menuManager.openManualMenu(player)
+
+            SLOT_IMAGE -> plugin.menuManager.openImageMenu(player)
 
             SLOT_BUG_REPORT -> {
                 player.closeInventory()

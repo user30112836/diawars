@@ -37,6 +37,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "pvp" -> handlePvp(sender, args.drop(1))
             "lobby" -> handleLobby(sender, args.drop(1))
             "msg" -> handleMsg(sender, args.drop(1))
+            "image" -> handleImage(sender, args.drop(1))
             else -> sendHelp(sender)
         }
 
@@ -479,6 +480,143 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     }
 
     // ------------------------------------------------------------------
+    // image
+    // ------------------------------------------------------------------
+
+    private fun handleImage(sender: CommandSender, args: List<String>) {
+        when (args.getOrNull(0)?.lowercase()) {
+            "limit" -> handleImageLimit(sender, args.drop(1))
+            "list" -> handleImageList(sender, args.drop(1))
+            "inspect" -> handleImageInspect(sender, args.drop(1))
+            "remove" -> handleImageRemove(sender, args.drop(1))
+            else -> sendImageHelp(sender)
+        }
+    }
+
+    private fun handleImageLimit(sender: CommandSender, args: List<String>) {
+        if (args.size < 2) {
+            sender.sendMessage(mm("<red>Verwendung: /admin image limit &lt;inc|dec&gt; &lt;spieler&gt;</red>"))
+            return
+        }
+        val target = resolveKnownPlayer(args[1])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        val newLimit = when (args[0].lowercase()) {
+            "inc", "increase", "+" -> plugin.store.imageLimitStore.increaseLimit(target.uniqueId)
+            "dec", "decrease", "-" -> plugin.store.imageLimitStore.decreaseLimit(target.uniqueId)
+            else -> {
+                sender.sendMessage(mm("<red>Verwendung: /admin image limit &lt;inc|dec&gt; &lt;spieler&gt;</red>"))
+                return
+            }
+        }
+        val count = plugin.imageManager.getImageCount(target.uniqueId)
+        sender.sendMessage(mm("<green>✓ Bildlimit von <gold>${escape(target.name ?: "?")}</gold> auf <gold>$newLimit</gold> gesetzt! ($count/$newLimit Bilder)</green>"))
+    }
+
+    private fun handleImageList(sender: CommandSender, args: List<String>) {
+        if (args.isEmpty()) {
+            val entries = plugin.imageManager.getAllKnownPlayers()
+                .map { uuid ->
+                    val count = plugin.imageManager.getImageCount(uuid)
+                    val limit = plugin.store.imageLimitStore.getLimit(uuid)
+                    Triple(uuid, count, limit)
+                }
+                // Exclude zero-image players, except when their limit is also 0.
+                .filter { (_, count, limit) -> count > 0 || limit == 0 }
+                .sortedBy { (uuid, _, _) -> plugin.server.getOfflinePlayer(uuid).name?.lowercase() ?: uuid.toString() }
+
+            if (entries.isEmpty()) {
+                sender.sendMessage(mm("<gray>Keine Spieler mit Bildern gefunden.</gray>"))
+                return
+            }
+            val lines = mutableListOf("<gold>=== Bilder-Übersicht ===</gold>")
+            entries.forEach { (uuid, count, limit) ->
+                val name = plugin.server.getOfflinePlayer(uuid).name ?: uuid.toString()
+                lines += "<gray>- <yellow>${escape(name)}</yellow> <white>$count/$limit</white></gray>"
+            }
+            sender.sendMessage(mm(lines.joinToString("\n")))
+            return
+        }
+
+        // /admin image list <player>
+        val target = resolveKnownPlayer(args[0])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        val images = plugin.imageManager.listImages(target.uniqueId)
+        val limit = plugin.store.imageLimitStore.getLimit(target.uniqueId)
+        if (images.isEmpty()) {
+            sender.sendMessage(mm("<gray>${escape(target.name ?: "?")} hat keine Bilder gespeichert. (Limit: $limit)</gray>"))
+            return
+        }
+        val lines = mutableListOf("<gold>=== Bilder von ${escape(target.name ?: "?")} (${images.size}/$limit) ===</gold>")
+        images.forEach { lines += "<gray>- <yellow>${escape(it)}</yellow></gray>" }
+        sender.sendMessage(mm(lines.joinToString("\n")))
+    }
+
+    private fun handleImageInspect(sender: CommandSender, args: List<String>) {
+        if (sender !is Player) {
+            sender.sendMessage("Dieser Befehl kann nur von Spielern ausgeführt werden!")
+            return
+        }
+        if (args.size < 2) {
+            sender.sendMessage(mm("<red>Verwendung: /admin image inspect &lt;spieler&gt; &lt;datei&gt;</red>"))
+            return
+        }
+        val target = resolveKnownPlayer(args[0])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        val result = plugin.imageManager.giveImage(sender, target.uniqueId, args[1])
+        when (result) {
+            is de.davidsw.diawars.managers.ImageManager.Result.Success -> sender.sendMessage(mm(result.message))
+            is de.davidsw.diawars.managers.ImageManager.Result.Error -> sender.sendMessage(mm(result.message))
+        }
+    }
+
+    private fun handleImageRemove(sender: CommandSender, args: List<String>) {
+        if (args.size < 2) {
+            sender.sendMessage(mm("<red>Verwendung: /admin image remove &lt;spieler&gt; &lt;datei|all&gt;</red>"))
+            return
+        }
+        val target = resolveKnownPlayer(args[0])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        if (args[1].equals("all", ignoreCase = true)) {
+            val removed = plugin.imageManager.deleteAllImages(target.uniqueId)
+            sender.sendMessage(mm("<green>✓ <gold>$removed</gold> Bild(er) von <gold>${escape(target.name ?: "?")}</gold> gelöscht!</green>"))
+            return
+        }
+        if (!plugin.imageManager.hasImage(target.uniqueId, args[1])) {
+            sender.sendMessage(mm("<red>Dieses Bild existiert nicht!</red>"))
+            return
+        }
+        plugin.imageManager.deleteImage(target.uniqueId, args[1])
+        sender.sendMessage(mm("<green>✓ Bild <gold>${escape(args[1])}</gold> von <gold>${escape(target.name ?: "?")}</gold> gelöscht!</green>"))
+    }
+
+    private fun sendImageHelp(sender: CommandSender) {
+        sender.sendMessage(
+            mm(
+                """
+                <gold>=== Bilder-Administration ===</gold>
+                <yellow>/admin image limit &lt;inc|dec&gt; &lt;spieler&gt;</yellow><gray> - Bildlimit um 10 erhöhen/senken</gray>
+                <yellow>/admin image list</yellow><gray> - Alle Spieler mit Bildanzahl und Limit</gray>
+                <yellow>/admin image list &lt;spieler&gt;</yellow><gray> - Bilder eines Spielers auflisten</gray>
+                <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild eines Spielers ansehen</gray>
+                <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
+                """.trimIndent(),
+            ),
+        )
+    }
+
+    // ------------------------------------------------------------------
     // help
     // ------------------------------------------------------------------
 
@@ -502,6 +640,10 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin pvp &lt;spieler|all&gt; &lt;on|off&gt;</yellow><gray> - PvP-Status setzen</gray>
                 <yellow>/admin lobby lock|unlock|status</yellow><gray> - Lobby sperren/freigeben</gray>
                 <yellow>/admin msg &lt;spieler|team-a|team-b|all&gt; &lt;nachricht&gt;</yellow><gray> - Nachricht mit [Server]-Tag senden</gray>
+                <yellow>/admin image limit &lt;inc|dec&gt; &lt;spieler&gt;</yellow><gray> - Bildlimit ändern</gray>
+                <yellow>/admin image list [spieler]</yellow><gray> - Bilder-Übersicht</gray>
+                <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild ansehen</gray>
+                <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
                 """.trimIndent(),
             ),
         )
@@ -518,7 +660,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg")
+            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg", "image")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -590,6 +732,35 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                     val names = plugin.server.onlinePlayers.map { it.name } +
                         listOf("all", "team-a", "team-b")
                     return names.filter { it.startsWith(args[1], ignoreCase = true) }
+                }
+            }
+
+            "image" -> {
+                if (args.size == 2) {
+                    return listOf("limit", "list", "inspect", "remove")
+                        .filter { it.startsWith(args[1].lowercase()) }
+                }
+                if (args.size == 3) {
+                    when (args[1].lowercase()) {
+                        "limit" -> return listOf("inc", "dec").filter { it.startsWith(args[2].lowercase()) }
+                        "list", "inspect", "remove" ->
+                            return plugin.server.onlinePlayers.map { it.name }
+                                .filter { it.startsWith(args[2], ignoreCase = true) }
+                    }
+                }
+                if (args.size == 4) {
+                    when (args[1].lowercase()) {
+                        "limit" ->
+                            return plugin.server.onlinePlayers.map { it.name }
+                                .filter { it.startsWith(args[3], ignoreCase = true) }
+                        "inspect", "remove" -> {
+                            val target = plugin.server.getPlayer(args[2])
+                                ?: return emptyList()
+                            val files = plugin.imageManager.listImages(target.uniqueId).toMutableList()
+                            if (args[1].equals("remove", ignoreCase = true)) files.add("all")
+                            return files.filter { it.startsWith(args[3], ignoreCase = true) }
+                        }
+                    }
                 }
             }
         }

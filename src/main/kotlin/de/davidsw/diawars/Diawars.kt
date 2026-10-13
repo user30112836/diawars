@@ -3,6 +3,7 @@ package de.davidsw.diawars
 import de.davidsw.diawars.commands.AdminCommand
 import de.davidsw.diawars.commands.BugCommand
 import de.davidsw.diawars.commands.EventCommand
+import de.davidsw.diawars.commands.ImageCommand
 import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
@@ -19,6 +20,7 @@ import de.davidsw.diawars.listeners.DiamondBundleListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
+import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.listeners.InventoryInspectListener
 import de.davidsw.diawars.listeners.LobbyListener
 import de.davidsw.diawars.listeners.MenuListener
@@ -38,6 +40,7 @@ import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondLogManager
 import de.davidsw.diawars.managers.DiamondScoreboardManager
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.ImageManager
 import de.davidsw.diawars.managers.InventoryInspectManager
 import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.ManualManager
@@ -55,6 +58,7 @@ import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
 import de.davidsw.diawars.menu.EventConfigMenu
 import de.davidsw.diawars.menu.EventMenu
+import de.davidsw.diawars.menu.ImageMenu
 import de.davidsw.diawars.menu.MainMenu
 import de.davidsw.diawars.menu.ManualMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
@@ -66,6 +70,7 @@ import de.davidsw.diawars.stores.ClientInfoStore
 import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
+import de.davidsw.diawars.stores.ImageLimitStore
 import de.davidsw.diawars.stores.MessageStore
 import de.davidsw.diawars.stores.OnboardingStore
 import de.davidsw.diawars.stores.PlayerSpawnStore
@@ -89,6 +94,7 @@ data class Menu(
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
     var manualMenu: ManualMenu,
+    var imageMenu: ImageMenu,
 )
 
 class Store(
@@ -109,12 +115,14 @@ class Store(
     val bugStore: BugStore,
     val onboardingStore: OnboardingStore,
     val clientInfoStore: ClientInfoStore,
+    val imageLimitStore: ImageLimitStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
+        imageLimitStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -145,6 +153,7 @@ class Diawars : JavaPlugin() {
     lateinit var inventoryInspectManager: InventoryInspectManager
     lateinit var manualManager: ManualManager
     lateinit var modWhitelistManager: ModWhitelistManager
+    lateinit var imageManager: ImageManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -170,6 +179,7 @@ class Diawars : JavaPlugin() {
             bugStore = BugStore(this),
             onboardingStore = OnboardingStore(this),
             clientInfoStore = ClientInfoStore(this),
+            imageLimitStore = ImageLimitStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -193,6 +203,7 @@ class Diawars : JavaPlugin() {
         inventoryInspectManager = InventoryInspectManager(this)
         manualManager = ManualManager(this)
         modWhitelistManager = ModWhitelistManager(this)
+        imageManager = ImageManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -203,6 +214,7 @@ class Diawars : JavaPlugin() {
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
             manualMenu = ManualMenu(this),
+            imageMenu = ImageMenu(this),
         )
 
         startStoreFlushTask()
@@ -234,8 +246,10 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(AfkActivityListener(this), this)
         server.pluginManager.registerEvents(InventoryInspectListener(), this)
         server.pluginManager.registerEvents(ClientInfoListener(this), this)
+        server.pluginManager.registerEvents(ImageListener(this), this)
 
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
+        server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -248,6 +262,7 @@ class Diawars : JavaPlugin() {
         getCommand("vault")?.setExecutor(VaultCommand(this))
         getCommand("bug")?.setExecutor(BugCommand(this))
         getCommand("admin")?.setExecutor(AdminCommand(this))
+        getCommand("image")?.setExecutor(ImageCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()

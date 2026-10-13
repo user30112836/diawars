@@ -24,6 +24,7 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_VAULT = mm("<green>Vault-Verwaltung</green>")
         val TITLE_VAULT_LIST = mm("<green>Vault-Liste</green>")
         val TITLE_MANUAL = mm("<green>Handbuch</green>")
+        val TITLE_IMAGE = mm("<green>Bilder</green>")
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
@@ -64,6 +65,12 @@ class MenuManager(private val plugin: Diawars) {
     fun openManualMenu(player: Player, memorize: Boolean = true){
         val inv = openMenuInv(player, TITLE_MANUAL, memorize)
         startUpdater({ plugin.menu.manualMenu.populateManualMenu(inv, player) }, player)
+    }
+
+    fun openImageMenu(player: Player, memorize: Boolean = true) {
+        if (memorize) plugin.menu.imageMenu.resetPage(player)
+        val inv = openMenuInv(player, TITLE_IMAGE, memorize)
+        startUpdater({ plugin.menu.imageMenu.populateImageMenu(inv, player) }, player)
     }
 
     private fun openMenuInv(player: Player, title: Component, memorize: Boolean): Inventory {
@@ -140,6 +147,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_MANUAL -> openManualMenu(player, false)
+            TITLE_IMAGE -> openImageMenu(player, false)
             else -> {}
         }
     }
@@ -164,6 +172,7 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_MANUAL -> openManualMenu(player, false)
+            TITLE_IMAGE -> openImageMenu(player, false)
             else -> {}
         }
     }
