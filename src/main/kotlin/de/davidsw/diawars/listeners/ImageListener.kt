@@ -6,9 +6,12 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.ImageManager
 import de.davidsw.diawars.managers.ImageMapRenderer
 import de.davidsw.diawars.util.MiniMessageHelper.mm
+import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityPickupItemEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.MapInitializeEvent
 import org.bukkit.event.world.WorldLoadEvent
@@ -96,6 +99,27 @@ class ImageListener(
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         plugin.imageManager.clearSession(event.player.uniqueId)
+    }
+
+    /**
+     * Picks up image maps issued before tracking existed (see
+     * [de.davidsw.diawars.managers.ImageManager.tryAdoptMap]): once adopted
+     * they are restored like any other map.
+     */
+    @EventHandler
+    fun onPlayerJoin(event: PlayerJoinEvent) {
+        val adopted = plugin.imageManager.adoptPlayerMaps(event.player)
+        if (adopted > 0) {
+            plugin.logger.info("Adopted $adopted previously untracked image map(s) for ${event.player.name}.")
+        }
+    }
+
+    @EventHandler
+    fun onItemPickup(event: EntityPickupItemEvent) {
+        val player = event.entity as? Player ?: return
+        val stack = event.item.itemStack
+        if (stack.type != Material.FILLED_MAP) return
+        plugin.imageManager.tryAdoptMap(player, stack)
     }
 
     /**

@@ -4,6 +4,8 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
+import net.kyori.adventure.text.TextComponent
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -329,6 +331,56 @@ class ImageManager(private val plugin: Diawars) {
         if (restored > 0 || dropped > 0) {
             plugin.logger.info("Restored $restored image map(s), dropped $dropped stale entr(ies).")
         }
+    }
+
+    /**
+     * Adopts a previously untracked image map (issued before tracking
+     * existed): our maps carry their file name as a white display name, so a
+     * filled map with such a name can be matched back to its file. Only
+     * adopts when unambiguous — the holder's own file wins, otherwise exactly
+     * one owner may have the file. Anvil-renamed vanilla maps are gray and
+     * never match, so real terrain maps are never touched. Idempotent.
+     *
+     * @return true when the map is now tracked (or already was)
+     */
+    fun tryAdoptMap(player: Player, stack: ItemStack): Boolean {
+        if (stack.type != Material.FILLED_MAP) return false
+        val meta = stack.itemMeta as? MapMeta ?: return false
+        val view = meta.mapView ?: return false
+        if (plugin.store.imageMapStore.get(view.id) != null) return true
+        val name = meta.displayName() as? TextComponent ?: return false
+        if (name.color() != NamedTextColor.WHITE || name.children().isNotEmpty()) return false
+        val fileName = name.content()
+        if (!isValidFileName(fileName)) return false
+
+        val ownerId = if (hasImage(player.uniqueId, fileName)) {
+            player.uniqueId
+        } else {
+            val owners = getAllKnownPlayers().filter { hasImage(it, fileName) }
+            if (owners.size != 1) return false
+            owners.first()
+        }
+
+        view.renderers.clear()
+        view.addRenderer(ImageMapRenderer(plugin, ownerId, fileName))
+        plugin.store.imageMapStore.putMap(view.id, ownerId, fileName)
+        return true
+    }
+
+    /** Scans the player's belongings for untracked image maps and adopts them. */
+    fun adoptPlayerMaps(player: Player): Int {
+        var adopted = 0
+        val seen = mutableSetOf<Int>()
+        val all = player.inventory.contents + player.enderChest.contents
+        for (stack in all) {
+            if (stack == null || stack.type != Material.FILLED_MAP) continue
+            val meta = stack.itemMeta as? MapMeta ?: continue
+            val id = meta.mapView?.id ?: continue
+            if (!seen.add(id)) continue
+            if (plugin.store.imageMapStore.get(id) != null) continue
+            if (tryAdoptMap(player, stack)) adopted++
+        }
+        return adopted
     }
 
     /**
