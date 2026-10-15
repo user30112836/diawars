@@ -5,6 +5,7 @@ api-version: '26.2'
 author: DavidSW
 
 depend: [NBTAPI]
+softdepend: [floodgate, Geyser-Spigot]
 
 commands:
   teamzones:

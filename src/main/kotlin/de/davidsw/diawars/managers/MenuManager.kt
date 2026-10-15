@@ -1,6 +1,7 @@
 package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MenuUtils
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import net.kyori.adventure.text.Component
@@ -23,7 +24,6 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_EVENT_CONFIG = mm("<green>Event-Konfiguration</green>")
         val TITLE_VAULT = mm("<green>Vault-Verwaltung</green>")
         val TITLE_VAULT_LIST = mm("<green>Vault-Liste</green>")
-        val TITLE_MANUAL = mm("<green>Handbuch</green>")
         val TITLE_IMAGE = mm("<green>Bilder</green>")
     }
 
@@ -62,12 +62,13 @@ class MenuManager(private val plugin: Diawars) {
         startUpdater({ plugin.menu.vaultListMenu.populateVaultListMenu(inv, player) }, player)
     }
 
-    fun openManualMenu(player: Player, memorize: Boolean = true){
-        val inv = openMenuInv(player, TITLE_MANUAL, memorize)
-        startUpdater({ plugin.menu.manualMenu.populateManualMenu(inv, player) }, player)
-    }
-
     fun openImageMenu(player: Player, memorize: Boolean = true) {
+        // Bedrock players have no client mod for uploads; the whole image
+        // feature is disabled for them (see ImageCommand).
+        if (BedrockUtil.isBedrock(player)) {
+            player.sendMessage(mm("<red>Die Bilder-Funktion ist auf Bedrock nicht verfügbar.</red>"))
+            return
+        }
         if (memorize) plugin.menu.imageMenu.resetPage(player)
         val inv = openMenuInv(player, TITLE_IMAGE, memorize)
         startUpdater({ plugin.menu.imageMenu.populateImageMenu(inv, player) }, player)
@@ -146,7 +147,6 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
-            TITLE_MANUAL -> openManualMenu(player, false)
             TITLE_IMAGE -> openImageMenu(player, false)
             else -> {}
         }
@@ -171,7 +171,6 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
-            TITLE_MANUAL -> openManualMenu(player, false)
             TITLE_IMAGE -> openImageMenu(player, false)
             else -> {}
         }
@@ -186,18 +185,28 @@ class MenuManager(private val plugin: Diawars) {
 
         val playerHistory = history[player.uniqueId] ?: return
         val playerPosition = position[player.uniqueId] ?: return
+        // Custom skull textures never resolve on Bedrock (Steve head) and
+        // STRUCTURE_VOID has no Bedrock item at all, so Bedrock players get
+        // plain vanilla items for the navigation row instead.
+        val bedrock = BedrockUtil.isBedrock(player)
         if (playerPosition > 0) {
-            inv.setItem(48, MenuUtils.skullFromValue(
+            inv.setItem(48, if (bedrock) MenuUtils.item(
+                material = Material.ARROW,
+                name = mm("<gray><bold>← Zurück</bold></gray>"),
+            ) else MenuUtils.skullFromValue(
                 value = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTg5NGRhNjk1OTY1NDhjNzRkOTY0ZTk5YjdhNGM5MjE3NjEwZjFhMjdjOTkxZGZhNDRkYWE1ZGE3NzFkODI1In19fQ==",
                 name = mm("<gray><bold>← Zurück</bold></gray>"),
             ))
         }
         inv.setItem(49, MenuUtils.item(
-            material = Material.STRUCTURE_VOID,
+            material = if (bedrock) Material.BARRIER else Material.STRUCTURE_VOID,
             name = mm("<gray><bold>Schließen</bold></gray>"),
         ))
         if (playerHistory.size > playerPosition + 1) {
-            inv.setItem(50, MenuUtils.skullFromValue(
+            inv.setItem(50, if (bedrock) MenuUtils.item(
+                material = Material.ARROW,
+                name = mm("<gray><bold>Weiter →</bold></gray>"),
+            ) else MenuUtils.skullFromValue(
                 value = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzc0NTNhYzJkN2E0MmE5MzY3NGZiZjYyY2FmMzMxYzcxNDNkY2JiY2M0ZjJiYWJiYzJmNjViOTUxNzQyMTQifX19",
                 name = mm("<gray><bold>Weiter →</bold></gray>"),
             ))

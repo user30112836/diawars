@@ -2,6 +2,7 @@ package de.davidsw.diawars.managers
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.ImageListener
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import net.kyori.adventure.text.TextComponent
@@ -427,6 +428,10 @@ class ImageManager(private val plugin: Diawars) {
      * so clients without it simply ignore the packet.
      */
     fun requestUploadUi(player: Player) {
+        if (BedrockUtil.isBedrock(player)) {
+            player.sendMessage(mm("<red>Die Bilder-Funktion ist auf Bedrock nicht verfügbar.</red>"))
+            return
+        }
         player.closeInventory()
         try {
             player.sendPluginMessage(plugin, ImageListener.OPEN_CHANNEL, ByteArray(0))

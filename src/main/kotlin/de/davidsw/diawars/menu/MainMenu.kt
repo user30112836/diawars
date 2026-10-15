@@ -3,6 +3,7 @@ package de.davidsw.diawars.menu
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.PvPManager
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MaterialSets
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -25,7 +26,6 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_EVENTS       = 40
         private const val SLOT_LOBBY        = 42
         private const val SLOT_BUG_REPORT   = 25
-        private const val SLOT_MANUAL       = 14
         private const val SLOT_IMAGE        = 16
     }
 
@@ -248,34 +248,32 @@ class MainMenu(private val plugin: Diawars) {
             glow = false,
         ))
 
-        // Manual
-        inv.setItem(SLOT_MANUAL, item(
-            material = Material.WRITTEN_BOOK,
-            name = mm("<gold><bold>Handbuch</bold></gold>"),
-            lore = listOf(
-                mm("<gray>Anleitung, Übersicht und</gray>"),
-                mm("<gray>Serverregeln nachlesen</gray>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Images
-        val imageCount = plugin.imageManager.getImageCount(player.uniqueId)
-        val imageLimit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
-        inv.setItem(SLOT_IMAGE, item(
-            material = Material.FILLED_MAP,
-            name = mm("<white><bold>Bilder</bold></white>"),
-            lore = listOf(
-                mm("<gray>Deine hochgeladenen Bilder: </gray><white>$imageCount/$imageLimit</white>"),
-                mm("<gray>Karte per Klick erhalten</gray>"),
-                mm("<gray>Upload über die Client-Mod</gray>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ),
-            glow = false,
-        ))
+        // Images (disabled on Bedrock: no client mod for uploads)
+        if (BedrockUtil.isBedrock(player)) {
+            inv.setItem(SLOT_IMAGE, item(
+                material = Material.BARRIER,
+                name = mm("<gray><bold>Bilder</bold></gray>"),
+                lore = listOf(
+                    mm("<gray>Auf Bedrock nicht verfügbar</gray>"),
+                ),
+                glow = false,
+            ))
+        } else {
+            val imageCount = plugin.imageManager.getImageCount(player.uniqueId)
+            val imageLimit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
+            inv.setItem(SLOT_IMAGE, item(
+                material = Material.FILLED_MAP,
+                name = mm("<white><bold>Bilder</bold></white>"),
+                lore = listOf(
+                    mm("<gray>Deine hochgeladenen Bilder: </gray><white>$imageCount/$imageLimit</white>"),
+                    mm("<gray>Karte per Klick erhalten</gray>"),
+                    mm("<gray>Upload über die Client-Mod</gray>"),
+                    mm(""),
+                    mm("<yellow>Klicken zum Öffnen</yellow>"),
+                ),
+                glow = false,
+            ))
+        }
     }
 
     fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
@@ -315,8 +313,6 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
-
-            SLOT_MANUAL -> plugin.menuManager.openManualMenu(player)
 
             SLOT_IMAGE -> plugin.menuManager.openImageMenu(player)
 

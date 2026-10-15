@@ -3,6 +3,7 @@ package de.davidsw.diawars.listeners
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -153,6 +154,7 @@ class ClientInfoListener(
             if (
                 player.isOnline &&
                 !player.hasPermission("diawars.admin") &&
+                !BedrockUtil.isBedrock(player) &&
                 !plugin.store.clientInfoStore.hasReported(player.uniqueId)
             ) {
                 player.kick(

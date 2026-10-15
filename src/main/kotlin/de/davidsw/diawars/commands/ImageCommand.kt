@@ -2,6 +2,7 @@ package de.davidsw.diawars.commands
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.ImageManager
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.command.Command
@@ -14,6 +15,13 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<out String>): Boolean {
         if (sender !is Player) {
             sender.sendMessage("Dieser Befehl kann nur von Spielern ausgeführt werden!")
+            return true
+        }
+
+        // Bedrock players have no client mod, so neither upload nor map
+        // handling is available to them. The menu is hidden as well.
+        if (BedrockUtil.isBedrock(sender)) {
+            sender.sendMessage(mm("<red>Die Bilder-Funktion ist auf Bedrock nicht verfügbar.</red>"))
             return true
         }
 
@@ -77,6 +85,7 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (sender !is Player) return emptyList()
+        if (BedrockUtil.isBedrock(sender)) return emptyList()
         if (args.size == 1) {
             return listOf("get", "upload").filter { it.startsWith(args[0].lowercase()) }
         }
