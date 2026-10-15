@@ -290,7 +290,9 @@ class ImageManager(private val plugin: Diawars) {
         val stack = ItemStack(Material.FILLED_MAP)
         val meta = stack.itemMeta as MapMeta
         meta.mapView = mapView
-        meta.displayName(mm("<white>${escape(file)}</white>"))
+        // File name goes into the lore, NOT the display name: item frames
+        // render the display name above the map, lore stays hidden.
+        meta.lore(listOf(mm("<white>${escape(file)}</white>")))
         stack.itemMeta = meta
         val safeFile = escape(file)
         val leftover = player.inventory.addItem(stack)
@@ -335,11 +337,14 @@ class ImageManager(private val plugin: Diawars) {
 
     /**
      * Adopts a previously untracked image map (issued before tracking
-     * existed): our maps carry their file name as a white display name, so a
-     * filled map with such a name can be matched back to its file. Only
-     * adopts when unambiguous — the holder's own file wins, otherwise exactly
-     * one owner may have the file. Anvil-renamed vanilla maps are gray and
-     * never match, so real terrain maps are never touched. Idempotent.
+     * existed): our maps carry their file name either as a single white lore
+     * line (current scheme) or as a white display name (legacy scheme, from
+     * before the name moved into the lore for item frames), so a filled map
+     * with such a marker can be matched back to its file. Only adopts when
+     * unambiguous — the holder's own file wins, otherwise exactly one owner
+     * may have the file. Anvil-renamed vanilla maps are gray and never match,
+     * so real terrain maps are never touched. Adopted items are normalized to
+     * the lore scheme (display name cleared). Idempotent.
      *
      * @return true when the map is now tracked (or already was)
      */
@@ -347,11 +352,8 @@ class ImageManager(private val plugin: Diawars) {
         if (stack.type != Material.FILLED_MAP) return false
         val meta = stack.itemMeta as? MapMeta ?: return false
         val view = meta.mapView ?: return false
-        if (plugin.store.imageMapStore.get(view.id) != null) return true
-        val name = meta.displayName() as? TextComponent ?: return false
-        if (name.color() != NamedTextColor.WHITE || name.children().isNotEmpty()) return false
-        val fileName = name.content()
-        if (!isValidFileName(fileName)) return false
+        val tracked = plugin.store.imageMapStore.get(view.id) != null
+        val fileName = extractOurFileName(meta) ?: return false
 
         val ownerId = if (hasImage(player.uniqueId, fileName)) {
             player.uniqueId
@@ -361,13 +363,50 @@ class ImageManager(private val plugin: Diawars) {
             owners.first()
         }
 
-        view.renderers.clear()
-        view.addRenderer(ImageMapRenderer(plugin, ownerId, fileName))
-        plugin.store.imageMapStore.putMap(view.id, ownerId, fileName)
+        if (!tracked) {
+            view.renderers.clear()
+            view.addRenderer(ImageMapRenderer(plugin, ownerId, fileName))
+            plugin.store.imageMapStore.putMap(view.id, ownerId, fileName)
+        }
+        normalizeMapMeta(stack, meta, fileName)
         return true
     }
 
-    /** Scans the player's belongings for untracked image maps and adopts them. */
+    /**
+     * Reads our file name marker off a map item: either the single white lore
+     * line (current) or the white display name (legacy). Returns null for
+     * anything else, including anvil-renamed (gray) vanilla maps.
+     */
+    private fun extractOurFileName(meta: MapMeta): String? {
+        meta.lore()?.let { lore ->
+            if (lore.size == 1) {
+                val line = lore[0] as? TextComponent ?: return null
+                if (line.color() == NamedTextColor.WHITE && line.children().isEmpty()) {
+                    val fileName = line.content()
+                    if (isValidFileName(fileName)) return fileName
+                }
+            }
+            return null
+        }
+        val name = meta.displayName() as? TextComponent ?: return null
+        if (name.color() != NamedTextColor.WHITE || name.children().isNotEmpty()) return null
+        val fileName = name.content()
+        if (!isValidFileName(fileName)) return null
+        return fileName
+    }
+
+    /** Rewrites a map item to the lore scheme (display name cleared). */
+    private fun normalizeMapMeta(stack: ItemStack, meta: MapMeta, fileName: String) {
+        if (meta.displayName() == null) {
+            val lore = meta.lore()
+            if (lore != null && lore.size == 1) return
+        }
+        meta.displayName(null)
+        meta.lore(listOf(mm("<white>${escape(fileName)}</white>")))
+        stack.itemMeta = meta
+    }
+
+    /** Scans the player's belongings for image maps, adopts and normalizes them. */
     fun adoptPlayerMaps(player: Player): Int {
         var adopted = 0
         val seen = mutableSetOf<Int>()
@@ -377,7 +416,6 @@ class ImageManager(private val plugin: Diawars) {
             val meta = stack.itemMeta as? MapMeta ?: continue
             val id = meta.mapView?.id ?: continue
             if (!seen.add(id)) continue
-            if (plugin.store.imageMapStore.get(id) != null) continue
             if (tryAdoptMap(player, stack)) adopted++
         }
         return adopted
