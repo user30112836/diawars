@@ -34,9 +34,6 @@ class MenuListener(private val plugin: Diawars): Listener {
         MenuManager.TITLE_VAULT_LIST to { event, player, slot ->
             plugin.menu.vaultListMenu.handleVaultListClick(player, slot, event.inventory)
         },
-        MenuManager.TITLE_MANUAL to { _, player, slot ->
-            plugin.menu.manualMenu.handleManualClick(player, slot)
-        },
         MenuManager.TITLE_IMAGE to { event, player, slot ->
             plugin.menu.imageMenu.handleImageClick(player, slot, event.inventory)
         },
@@ -78,7 +75,6 @@ class MenuListener(private val plugin: Diawars): Listener {
         // drop all per-player view state so neither tasks nor caches leak.
         val playerId = event.player.uniqueId
         plugin.menuManager.cleanupPlayer(playerId)
-        plugin.menu.manualMenu.clearCache(playerId)
         plugin.menu.vaultListMenu.clearCache(playerId)
         plugin.menu.eventMenu.clearCache(playerId)
         plugin.menu.imageMenu.clearCache(playerId)

@@ -43,7 +43,6 @@ import de.davidsw.diawars.managers.EventManager
 import de.davidsw.diawars.managers.ImageManager
 import de.davidsw.diawars.managers.InventoryInspectManager
 import de.davidsw.diawars.managers.LobbyManager
-import de.davidsw.diawars.managers.ManualManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.managers.ModWhitelistManager
@@ -60,7 +59,6 @@ import de.davidsw.diawars.menu.EventConfigMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.ImageMenu
 import de.davidsw.diawars.menu.MainMenu
-import de.davidsw.diawars.menu.ManualMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
@@ -94,7 +92,6 @@ data class Menu(
     var eventConfigMenu: EventConfigMenu,
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
-    var manualMenu: ManualMenu,
     var imageMenu: ImageMenu,
 )
 
@@ -153,7 +150,6 @@ class Diawars : JavaPlugin() {
     lateinit var vaultManager: VaultManager
     lateinit var bugManager: BugManager
     lateinit var inventoryInspectManager: InventoryInspectManager
-    lateinit var manualManager: ManualManager
     lateinit var modWhitelistManager: ModWhitelistManager
     lateinit var imageManager: ImageManager
 
@@ -204,7 +200,6 @@ class Diawars : JavaPlugin() {
         vaultManager = VaultManager(this)
         bugManager = BugManager(this)
         inventoryInspectManager = InventoryInspectManager(this)
-        manualManager = ManualManager(this)
         modWhitelistManager = ModWhitelistManager(this)
         imageManager = ImageManager(this)
 
@@ -216,7 +211,6 @@ class Diawars : JavaPlugin() {
             eventConfigMenu = EventConfigMenu(this),
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
-            manualMenu = ManualMenu(this),
             imageMenu = ImageMenu(this),
         )
 
@@ -290,7 +284,6 @@ class Diawars : JavaPlugin() {
         reloadConfig()
         teamManager.loadTeamsFromConfig()
         vaultManager.loadFromConfig()
-        manualManager.loadFromConfig()
         modWhitelistManager.loadFromConfig()
 
         if (config.getBoolean("border.enabled", true)) {
