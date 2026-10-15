@@ -32,6 +32,12 @@ class ImageListener(
         /** Server answers full-resolution downloads through this channel. */
         const val DATA_CHANNEL = "diawars:image_data"
 
+        /** Clients announce uploads here; the server agrees on the part count. */
+        const val OFFER_CHANNEL = "diawars:image_offer"
+
+        /** Server accepts or rejects announced uploads through this channel. */
+        const val ACCEPT_CHANNEL = "diawars:image_accept"
+
         private val GSON = Gson()
 
         fun writeVarIntPrefixedUtf8(text: String): ByteArray {
@@ -70,7 +76,31 @@ class ImageListener(
         when (channel) {
             CHANNEL -> handleUpload(player, message)
             REQ_CHANNEL -> handleDownloadRequest(player, message)
+            OFFER_CHANNEL -> handleOffer(player, message)
             else -> return
+        }
+    }
+
+    private fun handleOffer(player: Player, message: ByteArray) {
+        val json = try {
+            readVarIntPrefixedUtf8(message)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image offer from ${player.name}: ${e.message}")
+            return
+        }
+        try {
+            val root = GSON.fromJson(json, JsonObject::class.java)
+                ?: throw IllegalArgumentException("JSON is null")
+            val file = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
+                ?: throw IllegalArgumentException("Missing file")
+            val bytes = root.get("bytes")?.takeIf { it.isJsonPrimitive }?.asLong
+                ?: throw IllegalArgumentException("Missing bytes")
+            val total = root.get("total")?.takeIf { it.isJsonPrimitive }?.asInt
+                ?: throw IllegalArgumentException("Missing total")
+            val hash = root.get("hash")?.takeIf { it.isJsonPrimitive }?.asString
+            plugin.imageManager.handleOffer(player, file, bytes, total, hash)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image offer from ${player.name}: ${e.message}")
         }
     }
 

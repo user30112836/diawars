@@ -30,25 +30,41 @@ class ImageManager(private val plugin: Diawars) {
     companion object {
         const val MAP_SIZE = 128
 
-        /** Max decoded image bytes per upload (protects against OOM). */
+        /** Max decoded image bytes per legacy (offer-less) upload. */
         const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
 
-        /** Max image width/height in pixels (bounds RAM for pathological PNGs). */
-        const val MAX_IMAGE_DIMENSION = 2048
+        /**
+         * Max decoded bytes per negotiated upload (64 MB). Parts assemble
+         * into temp files instead of heap, so uploads are bounded by disk —
+         * effectively as large as the player wants.
+         */
+        const val MAX_UPLOAD_BYTES = 64L * 1024 * 1024
 
-        /** Max chunk payloads per image (total part count sanity bound). */
+        /** Max image width/height in pixels (bounds decode RAM). */
+        const val MAX_IMAGE_DIMENSION = 8192
+
+        /** Max chunk payloads without a prior offer (legacy clients stream blind). */
         const val MAX_PARTS = 256
+
+        /** Max chunk payloads of a negotiated upload (agreed via offer/accept). */
+        const val MAX_NEGOTIATED_PARTS = 8192
 
         /** Max base64 chars per chunk (keeps each payload well below packet limits). */
         const val MAX_CHUNK_CHARS = 20_000
 
-        /** Download chunks per player per tick (mirrors the client upload pacing). */
-        const val DOWNLOAD_CHUNKS_PER_TICK = 8
+        /** Download chunks per player per tick (large images need throughput). */
+        const val DOWNLOAD_CHUNKS_PER_TICK = 32
 
         /** Upload session timeout in millis. */
         const val SESSION_TIMEOUT_MILLIS = 120_000L
 
         private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9._-]{1,32}$")
+
+        /** Expected part count for B decoded bytes at [MAX_CHUNK_CHARS] chars each. */
+        fun expectedParts(bytes: Long): Long {
+            val b64len = 4 * ((bytes + 2) / 3)
+            return (b64len + MAX_CHUNK_CHARS - 1) / MAX_CHUNK_CHARS
+        }
     }
 
     sealed interface Result {
@@ -59,12 +75,36 @@ class ImageManager(private val plugin: Diawars) {
     private data class UploadSession(
         val file: String,
         val total: Int,
-        val parts: MutableMap<Int, String> = mutableMapOf(),
+        /** Announced byte count, or -1 for legacy (offer-less) sessions. */
+        val bytesExpected: Long,
+        /** Announced SHA-256 hex, or null for legacy sessions. */
+        val hashExpected: String?,
+        val received: MutableSet<Int> = mutableSetOf(),
         var lastUpdate: Long = System.currentTimeMillis(),
     )
 
     private val sessions = mutableMapOf<UUID, UploadSession>()
     private val sessionLock = Any()
+
+    init {
+        // Orphaned part files from a crash never belong to a session again.
+        try {
+            tmpRoot().deleteRecursively()
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Staging area for in-flight uploads: images/.tmp/<uuid>/<file>/p<part>.bin. */
+    private fun tmpRoot(): File = File(imagesDir(), ".tmp")
+
+    private fun tmpDir(playerId: UUID, file: String): File = File(File(tmpRoot(), playerId.toString()), file)
+
+    private fun deleteSessionFiles(playerId: UUID, session: UploadSession) {
+        try {
+            tmpDir(playerId, session.file).deleteRecursively()
+        } catch (_: Exception) {
+        }
+    }
 
     // Cached per-player file lists: menus re-render every 40 ticks, so the
     // hot paths (menu, main-menu count, tab completion) must not hit the disk.
@@ -232,8 +272,71 @@ class ImageManager(private val plugin: Diawars) {
     }
 
     // ------------------------------------------------------------------
-    // chunked upload (diawars:image payload)
+    // chunked upload (diawars:image_offer -> diawars:image_accept, then
+    // diawars:image payload)
     // ------------------------------------------------------------------
+    //
+    // Transfers have no fixed size: client and server agree on the part count
+    // up front (offer/accept handshake), then chunks assemble into temp files
+    // instead of heap. Legacy clients that stream without an offer keep
+    // working up to MAX_PARTS/MAX_IMAGE_BYTES.
+
+    /**
+     * Handles an upload offer. Expected JSON fields (parsed by the listener):
+     * file, bytes (decoded size), total (part count), hash (SHA-256 hex,
+     * optional). Always answers on [ImageListener.ACCEPT_CHANNEL].
+     */
+    fun handleOffer(player: Player, file: String, bytes: Long, total: Int, hash: String?) {
+        if (!isValidFileName(file)) {
+            sendAccept(player, file, false, null,
+                "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - (max. 32 Zeichen). \"all\" ist reserviert.</red>")
+            return
+        }
+        if (bytes < 1 || bytes > MAX_UPLOAD_BYTES || total < 1 || total > MAX_NEGOTIATED_PARTS ||
+            total.toLong() != expectedParts(bytes)
+        ) {
+            sendAccept(player, file, false, null,
+                "<red>Ungültige Bildgröße (max. ${MAX_UPLOAD_BYTES / 1024 / 1024} MB, Teile passen nicht zur Größe)!</red>")
+            return
+        }
+        if (hash != null && !hash.matches(Regex("[0-9a-fA-F]{64}"))) {
+            sendAccept(player, file, false, null, "<red>Ungültige Bilddaten (Hash)!</red>")
+            return
+        }
+        val count = getImageCount(player.uniqueId)
+        val limit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
+        if (count >= limit) {
+            sendAccept(player, file, false, null,
+                "<red>Dein Bildlimit ist erreicht ($count/$limit)! Bitte einen Admin um eine Erhöhung.</red>")
+            return
+        }
+        if (hasImage(player.uniqueId, file)) {
+            sendAccept(player, file, false, null,
+                "<red>Du hast bereits ein Bild mit diesem Namen! Wähle einen anderen Dateinamen.</red>")
+            return
+        }
+
+        synchronized(sessionLock) {
+            purgeExpiredLocked()
+            sessions[player.uniqueId]?.let { deleteSessionFiles(player.uniqueId, it) }
+            sessions[player.uniqueId] = UploadSession(file, total, bytes, hash?.lowercase())
+        }
+        sendAccept(player, file, true, total, null)
+    }
+
+    private fun sendAccept(player: Player, file: String, accepted: Boolean, total: Int?, error: String?) {
+        val root = JsonObject()
+        root.addProperty("file", file)
+        root.addProperty("accepted", accepted)
+        if (total != null) root.addProperty("total", total)
+        if (error != null) root.addProperty("error", error)
+        try {
+            player.sendPluginMessage(plugin, ImageListener.ACCEPT_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(root.toString()))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not send image accept to ${player.name}: ${e.message}")
+            if (!accepted) clearSession(player.uniqueId)
+        }
+    }
 
     /**
      * Handles one upload chunk. Expected JSON fields (parsed by the listener):
@@ -246,56 +349,99 @@ class ImageManager(private val plugin: Diawars) {
             clearSession(player.uniqueId)
             return Result.Error("<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - (max. 32 Zeichen). \"all\" ist reserviert.</red>")
         }
-        if (total < 1 || total > MAX_PARTS) {
-            clearSession(player.uniqueId)
-            return Result.Error("<red>Ungültige Bilddaten (Anzahl der Teile)!</red>")
-        }
-        if (part < 0 || part >= total) {
-            clearSession(player.uniqueId)
-            return Result.Error("<red>Ungültige Bilddaten (Teilnummer)!</red>")
-        }
         if (data.length > MAX_CHUNK_CHARS) {
-            clearSession(player.uniqueId)
+            failSession(player.uniqueId)
             return Result.Error("<red>Bildteil ist zu groß!</red>")
         }
 
         val playerId = player.uniqueId
         synchronized(sessionLock) {
             purgeExpiredLocked()
-            val existing = sessions[playerId]
-            if (existing != null && (existing.file != file || existing.total != total)) {
+            var session = sessions[playerId]
+            if (session != null && (session.file != file || session.total != total)) {
                 // New upload started while another was in progress: replace it.
-                sessions[playerId] = UploadSession(file, total)
+                deleteSessionFiles(playerId, session)
+                sessions.remove(playerId)
+                session = null
             }
-            val session = sessions.getOrPut(playerId) { UploadSession(file, total) }
+            if (session == null) {
+                // Legacy clients stream without an offer: small uploads only,
+                // large ones must negotiate first (client shows how).
+                if (total < 1 || total > MAX_PARTS) {
+                    return Result.Error("<red>Dieses Bild braucht einen Upload-Handshake — bitte aktualisiere die Diawars-Client-Mod!</red>")
+                }
+                session = UploadSession(file, total, -1, null)
+                sessions[playerId] = session
+            }
+            if (part < 0 || part >= session.total) {
+                failSession(playerId)
+                return Result.Error("<red>Ungültige Bilddaten (Teilnummer)!</red>")
+            }
+            val decoded = try {
+                Base64.getDecoder().decode(data)
+            } catch (_: IllegalArgumentException) {
+                failSession(playerId)
+                return Result.Error("<red>Ungültige Bilddaten (Base64)!</red>")
+            }
+            try {
+                val dir = tmpDir(playerId, session.file)
+                dir.mkdirs()
+                File(dir, "p$part.bin").writeBytes(decoded)
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not stage image part for ${player.name}: ${e.message}")
+                failSession(playerId)
+                return Result.Error("<red>Das Bild konnte nicht zwischengespeichert werden!</red>")
+            }
             session.lastUpdate = System.currentTimeMillis()
-            session.parts[part] = data
+            session.received.add(part)
 
-            if (session.parts.size < total) return null
+            if (session.received.size < session.total) return null
             sessions.remove(playerId)
             return finishUpload(player, file, session)
         }
     }
 
+    /** Assembles the staged parts and stores the image. Deletes staging files. */
     private fun finishUpload(player: Player, file: String, session: UploadSession): Result {
         // Limit check at completion time (images may have been added meanwhile).
         val count = getImageCount(player.uniqueId)
         val limit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
         if (count >= limit) {
+            deleteSessionFiles(player.uniqueId, session)
             return Result.Error("<red>Dein Bildlimit ist erreicht ($count/$limit)! Bitte einen Admin um eine Erhöhung.</red>")
         }
         if (hasImage(player.uniqueId, file)) {
+            deleteSessionFiles(player.uniqueId, session)
             return Result.Error("<red>Du hast bereits ein Bild mit diesem Namen! Wähle einen anderen Dateinamen.</red>")
         }
 
-        val combined = (0 until session.total).joinToString("") { session.parts[it] ?: "" }
+        val negotiated = session.bytesExpected >= 0
+        val cap = if (negotiated) MAX_UPLOAD_BYTES else MAX_IMAGE_BYTES.toLong()
         val bytes = try {
-            Base64.getDecoder().decode(combined)
-        } catch (_: IllegalArgumentException) {
-            return Result.Error("<red>Ungültige Bilddaten (Base64)!</red>")
+            assembleParts(player.uniqueId, session)
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not assemble image $file for ${player.name}: ${e.message}")
+            deleteSessionFiles(player.uniqueId, session)
+            return Result.Error("<red>Ungültige Bilddaten (Teile unvollständig)!</red>")
         }
-        if (bytes.isEmpty() || bytes.size > MAX_IMAGE_BYTES) {
-            return Result.Error("<red>Das Bild ist zu groß oder leer (max. 2 MB)!</red>")
+        deleteSessionFiles(player.uniqueId, session)
+        if (bytes.isEmpty() || bytes.size > cap) {
+            val capMb = cap / 1024 / 1024
+            return Result.Error("<red>Das Bild ist zu groß oder leer (max. $capMb MB)!</red>")
+        }
+        if (negotiated && bytes.size.toLong() != session.bytesExpected) {
+            return Result.Error("<red>Ungültige Bilddaten (Größe weicht vom Angebot ab)!</red>")
+        }
+        if (session.hashExpected != null && !sha256Hex(bytes).equals(session.hashExpected, ignoreCase = true)) {
+            return Result.Error("<red>Ungültige Bilddaten (Prüfsumme stimmt nicht, bitte erneut hochladen)!</red>")
+        }
+
+        // Cheap dimension pre-check for PNGs (our clients always send PNG):
+        // IHDR width/height sit at fixed offsets, no decode needed.
+        pngDimensions(bytes)?.let { (w, h) ->
+            if (w < 1 || h < 1 || w > MAX_IMAGE_DIMENSION || h > MAX_IMAGE_DIMENSION) {
+                return Result.Error("<red>Das Bild hat eine ungültige Größe (max. $MAX_IMAGE_DIMENSION×$MAX_IMAGE_DIMENSION Pixel)!</red>")
+            }
         }
 
         val decoded = try {
@@ -343,16 +489,55 @@ class ImageManager(private val plugin: Diawars) {
         }
     }
 
+    /** Concatenates staged part files 0..total-1 in order. */
+    private fun assembleParts(playerId: UUID, session: UploadSession): ByteArray {
+        val dir = tmpDir(playerId, session.file)
+        val out = java.io.ByteArrayOutputStream()
+        for (i in 0 until session.total) {
+            val part = File(dir, "p$i.bin")
+            if (!part.isFile) throw IllegalStateException("missing part $i")
+            part.inputStream().use { it.copyTo(out) }
+        }
+        return out.toByteArray()
+    }
+
+    /** PNG IHDR dimensions without decoding, or null for non-PNG data. */
+    private fun pngDimensions(bytes: ByteArray): Pair<Int, Int>? {
+        if (bytes.size < 24) return null
+        val magic = byteArrayOf(137.toByte(), 80, 78, 71, 13, 10, 26, 10)
+        if (!bytes.copyOfRange(0, 8).contentEquals(magic)) return null
+        fun u32(off: Int): Int = ((bytes[off].toInt() and 0xFF) shl 24) or
+            ((bytes[off + 1].toInt() and 0xFF) shl 16) or
+            ((bytes[off + 2].toInt() and 0xFF) shl 8) or
+            (bytes[off + 3].toInt() and 0xFF)
+        return u32(16) to u32(20)
+    }
+
+    private fun sha256Hex(bytes: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
     private fun purgeExpiredLocked() {
         val now = System.currentTimeMillis()
         val it = sessions.entries.iterator()
         while (it.hasNext()) {
-            if (now - it.next().value.lastUpdate > SESSION_TIMEOUT_MILLIS) it.remove()
+            val entry = it.next()
+            if (now - entry.value.lastUpdate > SESSION_TIMEOUT_MILLIS) {
+                deleteSessionFiles(entry.key, entry.value)
+                it.remove()
+            }
+        }
+    }
+
+    private fun failSession(playerId: UUID) {
+        synchronized(sessionLock) {
+            sessions.remove(playerId)?.let { deleteSessionFiles(playerId, it) }
         }
     }
 
     fun clearSession(playerId: UUID) {
-        synchronized(sessionLock) { sessions.remove(playerId) }
+        failSession(playerId)
     }
 
     // ------------------------------------------------------------------
@@ -577,7 +762,7 @@ class ImageManager(private val plugin: Diawars) {
 
         val base64 = Base64.getEncoder().encodeToString(bytes)
         val total = (base64.length + MAX_CHUNK_CHARS - 1) / MAX_CHUNK_CHARS
-        if (total > MAX_PARTS) {
+        if (total > MAX_NEGOTIATED_PARTS) {
             plugin.logger.warning("Image $resolvedFile of $resolvedOwner exceeds download chunk budget ($total parts).")
             sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "too-big"))
             return

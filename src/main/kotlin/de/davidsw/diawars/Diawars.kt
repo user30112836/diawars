@@ -258,8 +258,10 @@ class Diawars : JavaPlugin() {
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.REQ_CHANNEL, ImageListener(this))
+        server.messenger.registerIncomingPluginChannel(this, ImageListener.OFFER_CHANNEL, ImageListener(this))
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.OPEN_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
