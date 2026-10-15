@@ -7,6 +7,7 @@ import de.davidsw.diawars.commands.ImageCommand
 import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
+import de.davidsw.diawars.commands.NightVisionCommand
 import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.commands.SelfKillCommand
@@ -25,6 +26,7 @@ import de.davidsw.diawars.listeners.InventoryInspectListener
 import de.davidsw.diawars.listeners.LobbyListener
 import de.davidsw.diawars.listeners.MenuListener
 import de.davidsw.diawars.listeners.MessageListener
+import de.davidsw.diawars.listeners.NightVisionListener
 import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PlayerRespawnListener
 import de.davidsw.diawars.listeners.PlayerSpawnChangeListener
@@ -46,6 +48,7 @@ import de.davidsw.diawars.managers.LobbyManager
 import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.managers.ModWhitelistManager
+import de.davidsw.diawars.managers.NightVisionManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.RewardManager
@@ -71,6 +74,7 @@ import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.ImageLimitStore
 import de.davidsw.diawars.stores.ImageMapStore
 import de.davidsw.diawars.stores.MessageStore
+import de.davidsw.diawars.stores.NightVisionStore
 import de.davidsw.diawars.stores.OnboardingStore
 import de.davidsw.diawars.stores.PlayerSpawnStore
 import de.davidsw.diawars.stores.PlayerStateStore
@@ -115,13 +119,14 @@ class Store(
     val clientInfoStore: ClientInfoStore,
     val imageLimitStore: ImageLimitStore,
     val imageMapStore: ImageMapStore,
+    val nightVisionStore: NightVisionStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
-        imageLimitStore, imageMapStore,
+        imageLimitStore, imageMapStore, nightVisionStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -152,6 +157,7 @@ class Diawars : JavaPlugin() {
     lateinit var inventoryInspectManager: InventoryInspectManager
     lateinit var modWhitelistManager: ModWhitelistManager
     lateinit var imageManager: ImageManager
+    lateinit var nightVisionManager: NightVisionManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -179,6 +185,7 @@ class Diawars : JavaPlugin() {
             clientInfoStore = ClientInfoStore(this),
             imageLimitStore = ImageLimitStore(this),
             imageMapStore = ImageMapStore(this),
+            nightVisionStore = NightVisionStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -202,6 +209,7 @@ class Diawars : JavaPlugin() {
         inventoryInspectManager = InventoryInspectManager(this)
         modWhitelistManager = ModWhitelistManager(this)
         imageManager = ImageManager(this)
+        nightVisionManager = NightVisionManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -245,6 +253,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(InventoryInspectListener(), this)
         server.pluginManager.registerEvents(ClientInfoListener(this), this)
         server.pluginManager.registerEvents(ImageListener(this), this)
+        server.pluginManager.registerEvents(NightVisionListener(this), this)
 
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
@@ -262,6 +271,7 @@ class Diawars : JavaPlugin() {
         getCommand("bug")?.setExecutor(BugCommand(this))
         getCommand("admin")?.setExecutor(AdminCommand(this))
         getCommand("image")?.setExecutor(ImageCommand(this))
+        getCommand("nightvision")?.setExecutor(NightVisionCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()
@@ -285,6 +295,7 @@ class Diawars : JavaPlugin() {
         teamManager.loadTeamsFromConfig()
         vaultManager.loadFromConfig()
         modWhitelistManager.loadFromConfig()
+        nightVisionManager.refreshGlobalState()
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()
