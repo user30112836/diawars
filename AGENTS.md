@@ -7,6 +7,7 @@ Single-module Kotlin/JVM Paper plugin. Entrypoint: `src/main/kotlin/de/davidsw/d
 - After **every** code change, run: `./gradlew build`
 - `build` already includes `shadowJar` (`tasks.build { dependsOn("shadowJar") }`). No separate jar step needed.
 - Toolchain is Java 25 via Gradle `jvmToolchain` — do not change system Java, Gradle provisions it.
+- Run Gradle with Java 21 (`JAVA_HOME=/usr/lib/jvm/java-21-openjdk`): the Gradle 8.8 daemon cannot start on system Java 26 (`IllegalArgumentException` in the Kotlin DSL). Compilation still uses the Java 25 toolchain.
 - Paper API `26.2` is `compileOnly`; NBTAPI is a hard `depend` (see `plugin.yml`).
 - There are **no tests** (`src/test` does not exist). Build is the verification.
 - After every build, deploy to the test server: delete `../diawars-server/plugins/Diawars-*.jar` and copy the fresh `build/libs/*-all.jar` (the shadow jar, e.g. `Diawars-5.1-beta-all.jar`) there. Never touch the other jars (NBTAPI, WorldEdit, …).
@@ -19,6 +20,7 @@ Single-module Kotlin/JVM Paper plugin. Entrypoint: `src/main/kotlin/de/davidsw/d
   - `#Fix <what now works>`, `#Performance <what improved>`, `#Improvement <what changed>` — otherwise no prefix (e.g. `Players now receive 32 Diamonds on first launch`).
   - No conventional-commits / scopes.
 - Commit finished logical units promptly; do not bundle unrelated features. Do not commit `build/`, `run/`, `.gradle/` (gitignored). `gradlew` + `gradle/` ARE committed — keep it that way.
+- Auto commits are allowed: commit finished logical units without asking the user for approval first.
 - Uncommitted work is normal here; check `git status` before starting.
 
 ## Wiring a feature (all steps required)
@@ -40,6 +42,7 @@ Packages: `commands/` (executors) → `managers/` (logic) → `stores/` (YAML pe
 - ItemStack/YAML serialization must stay on the main thread (see `YamlStore` docs); only file writes go async.
 - `todo` file at root is the bug/feature backlog — check it for intended behavior, update it when done.
 - Sibling repos in parent dir (`diawars-client-fabric`, `diawars-client-forge`, `diawars-server`): image/payload features span plugin + client mods; live test server lives in `../diawars-server`.
+- Client mods (Gradle 9.5.1, `sourceCompatibility = 25`) must be built with Java 25 (`JAVA_HOME=/usr/lib/jvm/java-25-openjdk`); Java 21 fails with `invalid source release: 25`. No deploy step for mods — players install the jars themselves.
 
 ## Bedrock / Geyser support
 

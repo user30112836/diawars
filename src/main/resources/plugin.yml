@@ -52,9 +52,13 @@ commands:
     description: Gibt eine Karte mit einem hochgeladenen Bild
     usage: /<command> <get|upload>
     permission: diawars.use
+  nightvision:
+    description: Schaltet Nachtsicht an oder aus
+    usage: /<command> [on|off]
+    permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder)
-    usage: /<command> <reload|inv|log|bug|event|pvp|lobby|msg|image>
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder, Config)
+    usage: /<command> <reload|inv|log|bug|event|pvp|lobby|msg|image|config>
     permission: diawars.admin
 
 permissions:

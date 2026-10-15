@@ -425,6 +425,9 @@ class EventManager(private val plugin: Diawars) {
             player.gameMode = GameMode.SURVIVAL
             player.teleport(plugin.server.worlds.first().spawnLocation)
         }
+        // Event effects are stripped above; opted-in players get their
+        // night vision back right away.
+        plugin.nightVisionManager.reapply(player)
         // Pending diamonds (e.g. playtime or accept rewards earned inside the event
         // world) are owed as soon as the player is back in the main world/lobby.
         // PlayerChangedWorldEvent in RewardListener is the primary payout trigger;

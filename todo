@@ -23,13 +23,6 @@ menu and also hide irrelevant content. They should not be able to move items fro
 close, forward). These edits shall be made through a gui being enabled by a new button in the menu which is in the bottom right corner of the menu
 (inside the outer ring).
 
-Night vision toggle:
-There should be a toggle for the players to enable or disable night vision. If night vision is enbaled the player should receive the night vision
-effect (without any particles). Every player has his individual toggle. The toggle should be accessable via a menu button or the /nightvision 
-command. In the config.yml there should he a field "night-vision-toggle". This field should receive a boolean which determines whether players can
-use the toggle or not. If not every player has night vision disabled. Admins should also be able to change the setting with "/admin config
-night-vision-toggle true|false". This should also change the state in the config file.
-
 Event inspect:
 Admins should be able to go into event world in spectator mode during the building phase. When the admin tipes "/admin event inspect <world>" the 
 admin should be teleported into the event world in spectator mode (like "/admin event review <world>" just with building world instead of submitted

@@ -38,6 +38,8 @@ diamond-limit: 32
 diamonds-per-kill: 2
 starter-diamonds: 32 # one-time grant on first join
 
+night-vision-toggle: true # whether players may use the night vision toggle (/nightvision)
+
 event:
   accept-reward-diamonds: 5
 

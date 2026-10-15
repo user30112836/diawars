@@ -27,6 +27,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_LOBBY        = 42
         private const val SLOT_BUG_REPORT   = 25
         private const val SLOT_IMAGE        = 16
+        private const val SLOT_NIGHT_VISION = 14
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -223,6 +224,30 @@ class MainMenu(private val plugin: Diawars) {
             glow = false,
         ))
 
+        // Night vision toggle
+        val nvAvailable = plugin.nightVisionManager.isAvailable()
+        val nvEnabled = plugin.nightVisionManager.hasEnabled(player.uniqueId)
+        inv.setItem(SLOT_NIGHT_VISION, item(
+            material = if (nvAvailable && nvEnabled) Material.GOLDEN_CARROT else Material.CARROT,
+            name = mm("<yellow><bold>Nachtsicht</bold></yellow>"),
+            lore = when {
+                !nvAvailable -> listOf(
+                    mm("<gray>Derzeit deaktiviert</gray>"),
+                )
+                nvEnabled -> listOf(
+                    mm("<gray>Status: </gray><green>Aktiviert</green>"),
+                    mm(""),
+                    mm("<yellow>Klicken zum Deaktivieren</yellow>"),
+                )
+                else -> listOf(
+                    mm("<gray>Status: </gray><red>Deaktiviert</red>"),
+                    mm(""),
+                    mm("<yellow>Klicken zum Aktivieren</yellow>"),
+                )
+            },
+            glow = nvAvailable && nvEnabled,
+        ))
+
         // Vault management
         val ownClaim = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)
         val vaultLore = if (ownClaim != null) {
@@ -313,6 +338,18 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
+
+            SLOT_NIGHT_VISION -> {
+                val next = plugin.nightVisionManager.toggle(player)
+                if (next == null) {
+                    player.sendMessage(mm("<red>Nachtsicht ist derzeit deaktiviert!</red>"))
+                } else {
+                    player.sendMessage(
+                        mm(if (next) "<green>✓ Nachtsicht aktiviert!</green>" else "<gray>Nachtsicht deaktiviert.</gray>"),
+                    )
+                }
+                populateMainMenu(inv, player)
+            }
 
             SLOT_IMAGE -> plugin.menuManager.openImageMenu(player)
 

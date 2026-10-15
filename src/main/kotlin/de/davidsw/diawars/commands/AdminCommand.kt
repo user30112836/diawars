@@ -38,6 +38,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "lobby" -> handleLobby(sender, args.drop(1))
             "msg" -> handleMsg(sender, args.drop(1))
             "image" -> handleImage(sender, args.drop(1))
+            "config" -> handleConfig(sender, args.drop(1))
             else -> sendHelp(sender)
         }
 
@@ -617,6 +618,31 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     }
 
     // ------------------------------------------------------------------
+    // config (server settings persisted to config.yml)
+    // ------------------------------------------------------------------
+
+    private fun handleConfig(sender: CommandSender, args: List<String>) {
+        if (args.size != 2 || !args[0].equals("night-vision-toggle", ignoreCase = true)) {
+            sender.sendMessage(mm("<red>Verwendung: /admin config night-vision-toggle &lt;true|false&gt;</red>"))
+            return
+        }
+        val value = when (args[1].lowercase()) {
+            "true", "on", "enable" -> true
+            "false", "off", "disable" -> false
+            else -> {
+                sender.sendMessage(mm("<red>Verwendung: /admin config night-vision-toggle &lt;true|false&gt;</red>"))
+                return
+            }
+        }
+        plugin.config.set("night-vision-toggle", value)
+        plugin.saveConfig()
+        plugin.nightVisionManager.refreshGlobalState()
+        sender.sendMessage(
+            mm("<green>✓ Nachtsicht wurde ${if (value) "aktiviert" else "deaktiviert"}!</green>"),
+        )
+    }
+
+    // ------------------------------------------------------------------
     // help
     // ------------------------------------------------------------------
 
@@ -644,6 +670,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image list [spieler]</yellow><gray> - Bilder-Übersicht</gray>
                 <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild ansehen</gray>
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
+                <yellow>/admin config night-vision-toggle &lt;true|false&gt;</yellow><gray> - Nachtsicht erlauben/sperren</gray>
                 """.trimIndent(),
             ),
         )
@@ -660,7 +687,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg", "image")
+            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg", "image", "config")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -761,6 +788,15 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                             return files.filter { it.startsWith(args[3], ignoreCase = true) }
                         }
                     }
+                }
+            }
+
+            "config" -> {
+                if (args.size == 2) {
+                    return listOf("night-vision-toggle").filter { it.startsWith(args[1].lowercase()) }
+                }
+                if (args.size == 3 && args[1].equals("night-vision-toggle", ignoreCase = true)) {
+                    return listOf("true", "false").filter { it.startsWith(args[2].lowercase()) }
                 }
             }
         }
