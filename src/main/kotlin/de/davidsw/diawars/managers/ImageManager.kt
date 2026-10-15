@@ -4,6 +4,7 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MiniMessageHelper.escape
+import com.google.gson.JsonObject
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import net.kyori.adventure.text.TextComponent
 import net.kyori.adventure.text.format.NamedTextColor
@@ -18,6 +19,8 @@ import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.security.MessageDigest
+import java.util.ArrayDeque
 import java.util.Base64
 import java.util.UUID
 import javax.imageio.ImageIO
@@ -30,11 +33,17 @@ class ImageManager(private val plugin: Diawars) {
         /** Max decoded image bytes per upload (protects against OOM). */
         const val MAX_IMAGE_BYTES = 2 * 1024 * 1024
 
+        /** Max image width/height in pixels (bounds RAM for pathological PNGs). */
+        const val MAX_IMAGE_DIMENSION = 2048
+
         /** Max chunk payloads per image (total part count sanity bound). */
         const val MAX_PARTS = 256
 
         /** Max base64 chars per chunk (keeps each payload well below packet limits). */
         const val MAX_CHUNK_CHARS = 20_000
+
+        /** Download chunks per player per tick (mirrors the client upload pacing). */
+        const val DOWNLOAD_CHUNKS_PER_TICK = 8
 
         /** Upload session timeout in millis. */
         const val SESSION_TIMEOUT_MILLIS = 120_000L
@@ -72,6 +81,9 @@ class ImageManager(private val plugin: Diawars) {
 
     fun imageFile(owner: UUID, file: String): File = File(playerDir(owner), "$file.png")
 
+    /** 128x128 map thumbnail derived from the full image (what maps render). */
+    fun thumbFile(owner: UUID, file: String): File = File(playerDir(owner), "thumbs/$file.png")
+
     fun isValidFileName(file: String): Boolean {
         if (file.equals("all", ignoreCase = true)) return false
         if (file == "." || file == "..") return false
@@ -101,20 +113,82 @@ class ImageManager(private val plugin: Diawars) {
 
     fun hasImage(owner: UUID, file: String): Boolean = imageFile(owner, file).isFile
 
+    /**
+     * 128x128 thumbnail for map rendering. Generated from the full image on
+     * first use, which also migrates images stored before thumbnails existed.
+     */
     fun loadImage(owner: UUID, file: String): BufferedImage? {
+        val thumb = thumbFile(owner, file)
+        if (thumb.isFile) {
+            try {
+                thumb.inputStream().use { ImageIO.read(it) }?.let { return ensure128(it) }
+            } catch (_: Exception) {
+                // fall through and regenerate below
+            }
+        }
+        val full = loadFullImage(owner, file) ?: return null
+        val resized = ensure128(full)
+        try {
+            thumb.parentFile.mkdirs()
+            ImageIO.write(resized, "png", thumb)
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not write thumbnail for $file of $owner: ${e.message}")
+        }
+        return resized
+    }
+
+    /** Full-resolution image as stored (no resize). Null when missing/unreadable. */
+    fun loadFullImage(owner: UUID, file: String): BufferedImage? {
         val f = imageFile(owner, file)
         if (!f.isFile) return null
         return try {
-            f.inputStream().use { ImageIO.read(it) }?.let { ensure128(it) }
+            f.inputStream().use { ImageIO.read(it) }
         } catch (_: Exception) {
             null
         }
+    }
+
+    /** Raw full-resolution PNG bytes. Null when missing/unreadable. */
+    fun fullImageBytes(owner: UUID, file: String): ByteArray? {
+        val f = imageFile(owner, file)
+        if (!f.isFile) return null
+        return try {
+            f.readBytes()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private val hashCache = mutableMapOf<String, String>()
+    private val hashCacheLock = Any()
+
+    /** SHA-256 hex of the stored full-resolution PNG (for client cache checks). */
+    fun fullImageHash(owner: UUID, file: String): String? {
+        val key = "$owner/$file"
+        synchronized(hashCacheLock) { hashCache[key]?.let { return it } }
+        val bytes = fullImageBytes(owner, file) ?: return null
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        val hex = digest.joinToString("") { "%02x".format(it) }
+        synchronized(hashCacheLock) {
+            if (hashCache.size > 1024) hashCache.clear()
+            hashCache[key] = hex
+        }
+        return hex
+    }
+
+    private fun dropHash(owner: UUID, file: String) {
+        synchronized(hashCacheLock) { hashCache.remove("$owner/$file") }
     }
 
     fun deleteImage(owner: UUID, file: String): Boolean {
         val f = imageFile(owner, file)
         if (!f.isFile) return false
         val deleted = f.delete()
+        try {
+            thumbFile(owner, file).delete()
+        } catch (_: Exception) {
+        }
+        dropHash(owner, file)
         if (deleted) {
             synchronized(imageListLock) { imageListCache[owner]?.remove(file) }
         }
@@ -130,6 +204,13 @@ class ImageManager(private val plugin: Diawars) {
         val files = dir.listFiles { f -> f.isFile && f.extension.equals("png", ignoreCase = true) }.orEmpty()
         var count = 0
         files.forEach { if (it.delete()) count++ }
+        try {
+            File(dir, "thumbs").deleteRecursively()
+        } catch (_: Exception) {
+        }
+        synchronized(hashCacheLock) {
+            hashCache.keys.removeIf { it.startsWith("$owner/") }
+        }
         synchronized(imageListLock) { imageListCache.remove(owner) }
         return count
     }
@@ -223,7 +304,11 @@ class ImageManager(private val plugin: Diawars) {
             null
         } ?: return Result.Error("<red>Die Datei ist kein gültiges Bild (PNG/JPG erwartet)!</red>")
 
-        val resized = ensure128(decoded)
+        if (decoded.width < 1 || decoded.height < 1 ||
+            decoded.width > MAX_IMAGE_DIMENSION || decoded.height > MAX_IMAGE_DIMENSION
+        ) {
+            return Result.Error("<red>Das Bild hat eine ungültige Größe (max. $MAX_IMAGE_DIMENSION×$MAX_IMAGE_DIMENSION Pixel)!</red>")
+        }
 
         return try {
             val dir = playerDir(player.uniqueId)
@@ -233,7 +318,14 @@ class ImageManager(private val plugin: Diawars) {
             if (target.exists()) {
                 return Result.Error("<red>Du hast bereits ein Bild mit diesem Namen! Wähle einen anderen Dateinamen.</red>")
             }
-            ImageIO.write(resized, "png", target)
+            // Full resolution is stored as-is; the 128x128 map thumbnail is
+            // derived so vanilla maps (and Bedrock via Geyser) keep working.
+            // Modded Java clients fetch the full image on demand.
+            ImageIO.write(decoded, "png", target)
+            val thumbDir = File(dir, "thumbs")
+            thumbDir.mkdirs()
+            ImageIO.write(ensure128(decoded), "png", File(thumbDir, "$file.png"))
+            dropHash(player.uniqueId, file)
             synchronized(imageListLock) {
                 val cached = imageListCache.getOrPut(player.uniqueId) { mutableListOf() }
                 if (!cached.any { it.equals(file, ignoreCase = true) }) {
@@ -327,6 +419,9 @@ class ImageManager(private val plugin: Diawars) {
                 dropped++
                 continue
             }
+            // Warm the thumbnail on the main thread (also migrates images
+            // stored before thumbnails existed) so renderers never write files.
+            loadImage(ref.owner, ref.file)
             view.renderers.clear()
             view.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file))
             restored++
@@ -408,8 +503,7 @@ class ImageManager(private val plugin: Diawars) {
     }
 
     /** Scans the player's belongings for image maps, adopts and normalizes them. */
-    fun adoptPlayerMaps(player: Player): Int {
-        var adopted = 0
+    fun adoptPlayerMaps(player: Player): Int {        var adopted = 0
         val seen = mutableSetOf<Int>()
         val all = player.inventory.contents + player.enderChest.contents
         for (stack in all) {
@@ -420,6 +514,165 @@ class ImageManager(private val plugin: Diawars) {
             if (tryAdoptMap(player, stack)) adopted++
         }
         return adopted
+    }
+
+    // ------------------------------------------------------------------
+    // full-resolution download (diawars:image_req -> diawars:image_data)
+    // ------------------------------------------------------------------
+    //
+    // Modded Java clients pull the stored full-resolution PNG on demand and
+    // render it instead of the 128x128 map texture. Vanilla and Bedrock
+    // (Geyser) clients never request anything, so they keep seeing the maps.
+
+    private data class Download(
+        val mapId: Int?,
+        val owner: UUID,
+        val file: String,
+        val hash: String,
+        val chunks: List<String>,
+        var next: Int = 0,
+    )
+
+    private val downloadQueues = mutableMapOf<UUID, ArrayDeque<Download>>()
+    private var downloadPump: org.bukkit.scheduler.BukkitTask? = null
+    private var downloadPumpRunning = false
+
+    /**
+     * Queues the full-resolution image for download. Resolves owner/file
+     * either directly or via the map id ([de.davidsw.diawars.stores.ImageMapStore]).
+     * A matching [knownHash] short-circuits the transfer ("unchanged").
+     */
+    fun requestFullImage(player: Player, mapId: Int?, owner: UUID?, file: String?, knownHash: String?) {
+        val resolvedOwner: UUID
+        val resolvedFile: String
+        if (owner != null && file != null && isValidFileName(file)) {
+            resolvedOwner = owner
+            resolvedFile = file
+        } else if (mapId != null) {
+            val ref = plugin.store.imageMapStore.get(mapId)
+            if (ref == null) {
+                sendDownloadJson(player, errorJson(mapId, null, null, "unknown"))
+                return
+            }
+            resolvedOwner = ref.owner
+            resolvedFile = ref.file
+        } else {
+            return
+        }
+
+        val bytes = fullImageBytes(resolvedOwner, resolvedFile)
+        if (bytes == null) {
+            if (mapId != null) plugin.store.imageMapStore.removeMap(mapId)
+            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
+            return
+        }
+        val hash = fullImageHash(resolvedOwner, resolvedFile) ?: run {
+            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
+            return
+        }
+        if (knownHash != null && knownHash.equals(hash, ignoreCase = true)) {
+            sendDownloadJson(player, unchangedJson(mapId, resolvedOwner, resolvedFile, hash))
+            return
+        }
+
+        val base64 = Base64.getEncoder().encodeToString(bytes)
+        val total = (base64.length + MAX_CHUNK_CHARS - 1) / MAX_CHUNK_CHARS
+        if (total > MAX_PARTS) {
+            plugin.logger.warning("Image $resolvedFile of $resolvedOwner exceeds download chunk budget ($total parts).")
+            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "too-big"))
+            return
+        }
+        val chunks = (0 until total).map { i ->
+            base64.substring(i * MAX_CHUNK_CHARS, minOf(base64.length, (i + 1) * MAX_CHUNK_CHARS))
+        }
+        synchronized(downloadQueues) {
+            downloadQueues.getOrPut(player.uniqueId) { ArrayDeque() }
+                .add(Download(mapId, resolvedOwner, resolvedFile, hash, chunks))
+        }
+        startDownloadPump()
+    }
+
+    fun cancelDownloads(playerId: UUID) {
+        synchronized(downloadQueues) { downloadQueues.remove(playerId) }
+    }
+
+    private fun startDownloadPump() {
+        synchronized(downloadQueues) {
+            if (downloadPump != null) return
+            downloadPump = plugin.server.scheduler.runTaskTimer(plugin, Runnable { pumpDownloads() }, 1L, 1L)
+        }
+    }
+
+    private fun pumpDownloads() {
+        val done = mutableListOf<UUID>()
+        synchronized(downloadQueues) {
+            for ((playerId, queue) in downloadQueues) {
+                val player = plugin.server.getPlayer(playerId)
+                if (player == null || !player.isOnline) {
+                    done.add(playerId)
+                    continue
+                }
+                var sent = 0
+                while (sent < DOWNLOAD_CHUNKS_PER_TICK) {
+                    val head = queue.peekFirst() ?: break
+                    if (head.next >= head.chunks.size) {
+                        queue.removeFirst()
+                        continue
+                    }
+                    val json = dataJson(head, head.next, head.chunks.size)
+                    head.next++
+                    sent++
+                    sendDownloadJson(player, json)
+                    if (head.next >= head.chunks.size) queue.removeFirst()
+                }
+                if (queue.isEmpty()) done.add(playerId)
+            }
+            done.forEach { downloadQueues.remove(it) }
+            if (downloadQueues.isEmpty()) {
+                downloadPump?.cancel()
+                downloadPump = null
+            }
+        }
+    }
+
+    private fun dataJson(d: Download, part: Int, total: Int): String {
+        val root = JsonObject()
+        if (d.mapId != null) root.addProperty("mapId", d.mapId)
+        root.addProperty("owner", d.owner.toString())
+        root.addProperty("file", d.file)
+        root.addProperty("hash", d.hash)
+        root.addProperty("part", part)
+        root.addProperty("total", total)
+        root.addProperty("data", d.chunks[part])
+        return root.toString()
+    }
+
+    private fun unchangedJson(mapId: Int?, owner: UUID, file: String, hash: String): String {
+        val root = JsonObject()
+        if (mapId != null) root.addProperty("mapId", mapId)
+        root.addProperty("owner", owner.toString())
+        root.addProperty("file", file)
+        root.addProperty("hash", hash)
+        root.addProperty("unchanged", true)
+        return root.toString()
+    }
+
+    private fun errorJson(mapId: Int?, owner: UUID?, file: String?, reason: String): String {
+        val root = JsonObject()
+        if (mapId != null) root.addProperty("mapId", mapId)
+        if (owner != null) root.addProperty("owner", owner.toString())
+        if (file != null) root.addProperty("file", file)
+        root.addProperty("error", reason)
+        return root.toString()
+    }
+
+    private fun sendDownloadJson(player: Player, json: String) {
+        try {
+            player.sendPluginMessage(plugin, ImageListener.DATA_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(json))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not send image data to ${player.name}: ${e.message}")
+            cancelDownloads(player.uniqueId)
+        }
     }
 
     /**

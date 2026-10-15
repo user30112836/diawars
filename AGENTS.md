@@ -43,6 +43,7 @@ Packages: `commands/` (executors) → `managers/` (logic) → `stores/` (YAML pe
 - `todo` file at root is the bug/feature backlog — check it for intended behavior, update it when done.
 - Sibling repos in parent dir (`diawars-client-fabric`, `diawars-client-forge`, `diawars-server`): image/payload features span plugin + client mods; live test server lives in `../diawars-server`.
 - Client mods (Gradle 9.5.1, `sourceCompatibility = 25`) must be built with Java 25 (`JAVA_HOME=/usr/lib/jvm/java-25-openjdk`); Java 21 fails with `invalid source release: 25`. No deploy step for mods — players install the jars themselves.
+- Client mods (Gradle 9.5.1, `sourceCompatibility = 25`) must be built with Java 25 (`JAVA_HOME=/usr/lib/jvm/java-25-openjdk`); Java 21 fails with `invalid source release: 25`. No deploy step for mods — players install the jars themselves.
 
 ## Bedrock / Geyser support
 

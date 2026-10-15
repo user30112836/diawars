@@ -16,6 +16,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.MapInitializeEvent
 import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.messaging.PluginMessageListener
+import java.util.UUID
 
 class ImageListener(
     private val plugin: Diawars,
@@ -25,7 +26,26 @@ class ImageListener(
         const val CHANNEL = "diawars:image"
         const val OPEN_CHANNEL = "diawars:image_open"
 
+        /** Modded clients pull full-resolution images through this channel. */
+        const val REQ_CHANNEL = "diawars:image_req"
+
+        /** Server answers full-resolution downloads through this channel. */
+        const val DATA_CHANNEL = "diawars:image_data"
+
         private val GSON = Gson()
+
+        fun writeVarIntPrefixedUtf8(text: String): ByteArray {
+            val bytes = text.toByteArray(Charsets.UTF_8)
+            var value = bytes.size
+            val out = mutableListOf<Byte>()
+            do {
+                var part = (value and 0x7F).toByte()
+                value = value ushr 7
+                if (value != 0) part = (part.toInt() or 0x80).toByte()
+                out.add(part)
+            } while (value != 0)
+            return out.toByteArray() + bytes
+        }
 
         fun readVarIntPrefixedUtf8(bytes: ByteArray): String {
             var index = 0
@@ -47,7 +67,43 @@ class ImageListener(
     }
 
     override fun onPluginMessageReceived(channel: String, player: Player, message: ByteArray) {
-        if (channel != CHANNEL) return
+        when (channel) {
+            CHANNEL -> handleUpload(player, message)
+            REQ_CHANNEL -> handleDownloadRequest(player, message)
+            else -> return
+        }
+    }
+
+    private fun handleDownloadRequest(player: Player, message: ByteArray) {
+        val json = try {
+            readVarIntPrefixedUtf8(message)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image request from ${player.name}: ${e.message}")
+            return
+        }
+        try {
+            val root = GSON.fromJson(json, JsonObject::class.java)
+                ?: throw IllegalArgumentException("JSON is null")
+            val mapId = root.get("mapId")?.takeIf { it.isJsonPrimitive }?.asInt
+            val owner = root.get("owner")?.takeIf { it.isJsonPrimitive }?.asString?.let {
+                try {
+                    UUID.fromString(it)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }
+            val file = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
+            val knownHash = root.get("knownHash")?.takeIf { it.isJsonPrimitive }?.asString
+            if (mapId == null && (owner == null || file == null)) {
+                throw IllegalArgumentException("Missing mapId or owner/file")
+            }
+            plugin.imageManager.requestFullImage(player, mapId, owner, file, knownHash)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image request from ${player.name}: ${e.message}")
+        }
+    }
+
+    private fun handleUpload(player: Player, message: ByteArray) {
 
         val json = try {
             readVarIntPrefixedUtf8(message)
@@ -99,6 +155,7 @@ class ImageListener(
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         plugin.imageManager.clearSession(event.player.uniqueId)
+        plugin.imageManager.cancelDownloads(event.player.uniqueId)
     }
 
     /**

@@ -54,7 +54,7 @@ class ImageMenu(private val plugin: Diawars) {
                 name = mm("<gray>Noch keine Bilder hochgeladen</gray>"),
                 lore = listOf(
                     mm("<gray>Lade Bilder über die Diawars-Client-Mod hoch</gray>"),
-                    mm("<gray>(Datei wählen, wird auf 128x128 skaliert)</gray>"),
+                    mm("<gray>(volle Auflösung; Karte zeigt 128x128)</gray>"),
                     mm(""),
                     mm("<gray>Oder nutze <yellow>/image upload</yellow></gray>"),
                 ),
