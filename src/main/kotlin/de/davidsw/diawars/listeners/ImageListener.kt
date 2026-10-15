@@ -4,11 +4,14 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.ImageManager
+import de.davidsw.diawars.managers.ImageMapRenderer
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.server.MapInitializeEvent
+import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.messaging.PluginMessageListener
 
 class ImageListener(
@@ -93,5 +96,29 @@ class ImageListener(
     @EventHandler
     fun onPlayerQuit(event: PlayerQuitEvent) {
         plugin.imageManager.clearSession(event.player.uniqueId)
+    }
+
+    /**
+     * Re-attaches our renderer whenever one of our maps initializes (freshly
+     * created or loaded from disk). Loaded views only carry the vanilla
+     * terrain renderer, which would otherwise repaint them as normal maps.
+     */
+    @EventHandler
+    fun onMapInitialize(event: MapInitializeEvent) {
+        val map = event.map
+        if (map.renderers.any { it is ImageMapRenderer }) return
+        val ref = plugin.store.imageMapStore.get(map.id) ?: return
+        if (!plugin.imageManager.hasImage(ref.owner, ref.file)) {
+            plugin.store.imageMapStore.removeMap(map.id)
+            return
+        }
+        map.renderers.clear()
+        map.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file))
+    }
+
+    /** Late-loading worlds (e.g. event worlds): retry the startup restore. */
+    @EventHandler
+    fun onWorldLoad(event: WorldLoadEvent) {
+        plugin.imageManager.restoreMapRenderers()
     }
 }

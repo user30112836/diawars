@@ -9,7 +9,6 @@ import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.MapMeta
-import org.bukkit.map.MapRenderer
 import org.bukkit.map.MapView
 import java.awt.Graphics2D
 import java.awt.RenderingHints
@@ -275,34 +274,22 @@ class ImageManager(private val plugin: Diawars) {
         return out
     }
 
-    fun createMapItem(viewer: Player, image: BufferedImage, fileName: String): ItemStack {
-        val mapView: MapView = Bukkit.createMap(viewer.world)
-        // Paint exactly once: pixel data persists in the world save afterwards.
-        mapView.renderers.clear()
-        mapView.addRenderer(object : MapRenderer() {
-            private var done = false
-            override fun render(view: MapView, canvas: org.bukkit.map.MapCanvas, player: Player) {
-                if (done) return
-                canvas.drawImage(0, 0, image)
-                done = true
-            }
-        })
-        val stack = ItemStack(Material.FILLED_MAP)
-        val meta = stack.itemMeta as MapMeta
-        meta.mapView = mapView
-        meta.displayName(mm("<white>${escape(fileName)}</white>"))
-        stack.itemMeta = meta
-        return stack
-    }
-
     /** Gives the player a map with the stored image, or an error message. */
     fun giveImage(player: Player, owner: UUID, file: String): Result {
         if (!isValidFileName(file)) {
             return Result.Error("<red>Ungültiger Dateiname!</red>")
         }
-        val image = loadImage(owner, file)
+        loadImage(owner, file)
             ?: return Result.Error("<red>Dieses Bild existiert nicht!</red>")
-        val stack = createMapItem(player, image, file)
+        val mapView: MapView = Bukkit.createMap(player.world)
+        mapView.renderers.clear()
+        mapView.addRenderer(ImageMapRenderer(plugin, owner, file))
+        plugin.store.imageMapStore.putMap(mapView.id, owner, file)
+        val stack = ItemStack(Material.FILLED_MAP)
+        val meta = stack.itemMeta as MapMeta
+        meta.mapView = mapView
+        meta.displayName(mm("<white>${escape(file)}</white>"))
+        stack.itemMeta = meta
         val safeFile = escape(file)
         val leftover = player.inventory.addItem(stack)
         return if (leftover.isEmpty()) {
@@ -310,6 +297,37 @@ class ImageManager(private val plugin: Diawars) {
         } else {
             player.world.dropItemNaturally(player.location, stack)
             Result.Success("<green>✓ Karte <gold>$safeFile</gold> erhalten! (Inventar war voll, Karte liegt am Boden.)</green>")
+        }
+    }
+
+    /**
+     * Re-attaches our renderer to every known image map whose view exists.
+     * Runs at startup and whenever a world loads (late-loading worlds);
+     * per-map [org.bukkit.event.server.MapInitializeEvent] covers the rest.
+     * Drops mappings whose image file is gone. Idempotent.
+     */
+    fun restoreMapRenderers() {
+        var restored = 0
+        var dropped = 0
+        for ((mapId, ref) in plugin.store.imageMapStore.getAll()) {
+            val view = try {
+                Bukkit.getMap(mapId)
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not load map $mapId: ${e.message}")
+                continue
+            } ?: continue
+            if (view.renderers.any { it is ImageMapRenderer }) continue
+            if (!hasImage(ref.owner, ref.file)) {
+                plugin.store.imageMapStore.removeMap(mapId)
+                dropped++
+                continue
+            }
+            view.renderers.clear()
+            view.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file))
+            restored++
+        }
+        if (restored > 0 || dropped > 0) {
+            plugin.logger.info("Restored $restored image map(s), dropped $dropped stale entr(ies).")
         }
     }
 

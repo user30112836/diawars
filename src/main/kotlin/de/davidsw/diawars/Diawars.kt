@@ -71,6 +71,7 @@ import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
 import de.davidsw.diawars.stores.ImageLimitStore
+import de.davidsw.diawars.stores.ImageMapStore
 import de.davidsw.diawars.stores.MessageStore
 import de.davidsw.diawars.stores.OnboardingStore
 import de.davidsw.diawars.stores.PlayerSpawnStore
@@ -116,13 +117,14 @@ class Store(
     val onboardingStore: OnboardingStore,
     val clientInfoStore: ClientInfoStore,
     val imageLimitStore: ImageLimitStore,
+    val imageMapStore: ImageMapStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
-        imageLimitStore,
+        imageLimitStore, imageMapStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -180,6 +182,7 @@ class Diawars : JavaPlugin() {
             onboardingStore = OnboardingStore(this),
             clientInfoStore = ClientInfoStore(this),
             imageLimitStore = ImageLimitStore(this),
+            imageMapStore = ImageMapStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -226,6 +229,7 @@ class Diawars : JavaPlugin() {
         eventManager.reactivateSchedules()
         lobbyManager.ensureWorldLoaded()
         afkManager.start()
+        imageManager.restoreMapRenderers()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PlayerRespawnListener(this), this)
