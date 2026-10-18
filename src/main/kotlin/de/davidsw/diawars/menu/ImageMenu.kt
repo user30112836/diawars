@@ -39,6 +39,13 @@ class ImageMenu(private val plugin: Diawars) {
     }
 
     fun populateImageMenu(inv: Inventory, player: Player) {
+        // Safety net: catches bans while the menu is already open.
+        if (plugin.imageManager.isBanned(player.uniqueId)) {
+            plugin.menuManager.stopUpdater(player)
+            player.closeInventory()
+            player.sendMessage(mm("<red>Du bist für die Bilder-Funktion gesperrt! Wende dich an einen Admin.</red>"))
+            return
+        }
         ALL_SLOTS.forEach { inv.setItem(it, null) }
 
         val images = plugin.imageManager.listImages(player.uniqueId)

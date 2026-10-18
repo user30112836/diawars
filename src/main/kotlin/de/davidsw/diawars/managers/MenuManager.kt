@@ -69,6 +69,10 @@ class MenuManager(private val plugin: Diawars) {
             player.sendMessage(mm("<red>Die Bilder-Funktion ist auf Bedrock nicht verfügbar.</red>"))
             return
         }
+        if (plugin.imageManager.isBanned(player.uniqueId)) {
+            player.sendMessage(mm("<red>Du bist für die Bilder-Funktion gesperrt! Wende dich an einen Admin.</red>"))
+            return
+        }
         if (memorize) plugin.menu.imageMenu.resetPage(player)
         val inv = openMenuInv(player, TITLE_IMAGE, memorize)
         startUpdater({ plugin.menu.imageMenu.populateImageMenu(inv, player) }, player)

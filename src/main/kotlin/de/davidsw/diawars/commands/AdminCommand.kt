@@ -490,8 +490,50 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "list" -> handleImageList(sender, args.drop(1))
             "inspect" -> handleImageInspect(sender, args.drop(1))
             "remove" -> handleImageRemove(sender, args.drop(1))
+            "ban" -> handleImageBan(sender, args.drop(1))
+            "unban" -> handleImageUnban(sender, args.drop(1))
             else -> sendImageHelp(sender)
         }
+    }
+
+    private fun handleImageBan(sender: CommandSender, args: List<String>) {
+        if (args.size != 1) {
+            sender.sendMessage(mm("<red>Verwendung: /admin image ban &lt;spieler&gt;</red>"))
+            return
+        }
+        val target = resolveKnownPlayer(args[0])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        if (plugin.store.imageBanStore.isBanned(target.uniqueId)) {
+            sender.sendMessage(mm("<red>${escape(target.name ?: "?")} ist bereits für die Bilder-Funktion gesperrt!</red>"))
+            return
+        }
+        plugin.imageManager.banPlayer(target.uniqueId)
+        val name = escape(target.name ?: "?")
+        sender.sendMessage(mm("<green>✓ <gold>$name</gold> ist jetzt für die Bilder-Funktion gesperrt!</green>"))
+        target.player?.sendMessage(mm("<red>Du wurdest für die Bilder-Funktion gesperrt! Deine Bilder und Karten sind vorerst deaktiviert.</red>"))
+    }
+
+    private fun handleImageUnban(sender: CommandSender, args: List<String>) {
+        if (args.size != 1) {
+            sender.sendMessage(mm("<red>Verwendung: /admin image unban &lt;spieler&gt;</red>"))
+            return
+        }
+        val target = resolveKnownPlayer(args[0])
+        if (target == null) {
+            sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
+            return
+        }
+        if (!plugin.store.imageBanStore.isBanned(target.uniqueId)) {
+            sender.sendMessage(mm("<red>${escape(target.name ?: "?")} ist nicht für die Bilder-Funktion gesperrt!</red>"))
+            return
+        }
+        plugin.imageManager.unbanPlayer(target.uniqueId)
+        val name = escape(target.name ?: "?")
+        sender.sendMessage(mm("<green>✓ <gold>$name</gold> ist wieder für die Bilder-Funktion freigeschaltet!</green>"))
+        target.player?.sendMessage(mm("<green>Du bist wieder für die Bilder-Funktion freigeschaltet! Deine Bilder und Karten funktionieren wieder.</green>"))
     }
 
     private fun handleImageLimit(sender: CommandSender, args: List<String>) {
@@ -524,8 +566,11 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                     val limit = plugin.store.imageLimitStore.getLimit(uuid)
                     Triple(uuid, count, limit)
                 }
-                // Exclude zero-image players, except when their limit is also 0.
-                .filter { (_, count, limit) -> count > 0 || limit == 0 }
+                // Exclude zero-image players, except when their limit is also 0
+                // or they are banned (admins want to see those).
+                .filter { (uuid, count, limit) ->
+                    count > 0 || limit == 0 || plugin.store.imageBanStore.isBanned(uuid)
+                }
                 .sortedBy { (uuid, _, _) -> plugin.server.getOfflinePlayer(uuid).name?.lowercase() ?: uuid.toString() }
 
             if (entries.isEmpty()) {
@@ -534,8 +579,9 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             }
             val lines = mutableListOf("<gold>=== Bilder-Übersicht ===</gold>")
             entries.forEach { (uuid, count, limit) ->
-                val name = plugin.server.getOfflinePlayer(uuid).name ?: uuid.toString()
-                lines += "<gray>- <yellow>${escape(name)}</yellow> <white>$count/$limit</white></gray>"
+                val name = escape(plugin.server.getOfflinePlayer(uuid).name ?: uuid.toString())
+                val nameTag = if (plugin.store.imageBanStore.isBanned(uuid)) "<red>$name</red>" else "<yellow>$name</yellow>"
+                lines += "<gray>- $nameTag <white>$count/$limit</white></gray>"
             }
             sender.sendMessage(mm(lines.joinToString("\n")))
             return
@@ -549,11 +595,12 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         }
         val images = plugin.imageManager.listImages(target.uniqueId)
         val limit = plugin.store.imageLimitStore.getLimit(target.uniqueId)
+        val banSuffix = if (plugin.store.imageBanStore.isBanned(target.uniqueId)) " <red>[GESPERRT]</red>" else ""
         if (images.isEmpty()) {
-            sender.sendMessage(mm("<gray>${escape(target.name ?: "?")} hat keine Bilder gespeichert. (Limit: $limit)</gray>"))
+            sender.sendMessage(mm("<gray>${escape(target.name ?: "?")} hat keine Bilder gespeichert. (Limit: $limit)</gray>$banSuffix"))
             return
         }
-        val lines = mutableListOf("<gold>=== Bilder von ${escape(target.name ?: "?")} (${images.size}/$limit) ===</gold>")
+        val lines = mutableListOf("<gold>=== Bilder von ${escape(target.name ?: "?")} (${images.size}/$limit) ===</gold>$banSuffix")
         images.forEach { lines += "<gray>- <yellow>${escape(it)}</yellow></gray>" }
         sender.sendMessage(mm(lines.joinToString("\n")))
     }
@@ -612,6 +659,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image list &lt;spieler&gt;</yellow><gray> - Bilder eines Spielers auflisten</gray>
                 <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild eines Spielers ansehen</gray>
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
+                <yellow>/admin image ban &lt;spieler&gt;</yellow><gray> - Spieler für die Bilder-Funktion sperren</gray>
+                <yellow>/admin image unban &lt;spieler&gt;</yellow><gray> - Sperre aufheben</gray>
                 """.trimIndent(),
             ),
         )
@@ -670,6 +719,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image list [spieler]</yellow><gray> - Bilder-Übersicht</gray>
                 <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild ansehen</gray>
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
+                <yellow>/admin image ban|unban &lt;spieler&gt;</yellow><gray> - Bilder-Funktion sperren/entsperren</gray>
                 <yellow>/admin config night-vision-toggle &lt;true|false&gt;</yellow><gray> - Nachtsicht erlauben/sperren</gray>
                 """.trimIndent(),
             ),
@@ -764,13 +814,13 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
 
             "image" -> {
                 if (args.size == 2) {
-                    return listOf("limit", "list", "inspect", "remove")
+                    return listOf("limit", "list", "inspect", "remove", "ban", "unban")
                         .filter { it.startsWith(args[1].lowercase()) }
                 }
                 if (args.size == 3) {
                     when (args[1].lowercase()) {
                         "limit" -> return listOf("inc", "dec").filter { it.startsWith(args[2].lowercase()) }
-                        "list", "inspect", "remove" ->
+                        "list", "inspect", "remove", "ban", "unban" ->
                             return plugin.server.onlinePlayers.map { it.name }
                                 .filter { it.startsWith(args[2], ignoreCase = true) }
                     }

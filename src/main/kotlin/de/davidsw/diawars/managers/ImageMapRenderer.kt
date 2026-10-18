@@ -34,7 +34,9 @@ class ImageMapRenderer(
     override fun render(view: MapView, canvas: MapCanvas, player: Player) {
         if (done) return
         done = true
-        if (placeholder) {
+        // Deleted images and banned owners both show the placeholder; the ban
+        // is checked at render time because it can be lifted mid-session.
+        if (placeholder || plugin.imageManager.isBanned(owner)) {
             canvas.drawImage(0, 0, plugin.imageManager.placeholderImage())
             return
         }

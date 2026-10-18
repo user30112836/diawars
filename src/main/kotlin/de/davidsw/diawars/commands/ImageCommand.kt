@@ -25,6 +25,11 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             return true
         }
 
+        if (plugin.imageManager.isBanned(sender.uniqueId)) {
+            sender.sendMessage(mm("<red>Du bist für die Bilder-Funktion gesperrt! Wende dich an einen Admin.</red>"))
+            return true
+        }
+
         when (args.getOrNull(0)?.lowercase()) {
             null -> listImages(sender)
 
@@ -86,6 +91,7 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     ): List<String> {
         if (sender !is Player) return emptyList()
         if (BedrockUtil.isBedrock(sender)) return emptyList()
+        if (plugin.imageManager.isBanned(sender.uniqueId)) return emptyList()
         if (args.size == 1) {
             return listOf("get", "upload").filter { it.startsWith(args[0].lowercase()) }
         }

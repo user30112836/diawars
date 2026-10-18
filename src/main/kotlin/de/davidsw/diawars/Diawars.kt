@@ -71,6 +71,7 @@ import de.davidsw.diawars.stores.ClientInfoStore
 import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
+import de.davidsw.diawars.stores.ImageBanStore
 import de.davidsw.diawars.stores.ImageLimitStore
 import de.davidsw.diawars.stores.ImageMapStore
 import de.davidsw.diawars.stores.MessageStore
@@ -119,6 +120,7 @@ class Store(
     val clientInfoStore: ClientInfoStore,
     val imageLimitStore: ImageLimitStore,
     val imageMapStore: ImageMapStore,
+    val imageBanStore: ImageBanStore,
     val nightVisionStore: NightVisionStore,
 ) {
     private val all: List<YamlStore> = listOf(
@@ -126,7 +128,7 @@ class Store(
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
-        imageLimitStore, imageMapStore, nightVisionStore,
+        imageLimitStore, imageMapStore, imageBanStore, nightVisionStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -185,6 +187,7 @@ class Diawars : JavaPlugin() {
             clientInfoStore = ClientInfoStore(this),
             imageLimitStore = ImageLimitStore(this),
             imageMapStore = ImageMapStore(this),
+            imageBanStore = ImageBanStore(this),
             nightVisionStore = NightVisionStore(this),
         )
 

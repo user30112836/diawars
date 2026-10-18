@@ -179,6 +179,9 @@ class ImageManager(private val plugin: Diawars) {
 
     fun hasImage(owner: UUID, file: String): Boolean = imageFile(owner, file).isFile
 
+    /** True while the player is banned from the image feature. */
+    fun isBanned(playerId: UUID): Boolean = plugin.store.imageBanStore.isBanned(playerId)
+
     /**
      * 128x128 thumbnail for map rendering. Generated from the full image on
      * first use, which also migrates images stored before thumbnails existed.
@@ -329,6 +332,70 @@ class ImageManager(private val plugin: Diawars) {
         }
     }
 
+    // ------------------------------------------------------------------
+    // bans
+    // ------------------------------------------------------------------
+
+    /**
+     * Bans a player from the image feature: uploading, the image menu and
+     * /image stop working for them. Their existing images stay on disk, but
+     * every map of theirs shows the placeholder (like a deletion) and modded
+     * clients drop their cached copies; the files themselves are untouched.
+     */
+    fun banPlayer(owner: UUID) {
+        plugin.store.imageBanStore.ban(owner)
+        plugin.store.imageBanStore.saveImmediately()
+        refreshMapsOf(owner)
+        notifyImageDeleted(owner, null)
+        plugin.logger.info("Banned player $owner from the image feature.")
+    }
+
+    /**
+     * Lifts the ban: the stored images become usable again and every map of
+     * theirs shows its image again. Modded clients drop their negative state
+     * so they re-fetch the full-resolution copies.
+     */
+    fun unbanPlayer(owner: UUID) {
+        plugin.store.imageBanStore.unban(owner)
+        plugin.store.imageBanStore.saveImmediately()
+        refreshMapsOf(owner)
+        notifyImageRefresh()
+        plugin.logger.info("Unbanned player $owner from the image feature.")
+    }
+
+    /**
+     * Re-attaches fresh renderers to all non-deleted maps of the owner. The
+     * renderer paints the placeholder while banned and the image otherwise, so
+     * replacing it forces exactly the right repaint.
+     */
+    private fun refreshMapsOf(owner: UUID) {
+        for ((mapId, ref) in plugin.store.imageMapStore.getAll()) {
+            if (ref.owner != owner || ref.deleted) continue
+            val view = try {
+                Bukkit.getMap(mapId)
+            } catch (_: Exception) {
+                null
+            } ?: continue
+            view.renderers.clear()
+            view.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file))
+        }
+    }
+
+    /** Tells modded clients to forget negative/deleted state and re-request images. */
+    private fun notifyImageRefresh() {
+        val root = JsonObject()
+        root.addProperty("refresh", true)
+        val json = root.toString()
+        for (player in plugin.server.onlinePlayers) {
+            if (BedrockUtil.isBedrock(player)) continue
+            try {
+                player.sendPluginMessage(plugin, ImageListener.DATA_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(json))
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not notify ${player.name} about the image refresh: ${e.message}")
+            }
+        }
+    }
+
     /** All player UUIDs known to the image system (have files or a custom limit). */
     fun getAllKnownPlayers(): Set<UUID> {
         val result = mutableSetOf<UUID>()
@@ -342,6 +409,7 @@ class ImageManager(private val plugin: Diawars) {
             }
         }
         result += plugin.store.imageLimitStore.getAllLimits().keys
+        result += plugin.store.imageBanStore.getAll()
         return result
     }
 
@@ -361,6 +429,11 @@ class ImageManager(private val plugin: Diawars) {
      * optional). Always answers on [ImageListener.ACCEPT_CHANNEL].
      */
     fun handleOffer(player: Player, file: String, bytes: Long, total: Int, hash: String?) {
+        if (isBanned(player.uniqueId)) {
+            sendAccept(player, file, false, null,
+                "<red>Du bist für die Bilder-Funktion gesperrt!</red>")
+            return
+        }
         if (!isValidFileName(file)) {
             sendAccept(player, file, false, null,
                 "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - (max. 32 Zeichen). \"all\" ist reserviert.</red>")
@@ -419,6 +492,10 @@ class ImageManager(private val plugin: Diawars) {
      * null means "chunk accepted, waiting for more".
      */
     fun handleChunk(player: Player, file: String, part: Int, total: Int, data: String): Result? {
+        if (isBanned(player.uniqueId)) {
+            clearSession(player.uniqueId)
+            return Result.Error("<red>Du bist für die Bilder-Funktion gesperrt!</red>")
+        }
         if (!isValidFileName(file)) {
             clearSession(player.uniqueId)
             return Result.Error("<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - (max. 32 Zeichen). \"all\" ist reserviert.</red>")
@@ -830,6 +907,13 @@ class ImageManager(private val plugin: Diawars) {
             resolvedOwner = ref.owner
             resolvedFile = ref.file
         } else {
+            return
+        }
+
+        if (isBanned(resolvedOwner)) {
+            // Maps of a banned player show the placeholder; hand out no
+            // full-resolution copy (also purges the client's cached one).
+            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
             return
         }
 
