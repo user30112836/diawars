@@ -25,6 +25,8 @@ class ImageMapRenderer(
     private val plugin: Diawars,
     val owner: UUID,
     val file: String,
+    /** True for maps whose image was deleted: paints the placeholder instead. */
+    private val placeholder: Boolean = false,
 ) : MapRenderer() {
     @Volatile
     private var done = false
@@ -32,6 +34,10 @@ class ImageMapRenderer(
     override fun render(view: MapView, canvas: MapCanvas, player: Player) {
         if (done) return
         done = true
+        if (placeholder) {
+            canvas.drawImage(0, 0, plugin.imageManager.placeholderImage())
+            return
+        }
         val image = plugin.imageManager.loadImage(owner, file) ?: return
         canvas.drawImage(0, 0, image)
     }

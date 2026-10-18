@@ -14,6 +14,8 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.MapMeta
 import org.bukkit.map.MapView
+import java.awt.BasicStroke
+import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
@@ -124,6 +126,30 @@ class ImageManager(private val plugin: Diawars) {
     /** 128x128 map thumbnail derived from the full image (what maps render). */
     fun thumbFile(owner: UUID, file: String): File = File(playerDir(owner), "thumbs/$file.png")
 
+    /** Lazily built placeholder shown on maps whose image was deleted. */
+    private val placeholder by lazy { createPlaceholderImage() }
+
+    fun placeholderImage(): BufferedImage = placeholder
+
+    private fun createPlaceholderImage(): BufferedImage {
+        val image = BufferedImage(MAP_SIZE, MAP_SIZE, BufferedImage.TYPE_INT_RGB)
+        val g = image.createGraphics()
+        try {
+            g.color = Color(28, 28, 32)
+            g.fillRect(0, 0, MAP_SIZE, MAP_SIZE)
+            g.color = Color(70, 70, 78)
+            g.stroke = BasicStroke(3f)
+            g.drawRect(1, 1, MAP_SIZE - 3, MAP_SIZE - 3)
+            g.color = Color(198, 62, 62)
+            g.stroke = BasicStroke(10f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+            g.drawLine(30, 30, MAP_SIZE - 30, MAP_SIZE - 30)
+            g.drawLine(MAP_SIZE - 30, 30, 30, MAP_SIZE - 30)
+        } finally {
+            g.dispose()
+        }
+        return image
+    }
+
     fun isValidFileName(file: String): Boolean {
         if (file.equals("all", ignoreCase = true)) return false
         if (file == "." || file == "..") return false
@@ -231,6 +257,7 @@ class ImageManager(private val plugin: Diawars) {
         dropHash(owner, file)
         if (deleted) {
             synchronized(imageListLock) { imageListCache[owner]?.remove(file) }
+            replaceMapsWithPlaceholder(owner, file)
         }
         return deleted
     }
@@ -252,7 +279,54 @@ class ImageManager(private val plugin: Diawars) {
             hashCache.keys.removeIf { it.startsWith("$owner/") }
         }
         synchronized(imageListLock) { imageListCache.remove(owner) }
+        if (count > 0) {
+            replaceMapsWithPlaceholder(owner, null)
+        }
         return count
+    }
+
+    /**
+     * Called after image deletion: every map of the deleted image (all of the
+     * owner's maps when [file] is null) is switched to the placeholder and the
+     * mapping is marked deleted so the placeholder survives restarts. Clients
+     * are told to drop their cached copy of the image.
+     */
+    private fun replaceMapsWithPlaceholder(owner: UUID, file: String?) {
+        val affected = mutableSetOf<Int>()
+        for ((mapId, ref) in plugin.store.imageMapStore.getAll()) {
+            if (ref.owner != owner) continue
+            if (file != null && ref.file != file) continue
+            plugin.store.imageMapStore.markDeleted(mapId)
+            affected += mapId
+            val view = try {
+                Bukkit.getMap(mapId)
+            } catch (_: Exception) {
+                null
+            } ?: continue
+            view.renderers.clear()
+            view.addRenderer(ImageMapRenderer(plugin, owner, ref.file, placeholder = true))
+        }
+        if (affected.isEmpty()) return
+        plugin.store.imageMapStore.saveImmediately()
+        notifyImageDeleted(owner, file)
+        plugin.logger.info("Replaced ${affected.size} map(s) with the placeholder after deleting ${file ?: "all images"} of $owner.")
+    }
+
+    /** Asks every modded client to drop its cached copy of a deleted image. */
+    private fun notifyImageDeleted(owner: UUID, file: String?) {
+        val root = JsonObject()
+        root.addProperty("deleted", true)
+        root.addProperty("owner", owner.toString())
+        if (file != null) root.addProperty("file", file)
+        val json = root.toString()
+        for (player in plugin.server.onlinePlayers) {
+            if (BedrockUtil.isBedrock(player)) continue
+            try {
+                player.sendPluginMessage(plugin, ImageListener.DATA_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(json))
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not notify ${player.name} about the deleted image: ${e.message}")
+            }
+        }
     }
 
     /** All player UUIDs known to the image system (have files or a custom limit). */
@@ -599,6 +673,13 @@ class ImageManager(private val plugin: Diawars) {
                 continue
             } ?: continue
             if (view.renderers.any { it is ImageMapRenderer }) continue
+            if (ref.deleted) {
+                // Image deleted by an admin: keep the placeholder.
+                view.renderers.clear()
+                view.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file, placeholder = true))
+                restored++
+                continue
+            }
             if (!hasImage(ref.owner, ref.file)) {
                 plugin.store.imageMapStore.removeMap(mapId)
                 dropped++
@@ -688,7 +769,8 @@ class ImageManager(private val plugin: Diawars) {
     }
 
     /** Scans the player's belongings for image maps, adopts and normalizes them. */
-    fun adoptPlayerMaps(player: Player): Int {        var adopted = 0
+    fun adoptPlayerMaps(player: Player): Int {
+        var adopted = 0
         val seen = mutableSetOf<Int>()
         val all = player.inventory.contents + player.enderChest.contents
         for (stack in all) {
@@ -737,6 +819,12 @@ class ImageManager(private val plugin: Diawars) {
             val ref = plugin.store.imageMapStore.get(mapId)
             if (ref == null) {
                 sendDownloadJson(player, errorJson(mapId, null, null, "unknown"))
+                return
+            }
+            if (ref.deleted) {
+                // Keep the mapping (it carries the placeholder) and answer
+                // with the file name so the client can purge its cache.
+                sendDownloadJson(player, errorJson(mapId, ref.owner, ref.file, "unknown"))
                 return
             }
             resolvedOwner = ref.owner

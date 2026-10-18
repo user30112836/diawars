@@ -219,6 +219,12 @@ class ImageListener(
         val map = event.map
         if (map.renderers.any { it is ImageMapRenderer }) return
         val ref = plugin.store.imageMapStore.get(map.id) ?: return
+        if (ref.deleted) {
+            // Image deleted by an admin: show the placeholder.
+            map.renderers.clear()
+            map.addRenderer(ImageMapRenderer(plugin, ref.owner, ref.file, placeholder = true))
+            return
+        }
         if (!plugin.imageManager.hasImage(ref.owner, ref.file)) {
             plugin.store.imageMapStore.removeMap(map.id)
             return
