@@ -63,6 +63,8 @@ import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.ImageMenu
 import de.davidsw.diawars.menu.MainMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
+import de.davidsw.diawars.menu.SettingsMenu
+import de.davidsw.diawars.menu.TogglesMenu
 import de.davidsw.diawars.menu.VaultListMenu
 import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
@@ -93,6 +95,8 @@ data class Menu(
     var mainMenu: MainMenu,
     var borderMenu: BorderMenu,
     var scoreboardMenu: ScoreboardMenu,
+    var settingsMenu: SettingsMenu,
+    var togglesMenu: TogglesMenu,
     var eventMenu: EventMenu,
     var eventConfigMenu: EventConfigMenu,
     var vaultMenu: VaultMenu,
@@ -218,6 +222,8 @@ class Diawars : JavaPlugin() {
             mainMenu = MainMenu(this),
             borderMenu = BorderMenu(this),
             scoreboardMenu = ScoreboardMenu(this),
+            settingsMenu = SettingsMenu(this),
+            togglesMenu = TogglesMenu(this),
             eventMenu = EventMenu(this),
             eventConfigMenu = EventConfigMenu(this),
             vaultMenu = VaultMenu(this),

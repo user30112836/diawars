@@ -2,277 +2,25 @@ package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
-import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.util.BedrockUtil
-import de.davidsw.diawars.util.MaterialSets
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
-import net.kyori.adventure.text.Component
-import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 
 class MainMenu(private val plugin: Diawars) {
     companion object {
-        private const val SLOT_VAULT        = 12
-        private const val SLOT_PVP_TOGGLE   = 19
-        private const val SLOT_SELF_KILL    = 21
-        private const val SLOT_SCOREBOARD   = 23
-        private const val SLOT_BORDER       = 29
-        private const val SLOT_SCORES       = 31
-        private const val SLOT_ZONE_INFO    = 33
-        private const val SLOT_INV          = 38
-        private const val SLOT_EVENTS       = 40
-        private const val SLOT_LOBBY        = 42
-        private const val SLOT_BUG_REPORT   = 25
-        private const val SLOT_IMAGE        = 16
-        private const val SLOT_NIGHT_VISION = 14
+        private const val SLOT_IMAGE      = 20
+        private const val SLOT_EVENTS     = 22
+        private const val SLOT_LOBBY      = 24
+        private const val SLOT_SETTINGS   = 29
+        private const val SLOT_VAULT      = 31
+        private const val SLOT_TOGGLES    = 33
+        private const val SLOT_BUG_REPORT = 40
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
-        val pvpEnabled = plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId)
-        val hasPending = plugin.store.pvpStatusStore.hasPendingToggle(player.uniqueId)
-        val team = plugin.teamManager.getPlayerTeam(player.uniqueId)
-        val inZone = plugin.zoneManager.isInOwnZone(player)
-
-        // PvP toggle
-        if (hasPending) {
-            // hasPending implies a cached destination; default to true so a raced
-            // cache miss can never abort the whole menu render mid-way (?: return).
-            val destination = plugin.store.pvpStatusStore.getToggleDestination(player.uniqueId) ?: true
-            inv.setItem(SLOT_PVP_TOGGLE, item(
-                material = Material.BARRIER,
-                name = mm(if (destination) "<yellow><bold>PvP Aktivierung abbrechen</bold></yellow>" else "<yellow><bold>PvP Aktivierung</bold></yellow>"),
-                lore = formatPvPToggleCancelLore(player),
-                glow = false,
-            ))
-        } else {
-            if (!plugin.pvpManager.isInFight(player.uniqueId)) {
-                val delayMinutes = plugin.config.getInt("pvp-toggle.delay-seconds", 300) / 60
-                inv.setItem(SLOT_PVP_TOGGLE, item(
-                    material = if (pvpEnabled) Material.RED_WOOL else Material.GREEN_WOOL,
-                    name = mm(if (pvpEnabled) "<red><bold>PvP deaktivieren</bold></red>" else "<green><bold>PvP aktivieren</bold></green>"),
-                    lore = listOf(
-                        mm("<gray>Status: </gray>${if (pvpEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
-                        mm("<gray>Klicken zum Umschalten</gray>"),
-                        mm("<gray>($delayMinutes Min. Verzögerung)</gray>"),
-                    ),
-                    glow = false,
-                ))
-            } else {
-                // Render a disabled slot while in combat instead of leaving the
-                // previous (now misleading) toggle item in place.
-                inv.setItem(SLOT_PVP_TOGGLE, item(
-                    material = Material.BARRIER,
-                    name = mm("<gray><bold>PvP</bold></gray>"),
-                    lore = listOf(
-                        mm("<gray>Im Kampf nicht verfügbar</gray>"),
-                    ),
-                    glow = false,
-                ))
-            }
-        }
-
-        // Self-kill
-        val inFight = plugin.pvpManager.isInFight(player.uniqueId)
-        if (inFight) {
-            inv.setItem(SLOT_SELF_KILL, item(
-                material = Material.BARRIER,
-                name = mm("<gray><bold>Self-kill</bold></gray>"),
-                lore = listOf(
-                    mm("<gray>Diese Funktion ist im Kampf deaktiviert</gray>"),
-                ),
-                glow = false,
-            ))
-        } else {
-            inv.setItem(SLOT_SELF_KILL, item(
-                material = Material.BONE,
-                name = mm("<dark_red><bold>Self-kill</bold></dark_red>"),
-                lore = listOf(
-                    mm("<gray>Hier kannst du dich selbst killen wenn du feststeckst</gray>"),
-                ),
-                glow = false,
-            ))
-        }
-
-        // Border settings
-        val borderPref = plugin.store.borderPreferencesStore.getPreference(player.uniqueId)
-        inv.setItem(SLOT_BORDER, item(
-            material = Material.END_ROD,
-            name     = mm("<aqua><bold>Border-Einstellungen</bold></aqua>"),
-            lore     = listOf(
-                mm("<gray>Status: </gray>${if (borderPref.enabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
-                mm("<gray>Partikel: </gray><white>${borderPref.particleType}</white>"),
-                mm("<gray>Farbe: </gray><white>${colorToName(borderPref.color)}</white>"),
-                mm("<gray>Sichtweite: </gray><white>${borderPref.renderDistance} Blöcke</white>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Scores
-        val playerDia = plugin.store.playerDiamondStore.getStoredCount(player.uniqueId)
-        val teamDia   = if (team != null) plugin.store.playerDiamondStore.getTotalTeamCount(team) else 0
-        inv.setItem(SLOT_SCORES, item(
-            material = Material.DIAMOND,
-            name = mm("<aqua><bold>Diamanten</bold></aqua>"),
-            lore = listOf(
-                mm("<gray>Deine: <aqua>$playerDia</aqua></gray>"),
-                mm(if (team != null) "<gray>${team.displayName}: </gray><aqua>$teamDia</aqua>" else "<dark_gray>Kein Team</dark_gray>"),
-            ),
-            glow = playerDia > 0,
-        ))
-
-        // Scoreboard settings
-        val scoreboardPref = plugin.store.scoreboardPreferencesStore.getPreference(player.uniqueId)
-        inv.setItem(SLOT_SCOREBOARD, item(
-            material = Material.OAK_SIGN,
-            name     = mm("<aqua><bold>Sidebar-Einstellungen</bold></aqua>"),
-            lore     = listOf(
-                mm("<gray>Status: </gray>${if (scoreboardPref.sidebarEnabled) "<green>Aktiviert</green>" else "<red>Deaktiviert</red>"}"),
-                mm("<gray>Angezeigte Komponenten: </gray><white>${scoreboardPref.enabledComponents.size}/5</white>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Zone info
-        inv.setItem(SLOT_ZONE_INFO, item(
-            material = Material.COMPASS,
-            name     = mm("<green><bold>Zonen-Info</bold></green>"),
-            lore     = listOf(
-                mm("<gray>Team: </gray><white>${team?.displayName ?: "Kein Team"}</white>"),
-                mm("<gray>In eigener Zone: ${if (inZone) "<green>Ja</green>" else "<red>Nein</red>"}</gray>"),
-            ),
-            glow = false,
-        ))
-
-        // Events
-        val eventSession = plugin.eventManager.getSession(player.uniqueId)
-        val sessionText = when (eventSession?.mode) {
-            EventManager.SessionMode.BUILD -> "<yellow>Baue an einem Event</yellow>"
-            EventManager.SessionMode.REVIEW -> "<light_purple>Prüfst ein Event</light_purple>"
-            EventManager.SessionMode.PLAY -> "<green>Nimmst an einem Event teil</green>"
-            null -> "<gray>Kein aktives Event</gray>"
-        }
-        inv.setItem(SLOT_EVENTS, item(
-            material = Material.BEACON,
-            name = mm("<gold><bold>Events</bold></gold>"),
-            lore = listOf(
-                mm("<gray>Status: </gray>$sessionText"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Inventory access (held shulker box / ender chest)
-        val heldItem = player.inventory.itemInMainHand
-        val canOpenInv = MaterialSets.isShulkerBox(heldItem.type) || heldItem.type == Material.ENDER_CHEST
-        inv.setItem(SLOT_INV, item(
-            material = if (canOpenInv) heldItem.type else Material.CHEST,
-            name = mm(if (canOpenInv) "<yellow><bold>Inventar öffnen</bold></yellow>" else "<gray><bold>Inventar öffnen</bold></gray>"),
-            lore = if (canOpenInv) listOf(
-                mm("<gray>Öffnet die gehaltene Shulker-Box</gray>"),
-                mm("<gray>oder Enderkiste</gray>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            ) else listOf(
-                mm("<gray>Halte eine Shulker-Box oder</gray>"),
-                mm("<gray>eine Enderkiste in der Hand</gray>"),
-            ),
-            glow = false,
-        ))
-
-        // Lobby toggle
-        val inEventSession = plugin.eventManager.getSession(player.uniqueId) != null
-        val inLobby = plugin.lobbyManager.isInLobby(player.uniqueId)
-        inv.setItem(SLOT_LOBBY, item(
-            material = when {
-                inEventSession -> Material.BARRIER
-                inLobby -> Material.RED_BED
-                else -> Material.LIME_BED
-            },
-            name = mm(when {
-                inEventSession -> "<gray><bold>Lobby</bold></gray>"
-                inLobby -> "<red><bold>Lobby verlassen</bold></red>"
-                else -> "<green><bold>Lobby betreten</bold></green>"
-            }),
-            lore = if (inEventSession) listOf(
-                mm("<gray>Verlasse zuerst dein Event</gray>"),
-                mm("<gray>um die Lobby zu betreten</gray>"),
-            ) else listOf(
-                mm("<gray>Status: </gray>${if (inLobby) "<green>In der Lobby</green>" else "<red>Nicht in der Lobby</red>"}"),
-                mm(""),
-                mm("<yellow>Klicken zum ${if (inLobby) "Verlassen" else "Betreten"}</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Bug report
-        inv.setItem(SLOT_BUG_REPORT, item(
-            material = Material.WRITABLE_BOOK,
-            name = mm("<yellow><bold>Bug melden</bold></yellow>"),
-            lore = listOf(
-                mm("<gray>Melde einen Fehler im Plugin</gray>"),
-                mm(""),
-                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
-            ),
-            glow = false,
-        ))
-
-        // Night vision toggle
-        val nvAvailable = plugin.nightVisionManager.isAvailable()
-        val nvEnabled = plugin.nightVisionManager.hasEnabled(player.uniqueId)
-        inv.setItem(SLOT_NIGHT_VISION, item(
-            material = Material.ENDER_EYE,
-            name = mm("<yellow><bold>Nachtsicht</bold></yellow>"),
-            lore = when {
-                !nvAvailable -> listOf(
-                    mm("<gray>Derzeit deaktiviert</gray>"),
-                )
-                nvEnabled -> listOf(
-                    mm("<gray>Status: </gray><green>Aktiviert</green>"),
-                    mm(""),
-                    mm("<yellow>Klicken zum Deaktivieren</yellow>"),
-                )
-                else -> listOf(
-                    mm("<gray>Status: </gray><red>Deaktiviert</red>"),
-                    mm(""),
-                    mm("<yellow>Klicken zum Aktivieren</yellow>"),
-                )
-            },
-            glow = nvAvailable && nvEnabled,
-        ))
-
-        // Vault management
-        val ownClaim = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)
-        val vaultLore = if (ownClaim != null) {
-            val vaultName = plugin.vaultManager.getVaultById(ownClaim.vaultId)?.displayName ?: ownClaim.vaultId
-            val vaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(ownClaim.vaultId)
-            listOf(
-                mm("<gray>Dein Vault: </gray><gold>$vaultName</gold>"),
-                mm("<gray>Diamanten: </gray><aqua>$vaultDiamonds</aqua>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            )
-        } else {
-            listOf(
-                mm("<gray>Du hast noch kein Vault beansprucht</gray>"),
-                mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
-            )
-        }
-        inv.setItem(SLOT_VAULT, item(
-            material = Material.VAULT,
-            name = mm("<gold><bold>Vault-Verwaltung</bold></gold>"),
-            lore = vaultLore,
-            glow = false,
-        ))
-
         // Images (disabled on Bedrock: no client mod for uploads; disabled
         // while banned: uploads and the menu are locked)
         if (BedrockUtil.isBedrock(player)) {
@@ -310,58 +58,116 @@ class MainMenu(private val plugin: Diawars) {
                 glow = false,
             ))
         }
+
+        // Events
+        val eventSession = plugin.eventManager.getSession(player.uniqueId)
+        val sessionText = when (eventSession?.mode) {
+            EventManager.SessionMode.BUILD -> "<yellow>Baue an einem Event</yellow>"
+            EventManager.SessionMode.REVIEW -> "<light_purple>Prüfst ein Event</light_purple>"
+            EventManager.SessionMode.PLAY -> "<green>Nimmst an einem Event teil</green>"
+            null -> "<gray>Kein aktives Event</gray>"
+        }
+        inv.setItem(SLOT_EVENTS, item(
+            material = Material.BEACON,
+            name = mm("<gold><bold>Events</bold></gold>"),
+            lore = listOf(
+                mm("<gray>Status: </gray>$sessionText"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
+
+        // Lobby toggle
+        val inEventSession = plugin.eventManager.getSession(player.uniqueId) != null
+        val inLobby = plugin.lobbyManager.isInLobby(player.uniqueId)
+        inv.setItem(SLOT_LOBBY, item(
+            material = when {
+                inEventSession -> Material.BARRIER
+                inLobby -> Material.RED_BED
+                else -> Material.LIME_BED
+            },
+            name = mm(when {
+                inEventSession -> "<gray><bold>Lobby</bold></gray>"
+                inLobby -> "<red><bold>Lobby verlassen</bold></red>"
+                else -> "<green><bold>Lobby betreten</bold></green>"
+            }),
+            lore = if (inEventSession) listOf(
+                mm("<gray>Verlasse zuerst dein Event</gray>"),
+                mm("<gray>um die Lobby zu betreten</gray>"),
+            ) else listOf(
+                mm("<gray>Status: </gray>${if (inLobby) "<green>In der Lobby</green>" else "<red>Nicht in der Lobby</red>"}"),
+                mm(""),
+                mm("<yellow>Klicken zum ${if (inLobby) "Verlassen" else "Betreten"}</yellow>"),
+            ),
+            glow = false,
+        ))
+
+        // Settings
+        inv.setItem(SLOT_SETTINGS, item(
+            material = Material.COMPARATOR,
+            name = mm("<green><bold>Einstellungen</bold></green>"),
+            lore = listOf(
+                mm("<gray>Border und Sidebar anpassen</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
+
+        // Vault management
+        val ownClaim = plugin.store.vaultClaimStore.getClaimByOwner(player.uniqueId)
+        val vaultLore = if (ownClaim != null) {
+            val vaultName = plugin.vaultManager.getVaultById(ownClaim.vaultId)?.displayName ?: ownClaim.vaultId
+            val vaultDiamonds = plugin.store.vaultDiamondStore.getVaultCount(ownClaim.vaultId)
+            listOf(
+                mm("<gray>Dein Vault: </gray><gold>$vaultName</gold>"),
+                mm("<gray>Diamanten: </gray><aqua>$vaultDiamonds</aqua>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            )
+        } else {
+            listOf(
+                mm("<gray>Du hast noch kein Vault beansprucht</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            )
+        }
+        inv.setItem(SLOT_VAULT, item(
+            material = Material.VAULT,
+            name = mm("<gold><bold>Vault-Verwaltung</bold></gold>"),
+            lore = vaultLore,
+            glow = false,
+        ))
+
+        // Toggles
+        inv.setItem(SLOT_TOGGLES, item(
+            material = Material.LEVER,
+            name = mm("<yellow><bold>Trigger/Toggles</bold></yellow>"),
+            lore = listOf(
+                mm("<gray>PvP, Self-kill, Nachtsicht</gray>"),
+                mm("<gray>und Inventar</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
+
+        // Bug report
+        inv.setItem(SLOT_BUG_REPORT, item(
+            material = Material.WRITABLE_BOOK,
+            name = mm("<yellow><bold>Bug melden</bold></yellow>"),
+            lore = listOf(
+                mm("<gray>Melde einen Fehler im Plugin</gray>"),
+                mm(""),
+                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+            ),
+            glow = false,
+        ))
     }
 
-    fun handleMainClick(player: Player, slot: Int, inv: Inventory) {
+    fun handleMainClick(player: Player, slot: Int) {
         when (slot) {
-            SLOT_PVP_TOGGLE -> {
-                val result = plugin.pvpManager.togglePvP(player.uniqueId)
-                when (result) {
-                    PvPManager.ToggleResult.ALREADY_PENDING -> plugin.pvpManager.cancelToggle(player.uniqueId)
-                    PvPManager.ToggleResult.IN_FIGHT -> {}
-                    else -> populateMainMenu(inv, player)
-                }
-            }
-
-            SLOT_SELF_KILL -> if (!plugin.pvpManager.isInFight(player.uniqueId)) player.health = 0.0
-
-            SLOT_BORDER -> plugin.menuManager.openBorderMenu(player)
-
-            SLOT_SCOREBOARD -> plugin.menuManager.openScoreboardMenu(player)
-
-            SLOT_SCORES -> {
-                player.closeInventory()
-                plugin.scoresManager.handleInfo(player)
-            }
-
-            SLOT_ZONE_INFO -> {
-                player.closeInventory()
-                val team = plugin.teamManager.getPlayerTeam(player.uniqueId)
-                if (team != null) {
-                    val inZone = plugin.zoneManager.isInOwnZone(player)
-                    player.sendMessage(mm("<gray>Team: </gray><gold>${team.displayName}</gold>"))
-                    player.sendMessage(mm("<gray>In eigener Zone: </gray>${if (inZone) "<green>Ja</green>" else "<red>Nein</red>"}"))
-                } else {
-                    player.sendMessage(mm("<gray>Du bist in keinem Team</gray>"))
-                }
-            }
-
-            SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
-
-            SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
-
-            SLOT_NIGHT_VISION -> {
-                val next = plugin.nightVisionManager.toggle(player)
-                if (next == null) {
-                    player.sendMessage(mm("<red>Nachtsicht ist derzeit deaktiviert!</red>"))
-                } else {
-                    player.sendMessage(
-                        mm(if (next) "<green>✓ Nachtsicht aktiviert!</green>" else "<gray>Nachtsicht deaktiviert.</gray>"),
-                    )
-                }
-                populateMainMenu(inv, player)
-            }
-
             SLOT_IMAGE -> {
                 // Disabled button (Bedrock or banned): the lore explains why,
                 // just close instead of opening the image menu.
@@ -372,33 +178,7 @@ class MainMenu(private val plugin: Diawars) {
                 }
             }
 
-            SLOT_BUG_REPORT -> {
-                player.closeInventory()
-                player.sendMessage(
-                    mm(
-                        "<yellow>Bitte beschreibe den Fehler:</yellow> " + "<click:suggest_command:'/bug report '><gold>[Bug melden]</gold></click>"
-                    )
-                )
-            }
-
-            SLOT_INV -> {
-                val item = player.inventory.itemInMainHand
-                when (item.type) {
-                    in MaterialSets.SHULKER_BOXES -> {
-                        player.closeInventory()
-                        if (!plugin.shulkerAccessManager.openHeldShulker(player)) {
-                            player.sendMessage(mm("<red>Diese Shulker-Box konnte nicht geöffnet werden!</red>"))
-                        }
-                    }
-                    Material.ENDER_CHEST -> {
-                        player.closeInventory()
-                        plugin.shulkerAccessManager.openHeldEnderChest(player)
-                    }
-                    else -> {
-                        player.sendMessage(mm("<red>Du musst eine Shulker-Box oder eine Enderkiste in der Hand haben!</red>"))
-                    }
-                }
-            }
+            SLOT_EVENTS -> plugin.menuManager.openEventMenu(player)
 
             SLOT_LOBBY -> {
                 if (plugin.eventManager.getSession(player.uniqueId) != null) return
@@ -426,29 +206,21 @@ class MainMenu(private val plugin: Diawars) {
                     }
                 }
             }
-        }
-    }
 
-    private fun formatPvPToggleCancelLore(player: Player): List<Component> {
-        val remaining = plugin.store.pvpStatusStore.getRemainingTime(player.uniqueId)
-        val minutes = remaining / 60
-        val seconds = remaining % 60
-        val duration = buildString {
-            if (minutes.toInt() != 0) append(" ${minutes}m")
-            if (seconds.toInt() != 0) append(" ${seconds}s")
-        }
-        return listOf(mm("<gray>Verbleibend: </gray><yellow>${duration}</yellow>"))
-    }
+            SLOT_SETTINGS -> plugin.menuManager.openSettingsMenu(player)
 
-    private fun colorToName(color: Color): String = when (color) {
-        Color.RED    -> "RED"
-        Color.BLUE   -> "BLUE"
-        Color.GREEN  -> "GREEN"
-        Color.YELLOW -> "YELLOW"
-        Color.ORANGE -> "ORANGE"
-        Color.PURPLE -> "PURPLE"
-        Color.WHITE  -> "WHITE"
-        Color.AQUA   -> "AQUA"
-        else         -> "${color.red},${color.green},${color.blue}"
+            SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
+
+            SLOT_TOGGLES -> plugin.menuManager.openTogglesMenu(player)
+
+            SLOT_BUG_REPORT -> {
+                player.closeInventory()
+                player.sendMessage(
+                    mm(
+                        "<yellow>Bitte beschreibe den Fehler:</yellow> " + "<click:suggest_command:'/bug report '><gold>[Bug melden]</gold></click>"
+                    )
+                )
+            }
+        }
     }
 }

@@ -13,14 +13,20 @@ import org.bukkit.event.player.PlayerQuitEvent
 
 class MenuListener(private val plugin: Diawars): Listener {
     private val clickHandlers: Map<Component, (InventoryClickEvent, Player, Int) -> Unit> = mapOf(
-        MenuManager.TITLE_MAIN to { event, player, slot ->
-            plugin.menu.mainMenu.handleMainClick(player, slot, event.inventory)
+        MenuManager.TITLE_MAIN to { _, player, slot ->
+            plugin.menu.mainMenu.handleMainClick(player, slot)
         },
         MenuManager.TITLE_BORDER to { event, player, slot ->
             plugin.menu.borderMenu.handleBorderClick(player, slot, event.inventory)
         },
         MenuManager.TITLE_SCOREBOARD to { event, player, slot ->
             plugin.menu.scoreboardMenu.handleScoreboardClick(player, slot, event.inventory)
+        },
+        MenuManager.TITLE_SETTINGS to { _, player, slot ->
+            plugin.menu.settingsMenu.handleSettingsClick(player, slot)
+        },
+        MenuManager.TITLE_TOGGLES to { event, player, slot ->
+            plugin.menu.togglesMenu.handleTogglesClick(player, slot, event.inventory)
         },
         MenuManager.TITLE_EVENT to { _, player, slot ->
             plugin.menu.eventMenu.handleEventClick(player, slot)

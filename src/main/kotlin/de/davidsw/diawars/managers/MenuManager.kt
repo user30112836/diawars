@@ -20,6 +20,8 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_MAIN = mm("<green>Diawars</green>")
         val TITLE_BORDER = mm("<green>Border-Einstellungen</green>")
         val TITLE_SCOREBOARD = mm("<green>Sidebar-Einstellungen</green>")
+        val TITLE_SETTINGS = mm("<green>Einstellungen</green>")
+        val TITLE_TOGGLES = mm("<green>Trigger/Toggles</green>")
         val TITLE_EVENT = mm("<green>Events</green>")
         val TITLE_EVENT_CONFIG = mm("<green>Event-Konfiguration</green>")
         val TITLE_VAULT = mm("<green>Vault-Verwaltung</green>")
@@ -40,6 +42,16 @@ class MenuManager(private val plugin: Diawars) {
     fun openScoreboardMenu(player: Player, memorize: Boolean = true) {
         val inv = openMenuInv(player, TITLE_SCOREBOARD, memorize)
         startUpdater({ plugin.menu.scoreboardMenu.populateScoreboardMenu(inv, player) }, player)
+    }
+
+    fun openSettingsMenu(player: Player, memorize: Boolean = true) {
+        val inv = openMenuInv(player, TITLE_SETTINGS, memorize)
+        startUpdater({ plugin.menu.settingsMenu.populateSettingsMenu(inv, player) }, player)
+    }
+
+    fun openTogglesMenu(player: Player, memorize: Boolean = true) {
+        val inv = openMenuInv(player, TITLE_TOGGLES, memorize)
+        startUpdater({ plugin.menu.togglesMenu.populateTogglesMenu(inv, player) }, player)
     }
 
     fun openEventMenu(player: Player, memorize: Boolean = true) {
@@ -147,6 +159,8 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
+            TITLE_SETTINGS -> openSettingsMenu(player, false)
+            TITLE_TOGGLES -> openTogglesMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
             TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
@@ -171,6 +185,8 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_MAIN -> openMainMenu(player, false)
             TITLE_BORDER -> openBorderMenu(player, false)
             TITLE_SCOREBOARD -> openScoreboardMenu(player, false)
+            TITLE_SETTINGS -> openSettingsMenu(player, false)
+            TITLE_TOGGLES -> openTogglesMenu(player, false)
             TITLE_EVENT -> openEventMenu(player, false)
             TITLE_EVENT_CONFIG -> openEventConfigMenu(player, false)
             TITLE_VAULT -> openVaultMenu(player, false)
