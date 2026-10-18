@@ -273,13 +273,24 @@ class MainMenu(private val plugin: Diawars) {
             glow = false,
         ))
 
-        // Images (disabled on Bedrock: no client mod for uploads)
+        // Images (disabled on Bedrock: no client mod for uploads; disabled
+        // while banned: uploads and the menu are locked)
         if (BedrockUtil.isBedrock(player)) {
             inv.setItem(SLOT_IMAGE, item(
                 material = Material.BARRIER,
                 name = mm("<gray><bold>Bilder</bold></gray>"),
                 lore = listOf(
                     mm("<gray>Auf Bedrock nicht verfügbar</gray>"),
+                ),
+                glow = false,
+            ))
+        } else if (plugin.imageManager.isBanned(player.uniqueId)) {
+            inv.setItem(SLOT_IMAGE, item(
+                material = Material.BARRIER,
+                name = mm("<red><bold>Bilder</bold></red>"),
+                lore = listOf(
+                    mm("<red>Du bist für die Bilder-Funktion gesperrt!</red>"),
+                    mm("<gray>Wende dich an einen Admin.</gray>"),
                 ),
                 glow = false,
             ))
@@ -351,7 +362,15 @@ class MainMenu(private val plugin: Diawars) {
                 populateMainMenu(inv, player)
             }
 
-            SLOT_IMAGE -> plugin.menuManager.openImageMenu(player)
+            SLOT_IMAGE -> {
+                // Disabled button (Bedrock or banned): the lore explains why,
+                // just close instead of opening the image menu.
+                if (BedrockUtil.isBedrock(player) || plugin.imageManager.isBanned(player.uniqueId)) {
+                    player.closeInventory()
+                } else {
+                    plugin.menuManager.openImageMenu(player)
+                }
+            }
 
             SLOT_BUG_REPORT -> {
                 player.closeInventory()
