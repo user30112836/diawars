@@ -228,7 +228,7 @@ class MainMenu(private val plugin: Diawars) {
         val nvAvailable = plugin.nightVisionManager.isAvailable()
         val nvEnabled = plugin.nightVisionManager.hasEnabled(player.uniqueId)
         inv.setItem(SLOT_NIGHT_VISION, item(
-            material = if (nvAvailable && nvEnabled) Material.GOLDEN_CARROT else Material.CARROT,
+            material = Material.ENDER_EYE,
             name = mm("<yellow><bold>Nachtsicht</bold></yellow>"),
             lore = when {
                 !nvAvailable -> listOf(
