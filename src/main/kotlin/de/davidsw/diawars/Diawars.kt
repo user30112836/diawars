@@ -55,6 +55,7 @@ import de.davidsw.diawars.managers.RewardManager
 import de.davidsw.diawars.managers.ScoresManager
 import de.davidsw.diawars.managers.ShulkerAccessManager
 import de.davidsw.diawars.managers.TeamManager
+import de.davidsw.diawars.managers.TextInputManager
 import de.davidsw.diawars.managers.VaultManager
 import de.davidsw.diawars.managers.ZoneManager
 import de.davidsw.diawars.menu.BorderMenu
@@ -163,6 +164,7 @@ class Diawars : JavaPlugin() {
     lateinit var inventoryInspectManager: InventoryInspectManager
     lateinit var modWhitelistManager: ModWhitelistManager
     lateinit var imageManager: ImageManager
+    lateinit var textInputManager: TextInputManager
     lateinit var nightVisionManager: NightVisionManager
 
     lateinit var store: Store
@@ -216,6 +218,7 @@ class Diawars : JavaPlugin() {
         inventoryInspectManager = InventoryInspectManager(this)
         modWhitelistManager = ModWhitelistManager(this)
         imageManager = ImageManager(this)
+        textInputManager = TextInputManager(this)
         nightVisionManager = NightVisionManager(this)
 
         menu = Menu(
@@ -271,6 +274,7 @@ class Diawars : JavaPlugin() {
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.OPEN_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, TextInputManager.CHANNEL)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))

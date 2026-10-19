@@ -2,6 +2,7 @@ package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.TextInputManager
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.stores.GameEvent
 import de.davidsw.diawars.util.DateTimeParser
@@ -76,7 +77,7 @@ class EventMenu(private val plugin: Diawars) {
                 lore = if (canCreate) listOf(
                     mm("<gray>Erstellt ein neues Event</gray>"),
                     mm(""),
-                    mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+                    mm("<yellow>Klicken zur Eingabe</yellow>"),
                 ) else listOf(mm("<dark_gray>Du hast bereits ein Event in Bearbeitung oder in einem Event</dark_gray>")),
             )
         )
@@ -303,13 +304,7 @@ class EventMenu(private val plugin: Diawars) {
                 val blocked = plugin.eventManager.getSession(player.uniqueId) != null ||
                         ownEvents.any { it.state == EventState.BUILDING || it.state == EventState.SUBMITTED }
                 if (blocked) return
-                player.closeInventory()
-                player.sendMessage(
-                    mm(
-                        "<yellow>Bitte gib den Namen deines Events ein:</yellow> " +
-                                "<click:suggest_command:'/event create '><gold>[Event erstellen]</gold></click>"
-                    )
-                )
+                plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.EVENT_CREATE)
             }
 
             SLOT_RESUME -> {

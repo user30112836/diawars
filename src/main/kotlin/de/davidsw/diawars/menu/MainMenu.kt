@@ -2,6 +2,7 @@ package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.EventManager
+import de.davidsw.diawars.managers.TextInputManager
 import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -160,7 +161,7 @@ class MainMenu(private val plugin: Diawars) {
             lore = listOf(
                 mm("<gray>Melde einen Fehler im Plugin</gray>"),
                 mm(""),
-                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+                mm("<yellow>Klicken zur Eingabe</yellow>"),
             ),
             glow = false,
         ))
@@ -213,14 +214,7 @@ class MainMenu(private val plugin: Diawars) {
 
             SLOT_TOGGLES -> plugin.menuManager.openTogglesMenu(player)
 
-            SLOT_BUG_REPORT -> {
-                player.closeInventory()
-                player.sendMessage(
-                    mm(
-                        "<yellow>Bitte beschreibe den Fehler:</yellow> " + "<click:suggest_command:'/bug report '><gold>[Bug melden]</gold></click>"
-                    )
-                )
-            }
+            SLOT_BUG_REPORT -> plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.BUG_REPORT)
         }
     }
 }

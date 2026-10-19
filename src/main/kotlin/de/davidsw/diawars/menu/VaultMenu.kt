@@ -2,6 +2,7 @@ package de.davidsw.diawars.menu
 
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.Team
+import de.davidsw.diawars.managers.TextInputManager
 import de.davidsw.diawars.stores.VaultClaim
 import de.davidsw.diawars.util.MenuUtils.item
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -76,7 +77,7 @@ class VaultMenu(private val plugin: Diawars) {
             lore = if (canInvite) listOf(
                 mm("<gray>Lädt ein Teammitglied zu deinem Vault ein</gray>"),
                 mm(""),
-                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+                mm("<yellow>Klicken zur Eingabe</yellow>"),
             ) else listOf(mm("<dark_gray>Du hast kein Vault beansprucht</dark_gray>")),
         ))
 
@@ -88,7 +89,7 @@ class VaultMenu(private val plugin: Diawars) {
             lore = if (canBan) listOf(
                 mm("<gray>Entfernt einen eingeladenen Spieler</gray>"),
                 mm(""),
-                mm("<yellow>Klicken um den Befehl vorzuschlagen</yellow>"),
+                mm("<yellow>Klicken zur Eingabe</yellow>"),
             ) else listOf(mm("<dark_gray>Niemand ist eingeladen</dark_gray>")),
         ))
     }
@@ -138,26 +139,14 @@ class VaultMenu(private val plugin: Diawars) {
             SLOT_INVITE -> {
                 val claims = plugin.store.vaultClaimStore
                 if (claims.getClaimByOwner(player.uniqueId) == null) return
-                player.closeInventory()
-                player.sendMessage(
-                    mm(
-                        "<yellow>Bitte gib den Namen des Spielers ein:</yellow> " +
-                                "<click:suggest_command:'/vault invite '><gold>[Spieler einladen]</gold></click>"
-                    )
-                )
+                plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.VAULT_INVITE)
             }
 
             SLOT_BAN -> {
                 val claims = plugin.store.vaultClaimStore
                 val claim = claims.getClaimByOwner(player.uniqueId) ?: return
                 if (claim.invited.isEmpty()) return
-                player.closeInventory()
-                player.sendMessage(
-                    mm(
-                        "<yellow>Bitte gib den Namen des Spielers ein:</yellow> " +
-                                "<click:suggest_command:'/vault ban '><gold>[Spieler entfernen]</gold></click>"
-                    )
-                )
+                plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.VAULT_BAN)
             }
         }
     }
