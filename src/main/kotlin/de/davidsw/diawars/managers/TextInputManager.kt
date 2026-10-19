@@ -1,6 +1,5 @@
 package de.davidsw.diawars.managers
 
-import com.google.gson.Gson
 import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.ImageListener
@@ -28,8 +27,6 @@ class TextInputManager(private val plugin: Diawars) {
 
         /** Vanilla drops commands longer than this; keep the field below it. */
         private const val MAX_PACKET_LENGTH = 256
-
-        private val GSON = Gson()
     }
 
     /**
