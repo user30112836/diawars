@@ -51,6 +51,7 @@ import de.davidsw.diawars.managers.ModWhitelistManager
 import de.davidsw.diawars.managers.NightVisionManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
+import de.davidsw.diawars.managers.RecipeManager
 import de.davidsw.diawars.managers.RewardManager
 import de.davidsw.diawars.managers.ScoresManager
 import de.davidsw.diawars.managers.ShulkerAccessManager
@@ -166,6 +167,7 @@ class Diawars : JavaPlugin() {
     lateinit var imageManager: ImageManager
     lateinit var textInputManager: TextInputManager
     lateinit var nightVisionManager: NightVisionManager
+    lateinit var recipeManager: RecipeManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -220,6 +222,7 @@ class Diawars : JavaPlugin() {
         imageManager = ImageManager(this)
         textInputManager = TextInputManager(this)
         nightVisionManager = NightVisionManager(this)
+        recipeManager = RecipeManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -244,6 +247,7 @@ class Diawars : JavaPlugin() {
         lobbyManager.ensureWorldLoaded()
         afkManager.start()
         imageManager.restoreMapRenderers()
+        recipeManager.registerRecipes()
 
         server.pluginManager.registerEvents(PlayerEventListener(this), this)
         server.pluginManager.registerEvents(PlayerRespawnListener(this), this)
@@ -266,6 +270,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(ClientInfoListener(this), this)
         server.pluginManager.registerEvents(ImageListener(this), this)
         server.pluginManager.registerEvents(NightVisionListener(this), this)
+        server.pluginManager.registerEvents(recipeManager, this)
 
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
