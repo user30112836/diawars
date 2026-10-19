@@ -6,6 +6,7 @@ import de.davidsw.diawars.stores.EventConfig
 import de.davidsw.diawars.stores.EventGameRules
 import de.davidsw.diawars.stores.EventPotionEffect
 import de.davidsw.diawars.stores.EventState
+import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.DateTimeParser
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -47,7 +48,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
 
             "submit" -> respond(sender, plugin.eventManager.submitEvent(sender))
 
-            "cancel" -> respond(sender, plugin.eventManager.cancelEvent(sender))
+            "cancel" -> handleCancel(sender)
 
             "leave" -> respond(sender, plugin.eventManager.leaveEvent(sender))
 
@@ -67,6 +68,38 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
         }
 
         return true
+    }
+
+    /**
+     * Event cancellation deletes the event and its world, so `/event cancel`
+     * only asks first; `/event cancel confirm` really deletes. Java players
+     * get a clickable run_command button, Bedrock players the typed command
+     * (they cannot click chat links). Invalid requests keep answering like
+     * before instead of asking for a pointless confirmation.
+     */
+    private fun handleCancel(sender: Player) {
+        val session = plugin.eventManager.getSession(sender.uniqueId)
+        if (session == null || session.mode != EventManager.SessionMode.BUILD) {
+            respond(sender, plugin.eventManager.cancelEvent(sender))
+            return
+        }
+
+        val eventName = plugin.store.eventStore.getEvent(session.eventId)?.name ?: "?"
+        sender.sendMessage(
+            mm(
+                """
+                <yellow>Dein Event <gold>${escape(eventName)}</gold> wird abgebrochen!</yellow>
+                <yellow>Die Event-Welt wird dabei endgültig gelöscht!</yellow>
+
+                <gray>Wirklich fortfahren?</gray>
+                """.trimIndent()
+            )
+        )
+        if (BedrockUtil.isBedrock(sender)) {
+            sender.sendMessage(mm("<gray>Tippe im Chat ein:</gray> <white>/event cancel confirm</white>"))
+        } else {
+            sender.sendMessage(mm("<click:run_command:'/event cancel confirm'><gold>[Ja, endgültig löschen]</gold></click>"))
+        }
     }
 
     private fun handleList(sender: Player, args: Array<out String>) {
@@ -103,7 +136,7 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
             "<yellow>/event config <option></yellow><gray> - Event während des Bauens konfigurieren</gray>",
             "<yellow>/event resume</yellow><gray> - Weiterbauen an deinem Event</gray>",
             "<yellow>/event submit</yellow><gray> - Event zur Prüfung einreichen</gray>",
-            "<yellow>/event cancel</yellow><gray> - Event abbrechen und löschen</gray>",
+            "<yellow>/event cancel</yellow><gray> - Event abbrechen und löschen (Bestätigung nötig)</gray>",
             "<yellow>/event join <id></yellow><gray> - Aktivem Event beitreten</gray>",
             "<yellow>/event leave</yellow><gray> - Event verlassen</gray>",
             "<yellow>/event list <accepted|active></yellow><gray> - Events auflisten</gray>",
@@ -303,6 +336,8 @@ class EventCommand(private val plugin: Diawars): CommandExecutor, TabCompleter {
                     return listOf("accepted", "active")
                         .filter { it.startsWith(args[1].lowercase()) }
                 }
+
+                "cancel" -> return listOf("confirm").filter { it.startsWith(args[1].lowercase()) }
 
                 "config" -> return listOf("info", "gamemode", "time", "gamerule", "effect", "inventory")
                     .filter { it.startsWith(args[1].lowercase()) }

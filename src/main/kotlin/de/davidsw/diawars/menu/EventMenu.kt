@@ -31,6 +31,9 @@ class EventMenu(private val plugin: Diawars) {
 
         private val ALL_SLOTS = listOf(SLOT_CREATE, SLOT_RESUME, SLOT_SUBMIT, SLOT_CANCEL, SLOT_LEAVE, SLOT_CONFIG, SLOT_STATUS) +
                 ACTIVE_SLOTS + PENDING_SLOTS + UPCOMING_SLOTS
+
+        /** How long the cancel button stays armed for the confirming click. */
+        private const val CANCEL_CONFIRM_WINDOW_MS = 15_000L
     }
 
     // slot -> event, kept per-player so clicks in the periodically-refreshed
@@ -39,11 +42,24 @@ class EventMenu(private val plugin: Diawars) {
     private val upcomingEventsCache = mutableMapOf<UUID, List<GameEvent>>()
     private val pendingEventsCache = mutableMapOf<UUID, List<GameEvent>>()
 
+    // Millis of the last cancel click; the deletion only runs on a confirming
+    // second click within the window (see [isCancelArmed]).
+    private val cancelArmedAt = mutableMapOf<UUID, Long>()
+
     /** Drops per-player view state. Call on quit: logout may skip the close event. */
     fun clearCache(playerId: UUID) {
         activeEventsCache.remove(playerId)
         upcomingEventsCache.remove(playerId)
         pendingEventsCache.remove(playerId)
+        cancelArmedAt.remove(playerId)
+    }
+
+    /** True while the cancel button is armed for a confirming second click. */
+    private fun isCancelArmed(playerId: UUID): Boolean {
+        val armedAt = cancelArmedAt[playerId] ?: return false
+        val armed = System.currentTimeMillis() - armedAt in 0 until CANCEL_CONFIRM_WINDOW_MS
+        if (!armed) cancelArmedAt.remove(playerId)
+        return armed
     }
 
     fun populateEventMenu(inv: Inventory, player: Player) {
@@ -55,7 +71,7 @@ class EventMenu(private val plugin: Diawars) {
         val submitted = ownEvents.firstOrNull { it.state == EventState.SUBMITTED }
         val isAdmin = player.hasPermission("diawars.admin")
 
-        populateActions(inv, session, building, submitted)
+        populateActions(inv, player, session, building, submitted)
         populateStatus(inv, session, building, submitted)
         populateActiveEvents(inv, player)
         populateUpcomingEvents(inv, player)
@@ -64,6 +80,7 @@ class EventMenu(private val plugin: Diawars) {
 
     private fun populateActions(
         inv: Inventory,
+        player: Player,
         session: EventManager.Session?,
         building: GameEvent?,
         submitted: GameEvent?,
@@ -111,16 +128,28 @@ class EventMenu(private val plugin: Diawars) {
         )
 
         val canCancel = session != null && session.mode == EventManager.SessionMode.BUILD
+        val cancelConfirm = canCancel && isCancelArmed(player.uniqueId)
         inv.setItem(
             SLOT_CANCEL, actionItem(
                 enabled = canCancel,
-                material = Material.BARRIER,
-                name = "<red><bold>Event abbrechen</bold></red>",
-                lore = if (canCancel) listOf(
-                    mm("<gray>Bricht dein Event ab und löscht es</gray>"),
-                    mm(""),
-                    mm("<yellow>Klicken zum Abbrechen</yellow>"),
-                ) else listOf(mm("<dark_gray>Du baust gerade an keinem Event</dark_gray>")),
+                material = if (cancelConfirm) Material.TNT else Material.BARRIER,
+                name = if (cancelConfirm) "<yellow><bold>Wirklich abbrechen?</bold></yellow>"
+                       else "<red><bold>Event abbrechen</bold></red>",
+                lore = when {
+                    cancelConfirm -> listOf(
+                        mm("<gray>Löscht </gray><gold>${escape(building?.name ?: session?.eventId ?: "?")}</gold>"),
+                        mm("<gray>endgültig!</gray>"),
+                        mm(""),
+                        mm("<yellow>Nochmal klicken zum Bestätigen</yellow>"),
+                        mm("<dark_gray>Bleibt 15 Sekunden aktiv</dark_gray>"),
+                    )
+                    canCancel -> listOf(
+                        mm("<gray>Bricht dein Event ab und löscht es</gray>"),
+                        mm(""),
+                        mm("<yellow>Klicken zum Abbrechen</yellow>"),
+                    )
+                    else -> listOf(mm("<dark_gray>Du baust gerade an keinem Event</dark_gray>"))
+                },
             )
         )
 
@@ -297,7 +326,7 @@ class EventMenu(private val plugin: Diawars) {
         }
     }
 
-    fun handleEventClick(player: Player, slot: Int) {
+    fun handleEventClick(player: Player, slot: Int, inv: Inventory) {
         when (slot) {
             SLOT_CREATE -> {
                 val ownEvents = plugin.store.eventStore.getByCreator(player.uniqueId)
@@ -319,8 +348,21 @@ class EventMenu(private val plugin: Diawars) {
             }
 
             SLOT_CANCEL -> {
-                player.closeInventory()
-                respond(player, plugin.eventManager.cancelEvent(player))
+                val session = plugin.eventManager.getSession(player.uniqueId)
+                if (session == null || session.mode != EventManager.SessionMode.BUILD) {
+                    // Not cancelable: pass through so the manager explains why.
+                    respond(player, plugin.eventManager.cancelEvent(player))
+                    return
+                }
+                if (!isCancelArmed(player.uniqueId)) {
+                    // Arm: the deletion waits for a confirming second click.
+                    cancelArmedAt[player.uniqueId] = System.currentTimeMillis()
+                    populateEventMenu(inv, player)
+                } else {
+                    cancelArmedAt.remove(player.uniqueId)
+                    player.closeInventory()
+                    respond(player, plugin.eventManager.cancelEvent(player))
+                }
             }
 
             SLOT_LEAVE -> {
