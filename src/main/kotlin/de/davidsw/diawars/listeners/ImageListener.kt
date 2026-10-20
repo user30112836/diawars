@@ -39,6 +39,12 @@ class ImageListener(
         /** Server accepts or rejects announced uploads through this channel. */
         const val ACCEPT_CHANNEL = "diawars:image_accept"
 
+        /** Mods pre-check split upload names through this channel. */
+        const val CHECK_CHANNEL = "diawars:image_check"
+
+        /** Server answers split name checks (ok/error) through this channel. */
+        const val CHECK_OK_CHANNEL = "diawars:image_check_ok"
+
         private val GSON = Gson()
 
         fun writeVarIntPrefixedUtf8(text: String): ByteArray {
@@ -78,7 +84,37 @@ class ImageListener(
             CHANNEL -> handleUpload(player, message)
             REQ_CHANNEL -> handleDownloadRequest(player, message)
             OFFER_CHANNEL -> handleOffer(player, message)
+            CHECK_CHANNEL -> handleSplitNameCheck(player, message)
             else -> return
+        }
+    }
+
+    /**
+     * Split upload pre-check: the mod asks whether every grid name is free
+     * (see ImageManager#handleNameCheck); the whole upload is cancelled when
+     * the answer is negative.
+     */
+    private fun handleSplitNameCheck(player: Player, message: ByteArray) {
+        val json = try {
+            readVarIntPrefixedUtf8(message)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image name check from ${player.name}: ${e.message}")
+            // Never leave the mod waiting: answer with a rejection.
+            plugin.imageManager.handleNameCheck(player, emptyList())
+            return
+        }
+        try {
+            val root = GSON.fromJson(json, JsonObject::class.java)
+                ?: throw IllegalArgumentException("JSON is null")
+            val array = root.get("names")?.takeIf { it.isJsonArray }?.asJsonArray
+                ?: throw IllegalArgumentException("Missing names")
+            val names = array.mapNotNull { element ->
+                element.takeIf { it.isJsonPrimitive }?.asString
+            }
+            plugin.imageManager.handleNameCheck(player, names)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid image name check from ${player.name}: ${e.message}")
+            plugin.imageManager.handleNameCheck(player, emptyList())
         }
     }
 

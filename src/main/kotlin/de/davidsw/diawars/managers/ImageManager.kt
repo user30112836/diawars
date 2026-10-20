@@ -60,7 +60,10 @@ class ImageManager(private val plugin: Diawars) {
         /** Upload session timeout in millis. */
         const val SESSION_TIMEOUT_MILLIS = 120_000L
 
-        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9._-]{1,32}$")
+        /** Max segments of a split (N×N) upload: 5×5 = 25 (mirrors the mods). */
+        const val MAX_SPLIT_SEGMENTS = 25
+
+        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9._()-]{1,32}$")
 
         /** Expected part count for B decoded bytes at [MAX_CHUNK_CHARS] chars each. */
         fun expectedParts(bytes: Long): Long {
@@ -414,6 +417,62 @@ class ImageManager(private val plugin: Diawars) {
     }
 
     // ------------------------------------------------------------------
+    // split upload name pre-check (diawars:image_check ->
+    // diawars:image_check_ok)
+    // ------------------------------------------------------------------
+    //
+    // The mods can split one upload into an N×N grid ("name(1)".."name(N²)")
+    // and check every target name up front, so the whole split is cancelled
+    // (client-side) instead of failing segments one by one mid-upload.
+
+    /**
+     * Handles a split upload name pre-check. Rejects the whole grid when any
+     * name is invalid or already taken, or when the image limit has no
+     * headroom for all segments; answers with ok = true otherwise.
+     */
+    fun handleNameCheck(player: Player, names: List<String>) {
+        if (isBanned(player.uniqueId)) {
+            sendCheckOk(player, false, "<red>Du bist für die Bilder-Funktion gesperrt!</red>")
+            return
+        }
+        if (names.isEmpty() || names.size > MAX_SPLIT_SEGMENTS) {
+            sendCheckOk(player, false, "<red>Ungültige Aufteilung (1 bis $MAX_SPLIT_SEGMENTS Teile)!</red>")
+            return
+        }
+        val invalid = names.firstOrNull { !isValidFileName(it) }
+        if (invalid != null) {
+            sendCheckOk(player, false, "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) (max. 32 Zeichen).</red>")
+            return
+        }
+        val count = getImageCount(player.uniqueId)
+        val limit = plugin.store.imageLimitStore.getLimit(player.uniqueId)
+        if (count + names.size > limit) {
+            sendCheckOk(player, false,
+                "<red>Dein Bildlimit reicht nicht für die Aufteilung ($count von $limit belegt, Aufteilung braucht ${names.size})! Der Upload wurde abgebrochen.</red>")
+            return
+        }
+        val taken = names.firstOrNull { hasImage(player.uniqueId, it) }
+        if (taken != null) {
+            sendCheckOk(player, false,
+                "<red>Du hast bereits ein Bild mit dem Namen <yellow>$taken</yellow>! Die Aufteilung wurde abgebrochen — wähle einen anderen Namen.</red>")
+            return
+        }
+        sendCheckOk(player, true, null)
+    }
+
+    private fun sendCheckOk(player: Player, ok: Boolean, error: String?) {
+        val root = JsonObject().apply {
+            addProperty("ok", ok)
+            if (error != null) addProperty("error", error)
+        }
+        try {
+            player.sendPluginMessage(plugin, ImageListener.CHECK_OK_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(root.toString()))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not send image check answer to ${player.name}: ${e.message}")
+        }
+    }
+
+    // ------------------------------------------------------------------
     // chunked upload (diawars:image_offer -> diawars:image_accept, then
     // diawars:image payload)
     // ------------------------------------------------------------------
@@ -436,7 +495,7 @@ class ImageManager(private val plugin: Diawars) {
         }
         if (!isValidFileName(file)) {
             sendAccept(player, file, false, null,
-                "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - (max. 32 Zeichen). \"all\" ist reserviert.</red>")
+                "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) (max. 32 Zeichen). \"all\" ist reserviert.</red>")
             return
         }
         if (bytes < 1 || bytes > MAX_UPLOAD_BYTES || total < 1 || total > MAX_NEGOTIATED_PARTS ||
