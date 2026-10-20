@@ -27,6 +27,8 @@ class MenuManager(private val plugin: Diawars) {
         val TITLE_VAULT = mm("<green>Vault-Verwaltung</green>")
         val TITLE_VAULT_LIST = mm("<green>Vault-Liste</green>")
         val TITLE_IMAGE = mm("<green>Bilder</green>")
+        val TITLE_REPORT = mm("<green>Melden</green>")
+        val TITLE_REPORT_PLAYERS = mm("<green>Spieler melden</green>")
     }
 
     fun openMainMenu(player: Player, memorize: Boolean = true) {
@@ -88,6 +90,16 @@ class MenuManager(private val plugin: Diawars) {
         if (memorize) plugin.menu.imageMenu.resetPage(player)
         val inv = openMenuInv(player, TITLE_IMAGE, memorize)
         startUpdater({ plugin.menu.imageMenu.populateImageMenu(inv, player) }, player)
+    }
+
+    fun openReportMenu(player: Player, memorize: Boolean = true) {
+        val inv = openMenuInv(player, TITLE_REPORT, memorize)
+        startUpdater({ plugin.menu.reportMenu.populateReportMenu(inv, player) }, player)
+    }
+
+    fun openReportPlayersMenu(player: Player, memorize: Boolean = true) {
+        val inv = openMenuInv(player, TITLE_REPORT_PLAYERS, memorize)
+        startUpdater({ plugin.menu.reportMenu.populateReportPlayersMenu(inv, player) }, player)
     }
 
     private fun openMenuInv(player: Player, title: Component, memorize: Boolean): Inventory {
@@ -166,6 +178,8 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_IMAGE -> openImageMenu(player, false)
+            TITLE_REPORT -> openReportMenu(player, false)
+            TITLE_REPORT_PLAYERS -> openReportPlayersMenu(player, false)
             else -> {}
         }
     }
@@ -192,6 +206,8 @@ class MenuManager(private val plugin: Diawars) {
             TITLE_VAULT -> openVaultMenu(player, false)
             TITLE_VAULT_LIST -> openVaultListMenu(player, false)
             TITLE_IMAGE -> openImageMenu(player, false)
+            TITLE_REPORT -> openReportMenu(player, false)
+            TITLE_REPORT_PLAYERS -> openReportPlayersMenu(player, false)
             else -> {}
         }
     }

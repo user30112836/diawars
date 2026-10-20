@@ -9,6 +9,7 @@ import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
 import de.davidsw.diawars.commands.NightVisionCommand
 import de.davidsw.diawars.commands.PvPCommand
+import de.davidsw.diawars.commands.ReportCommand
 import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
@@ -31,6 +32,7 @@ import de.davidsw.diawars.listeners.PlayerEventListener
 import de.davidsw.diawars.listeners.PlayerRespawnListener
 import de.davidsw.diawars.listeners.PlayerSpawnChangeListener
 import de.davidsw.diawars.listeners.PvPListener
+import de.davidsw.diawars.listeners.ReportListener
 import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.VaultListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
@@ -49,6 +51,7 @@ import de.davidsw.diawars.managers.MenuManager
 import de.davidsw.diawars.managers.MessageManager
 import de.davidsw.diawars.managers.ModWhitelistManager
 import de.davidsw.diawars.managers.NightVisionManager
+import de.davidsw.diawars.managers.ReportManager
 import de.davidsw.diawars.stores.PlayerDiamondStore
 import de.davidsw.diawars.managers.PvPManager
 import de.davidsw.diawars.managers.RecipeManager
@@ -64,6 +67,7 @@ import de.davidsw.diawars.menu.EventConfigMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.ImageMenu
 import de.davidsw.diawars.menu.MainMenu
+import de.davidsw.diawars.menu.ReportMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.SettingsMenu
 import de.davidsw.diawars.menu.TogglesMenu
@@ -85,6 +89,7 @@ import de.davidsw.diawars.stores.PlayerSpawnStore
 import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
+import de.davidsw.diawars.stores.ReportStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
@@ -104,6 +109,7 @@ data class Menu(
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
     var imageMenu: ImageMenu,
+    var reportMenu: ReportMenu,
 )
 
 class Store(
@@ -128,13 +134,14 @@ class Store(
     val imageMapStore: ImageMapStore,
     val imageBanStore: ImageBanStore,
     val nightVisionStore: NightVisionStore,
+    val reportStore: ReportStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
-        imageLimitStore, imageMapStore, imageBanStore, nightVisionStore,
+        imageLimitStore, imageMapStore, imageBanStore, nightVisionStore, reportStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -166,6 +173,7 @@ class Diawars : JavaPlugin() {
     lateinit var modWhitelistManager: ModWhitelistManager
     lateinit var imageManager: ImageManager
     lateinit var textInputManager: TextInputManager
+    lateinit var reportManager: ReportManager
     lateinit var nightVisionManager: NightVisionManager
     lateinit var recipeManager: RecipeManager
 
@@ -197,6 +205,7 @@ class Diawars : JavaPlugin() {
             imageMapStore = ImageMapStore(this),
             imageBanStore = ImageBanStore(this),
             nightVisionStore = NightVisionStore(this),
+            reportStore = ReportStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -221,6 +230,9 @@ class Diawars : JavaPlugin() {
         modWhitelistManager = ModWhitelistManager(this)
         imageManager = ImageManager(this)
         textInputManager = TextInputManager(this)
+        // ReportManager needs imageManager (image lookups, thumbnail scaling)
+        // and textInputManager (reason dialog).
+        reportManager = ReportManager(this)
         nightVisionManager = NightVisionManager(this)
         recipeManager = RecipeManager(this)
 
@@ -235,6 +247,7 @@ class Diawars : JavaPlugin() {
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
             imageMenu = ImageMenu(this),
+            reportMenu = ReportMenu(this),
         )
 
         startStoreFlushTask()
@@ -269,6 +282,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(InventoryInspectListener(), this)
         server.pluginManager.registerEvents(ClientInfoListener(this), this)
         server.pluginManager.registerEvents(ImageListener(this), this)
+        server.pluginManager.registerEvents(ReportListener(this), this)
         server.pluginManager.registerEvents(NightVisionListener(this), this)
         server.pluginManager.registerEvents(recipeManager, this)
 
@@ -280,6 +294,7 @@ class Diawars : JavaPlugin() {
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, TextInputManager.CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, ReportManager.SHOT_CHANNEL)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -293,6 +308,7 @@ class Diawars : JavaPlugin() {
         getCommand("bug")?.setExecutor(BugCommand(this))
         getCommand("admin")?.setExecutor(AdminCommand(this))
         getCommand("image")?.setExecutor(ImageCommand(this))
+        getCommand("report")?.setExecutor(ReportCommand(this))
         getCommand("nightvision")?.setExecutor(NightVisionCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {

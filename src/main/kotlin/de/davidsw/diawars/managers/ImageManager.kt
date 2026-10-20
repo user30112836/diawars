@@ -860,6 +860,27 @@ class ImageManager(private val plugin: Diawars) {
         return adopted
     }
 
+    /**
+     * Read-only image lookup for a filled-map item (no adoption side effects,
+     * used when a player wants to report the image they are holding): first
+     * the tracked map id, then the file-name marker exactly like
+     * [tryAdoptMap] would match it.
+     *
+     * @return owner to file name, or null when the item is not one of our maps
+     */
+    fun findImageRef(stack: ItemStack): Pair<UUID, String>? {
+        if (stack.type != Material.FILLED_MAP) return null
+        val meta = stack.itemMeta as? MapMeta ?: return null
+        val view = meta.mapView
+        if (view != null) {
+            plugin.store.imageMapStore.get(view.id)?.let { return it.owner to it.file }
+        }
+        val fileName = extractOurFileName(meta) ?: return null
+        val owners = getAllKnownPlayers().filter { hasImage(it, fileName) }
+        if (owners.size != 1) return null
+        return owners.first() to fileName
+    }
+
     // ------------------------------------------------------------------
     // full-resolution download (diawars:image_req -> diawars:image_data)
     // ------------------------------------------------------------------

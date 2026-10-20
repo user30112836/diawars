@@ -33,6 +33,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "inv" -> handleInv(sender, args.drop(1))
             "log" -> handleLog(sender, args.drop(1))
             "bug" -> handleBug(sender, args.drop(1))
+            "report" -> handleReport(sender, args.drop(1))
             "event" -> handleEvent(sender, args.drop(1))
             "pvp" -> handlePvp(sender, args.drop(1))
             "lobby" -> handleLobby(sender, args.drop(1))
@@ -182,6 +183,71 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <gold>=== Bug-Administration ===</gold>
                 <yellow>/admin bug list</yellow><gray> - Offene Bugs auflisten</gray>
                 <yellow>/admin bug resolve &lt;id&gt;</yellow><gray> - Bug als behoben markieren</gray>
+                """.trimIndent(),
+            ),
+        )
+    }
+
+    // ------------------------------------------------------------------
+    // report (player reports incl. screenshot attachments)
+    // ------------------------------------------------------------------
+
+    private fun handleReport(sender: CommandSender, args: List<String>) {
+        if (sender !is Player) {
+            sender.sendMessage("Dieser Befehl kann nur von Spielern ausgeführt werden!")
+            return
+        }
+
+        when (args.getOrNull(0)?.lowercase()) {
+            "list" -> {
+                plugin.store.reportStore.markRead(sender.uniqueId)
+                sender.sendMessage(mm(plugin.reportManager.formatList().joinToString("\n")))
+            }
+
+            "view" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin report view &lt;id&gt;</red>"))
+                    return
+                }
+                respondReport(sender, plugin.reportManager.formatView(args[1]))
+            }
+
+            "shot" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin report shot &lt;id&gt;</red>"))
+                    return
+                }
+                respondReport(sender, plugin.reportManager.giveShotMap(sender, args[1]))
+            }
+
+            "resolve", "close" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin report resolve &lt;id&gt;</red>"))
+                    return
+                }
+                respondReport(sender, plugin.reportManager.resolve(args[1]))
+            }
+
+            else -> sendReportHelp(sender)
+        }
+    }
+
+    private fun respondReport(player: Player, result: de.davidsw.diawars.managers.ReportManager.Result) {
+        when (result) {
+            is de.davidsw.diawars.managers.ReportManager.Result.Success -> player.sendMessage(mm(result.message))
+            is de.davidsw.diawars.managers.ReportManager.Result.Error -> player.sendMessage(mm(result.message))
+        }
+    }
+
+    private fun sendReportHelp(player: Player) {
+        player.sendMessage(
+            mm(
+                """
+                <gold>=== Report-Administration ===</gold>
+                <yellow>/admin report list</yellow><gray> - Offene Reports auflisten</gray>
+                <yellow>/admin report view &lt;id&gt;</yellow><gray> - Report-Details ansehen</gray>
+                <yellow>/admin report shot &lt;id&gt;</yellow><gray> - Screenshot-Karte erhalten</gray>
+                <yellow>/admin report resolve &lt;id&gt;</yellow><gray> - Report als behandelt markieren</gray>
                 """.trimIndent(),
             ),
         )
@@ -707,6 +773,10 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin log [anzahl]</yellow><gray> - Diamond-Log anzeigen</gray>
                 <yellow>/admin bug list</yellow><gray> - Offene Bugs auflisten</gray>
                 <yellow>/admin bug resolve &lt;id&gt;</yellow><gray> - Bug als behoben markieren</gray>
+                <yellow>/admin report list</yellow><gray> - Offene Reports auflisten</gray>
+                <yellow>/admin report view &lt;id&gt;</yellow><gray> - Report-Details ansehen</gray>
+                <yellow>/admin report shot &lt;id&gt;</yellow><gray> - Screenshot-Karte erhalten</gray>
+                <yellow>/admin report resolve &lt;id&gt;</yellow><gray> - Report als behandelt markieren</gray>
                 <yellow>/admin event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>
                 <yellow>/admin event accept &lt;id&gt; &lt;start&gt; &lt;ende&gt;</yellow><gray> - Event annehmen</gray>
                 <yellow>/admin event reject &lt;id&gt; &lt;grund&gt;</yellow><gray> - Event ablehnen</gray>
@@ -737,7 +807,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "event", "pvp", "lobby", "msg", "image", "config")
+            return listOf("reload", "inv", "log", "bug", "report", "event", "pvp", "lobby", "msg", "image", "config")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -764,6 +834,16 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 }
                 if (args.size == 3 && args[1].equals("resolve", ignoreCase = true)) {
                     return plugin.store.bugStore.getUnresolved().map { it.id }
+                        .filter { it.startsWith(args[2]) }
+                }
+            }
+
+            "report" -> {
+                if (args.size == 2) {
+                    return listOf("list", "view", "shot", "resolve").filter { it.startsWith(args[1].lowercase()) }
+                }
+                if (args.size == 3) {
+                    return plugin.store.reportStore.getOpen().map { it.id }
                         .filter { it.startsWith(args[2]) }
                 }
             }

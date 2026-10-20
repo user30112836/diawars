@@ -18,6 +18,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_SETTINGS   = 29
         private const val SLOT_VAULT      = 31
         private const val SLOT_TOGGLES    = 33
+        private const val SLOT_REPORT     = 38
         private const val SLOT_BUG_REPORT = 40
     }
 
@@ -154,6 +155,19 @@ class MainMenu(private val plugin: Diawars) {
             glow = false,
         ))
 
+        // Report
+        inv.setItem(SLOT_REPORT, item(
+            material = Material.COMPASS,
+            name = mm("<gold><bold>Melden</bold></gold>"),
+            lore = listOf(
+                mm("<gray>Melde Bild-Karten oder Spieler</gray>"),
+                mm("<gray>mit Grund und Screenshot</gray>"),
+                mm(""),
+                mm("<yellow>Klicken zum Öffnen</yellow>"),
+            ),
+            glow = false,
+        ))
+
         // Bug report
         inv.setItem(SLOT_BUG_REPORT, item(
             material = Material.WRITABLE_BOOK,
@@ -213,6 +227,8 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_VAULT -> plugin.menuManager.openVaultMenu(player)
 
             SLOT_TOGGLES -> plugin.menuManager.openTogglesMenu(player)
+
+            SLOT_REPORT -> plugin.menuManager.openReportMenu(player)
 
             SLOT_BUG_REPORT -> plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.BUG_REPORT)
         }

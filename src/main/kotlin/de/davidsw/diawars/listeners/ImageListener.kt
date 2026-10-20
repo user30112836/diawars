@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.managers.ImageManager
 import de.davidsw.diawars.managers.ImageMapRenderer
+import de.davidsw.diawars.managers.ReportManager
 import de.davidsw.diawars.util.MiniMessageHelper.mm
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -98,6 +99,13 @@ class ImageListener(
             val total = root.get("total")?.takeIf { it.isJsonPrimitive }?.asInt
                 ?: throw IllegalArgumentException("Missing total")
             val hash = root.get("hash")?.takeIf { it.isJsonPrimitive }?.asString
+            val report = root.get(ReportManager.REPORT_FIELD)?.takeIf { it.isJsonPrimitive }?.asString
+            if (report != null) {
+                // Report screenshot attachment: negotiated upload stored under
+                // the report, not the player's image gallery (see ReportManager).
+                plugin.reportManager.handleShotOffer(player, report, file, bytes, total, hash)
+                return
+            }
             plugin.imageManager.handleOffer(player, file, bytes, total, hash)
         } catch (e: Exception) {
             plugin.logger.warning("Invalid image offer from ${player.name}: ${e.message}")
@@ -142,11 +150,22 @@ class ImageListener(
             return
         }
 
-        val (file, part, total, data) = try {
+        val (file, part, total, data, report) = try {
             parseChunk(json)
         } catch (e: Exception) {
             plugin.logger.warning("Invalid image chunk from ${player.name}: ${e.message}")
             player.sendMessage(mm("<red>Ungültige Bilddaten vom Client!</red>"))
+            return
+        }
+
+        if (report != null) {
+            // Report screenshot attachment (see ReportManager#handleShotOffer).
+            val result = plugin.reportManager.handleShotChunk(player, report, file, part, total, data)
+            when (result) {
+                is ReportManager.Result.Success -> player.sendMessage(mm(result.message))
+                is ReportManager.Result.Error -> player.sendMessage(mm(result.message))
+                null -> return
+            }
             return
         }
 
@@ -166,7 +185,7 @@ class ImageListener(
         }
     }
 
-    private data class Chunk(val file: String, val part: Int, val total: Int, val data: String)
+    private data class Chunk(val file: String, val part: Int, val total: Int, val data: String, val report: String?)
 
     private fun parseChunk(json: String): Chunk {
         val root = GSON.fromJson(json, JsonObject::class.java)
@@ -179,7 +198,8 @@ class ImageListener(
             ?: throw IllegalArgumentException("Missing total")
         val data = root.get("data")?.takeIf { it.isJsonPrimitive }?.asString
             ?: throw IllegalArgumentException("Missing data")
-        return Chunk(file, part, total, data)
+        val report = root.get(ReportManager.REPORT_FIELD)?.takeIf { it.isJsonPrimitive }?.asString
+        return Chunk(file, part, total, data, report)
     }
 
     @EventHandler
