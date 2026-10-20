@@ -43,12 +43,6 @@ class MenuListener(private val plugin: Diawars): Listener {
         MenuManager.TITLE_IMAGE to { event, player, slot ->
             plugin.menu.imageMenu.handleImageClick(player, slot, event.inventory)
         },
-        MenuManager.TITLE_REPORT to { _, player, slot ->
-            plugin.menu.reportMenu.handleReportClick(player, slot)
-        },
-        MenuManager.TITLE_REPORT_PLAYERS to { event, player, slot ->
-            plugin.menu.reportMenu.handleReportPlayersClick(player, slot, event.inventory)
-        },
     )
 
     private val managedMenus: Set<Component> = clickHandlers.keys
@@ -90,6 +84,5 @@ class MenuListener(private val plugin: Diawars): Listener {
         plugin.menu.vaultListMenu.clearCache(playerId)
         plugin.menu.eventMenu.clearCache(playerId)
         plugin.menu.imageMenu.clearCache(playerId)
-        plugin.menu.reportMenu.clearCache(playerId)
     }
 }

@@ -1,5 +1,5 @@
 name: Diawars
-version: '5.2-beta'
+version: '5.3-beta'
 main: de.davidsw.diawars.Diawars
 api-version: '26.2'
 author: DavidSW
@@ -54,7 +54,7 @@ commands:
     permission: diawars.use
   report:
     description: Meldet Bilder oder Spieler (mit Grund und Screenshot-Anhang)
-    usage: /<command> <image|player|reason|shot>
+    usage: /<command> <spieler|-> [grund]
     permission: diawars.use
   nightvision:
     description: Schaltet Nachtsicht an oder aus

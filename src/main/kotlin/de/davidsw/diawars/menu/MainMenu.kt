@@ -163,7 +163,7 @@ class MainMenu(private val plugin: Diawars) {
                 mm("<gray>Melde Bild-Karten oder Spieler</gray>"),
                 mm("<gray>mit Grund und Screenshot</gray>"),
                 mm(""),
-                mm("<yellow>Klicken zum Öffnen</yellow>"),
+                mm("<yellow>Klicken öffnet den Report-Dialog</yellow>"),
             ),
             glow = false,
         ))
@@ -228,7 +228,7 @@ class MainMenu(private val plugin: Diawars) {
 
             SLOT_TOGGLES -> plugin.menuManager.openTogglesMenu(player)
 
-            SLOT_REPORT -> plugin.menuManager.openReportMenu(player)
+            SLOT_REPORT -> plugin.reportManager.openDialog(player)
 
             SLOT_BUG_REPORT -> plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.BUG_REPORT)
         }

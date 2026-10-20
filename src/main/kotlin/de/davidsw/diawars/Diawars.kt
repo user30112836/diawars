@@ -67,7 +67,6 @@ import de.davidsw.diawars.menu.EventConfigMenu
 import de.davidsw.diawars.menu.EventMenu
 import de.davidsw.diawars.menu.ImageMenu
 import de.davidsw.diawars.menu.MainMenu
-import de.davidsw.diawars.menu.ReportMenu
 import de.davidsw.diawars.menu.ScoreboardMenu
 import de.davidsw.diawars.menu.SettingsMenu
 import de.davidsw.diawars.menu.TogglesMenu
@@ -109,7 +108,6 @@ data class Menu(
     var vaultMenu: VaultMenu,
     var vaultListMenu: VaultListMenu,
     var imageMenu: ImageMenu,
-    var reportMenu: ReportMenu,
 )
 
 class Store(
@@ -247,7 +245,6 @@ class Diawars : JavaPlugin() {
             vaultMenu = VaultMenu(this),
             vaultListMenu = VaultListMenu(this),
             imageMenu = ImageMenu(this),
-            reportMenu = ReportMenu(this),
         )
 
         startStoreFlushTask()
@@ -290,11 +287,13 @@ class Diawars : JavaPlugin() {
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.REQ_CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.OFFER_CHANNEL, ImageListener(this))
+        server.messenger.registerIncomingPluginChannel(this, ReportManager.SUBMIT_CHANNEL, ReportListener(this))
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.OPEN_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, TextInputManager.CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ReportManager.SHOT_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, ReportManager.DIALOG_CHANNEL)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))

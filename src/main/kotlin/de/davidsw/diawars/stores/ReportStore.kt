@@ -5,32 +5,37 @@ import org.bukkit.configuration.file.YamlConfiguration
 import java.util.UUID
 
 /**
- * One player report (image or player). Exactly one of the target fields is
- * set, depending on [ReportTargetType]:
- * - IMAGE: [targetOwner] + [targetFile] (the reported image)
- * - PLAYER: [targetPlayer] + [targetName] (the reported player at report time)
+ * One player report with any combination of aspects (submitted via the
+ * client-mod dialog = [ReportSource.MENU], or via the command line =
+ * [ReportSource.COMMAND] where the command path auto-appends screenshot and
+ * hand image):
+ * - [targetPlayer] / [targetName]: reported online player (name snapshot)
+ * - [targetOwner] / [targetFile]: reported image (may coexist with a player)
+ * - [reason]: free text, may be empty
+ * - [shot]: a screenshot was attached via the client mod
  */
 data class ReportEntry(
     val id: String,
     val reporter: UUID,
     val reportedAt: Long,
-    val type: ReportTargetType,
+    val source: ReportSource,
     val targetPlayer: UUID?,
     val targetName: String?,
     val targetOwner: UUID?,
     val targetFile: String?,
-    val reason: String,
+    val reason: String?,
     /** True once a screenshot was attached via the client mod. */
     var shot: Boolean = false,
     var resolved: Boolean = false,
 )
 
-enum class ReportTargetType {
-    IMAGE,
-    PLAYER;
+/** How the report was submitted: mod dialog ("Menü") or command line ("Befehl"). */
+enum class ReportSource {
+    MENU,
+    COMMAND;
 
     companion object {
-        fun from(raw: String): ReportTargetType? = entries.firstOrNull { it.name == raw }
+        fun from(raw: String): ReportSource? = entries.firstOrNull { it.name == raw }
     }
 }
 
@@ -56,23 +61,23 @@ class ReportStore(plugin: Diawars) : YamlStore(plugin, "reports.yml") {
 
     fun addReport(
         reporter: UUID,
-        type: ReportTargetType,
+        source: ReportSource,
         targetPlayer: UUID?,
         targetName: String?,
         targetOwner: UUID?,
         targetFile: String?,
-        reason: String,
+        reason: String?,
     ): ReportEntry {
         val entry = ReportEntry(
             id = (nextId++).toString(),
             reporter = reporter,
             reportedAt = System.currentTimeMillis() / 1000,
-            type = type,
+            source = source,
             targetPlayer = targetPlayer,
             targetName = targetName,
             targetOwner = targetOwner,
             targetFile = targetFile,
-            reason = reason,
+            reason = reason?.takeIf { it.isNotBlank() },
         )
         cache[entry.id] = entry
         // Infrequent player-facing writes: persist synchronously so reports
@@ -115,7 +120,7 @@ class ReportStore(plugin: Diawars) : YamlStore(plugin, "reports.yml") {
         for ((id, report) in cache) {
             yaml.set("reports.$id.reporter", report.reporter.toString())
             yaml.set("reports.$id.reported-at", report.reportedAt)
-            yaml.set("reports.$id.type", report.type.name)
+            yaml.set("reports.$id.source", report.source.name)
             yaml.set("reports.$id.target-player", report.targetPlayer?.toString())
             yaml.set("reports.$id.target-name", report.targetName)
             yaml.set("reports.$id.target-owner", report.targetOwner?.toString())
@@ -135,7 +140,6 @@ class ReportStore(plugin: Diawars) : YamlStore(plugin, "reports.yml") {
             for (id in reportsSection.getKeys(false)) {
                 try {
                     val section = reportsSection.getConfigurationSection(id) ?: continue
-                    val type = ReportTargetType.from(section.getString("type") ?: "PLAYER") ?: continue
                     val targetPlayer = section.getString("target-player")?.let {
                         try {
                             UUID.fromString(it)
@@ -154,12 +158,13 @@ class ReportStore(plugin: Diawars) : YamlStore(plugin, "reports.yml") {
                         id = id,
                         reporter = UUID.fromString(section.getString("reporter") ?: continue),
                         reportedAt = section.getLong("reported-at", 0L),
-                        type = type,
+                        // Legacy entries predate the source marker (command only).
+                        source = ReportSource.from(section.getString("source") ?: "") ?: ReportSource.COMMAND,
                         targetPlayer = targetPlayer,
                         targetName = section.getString("target-name"),
                         targetOwner = targetOwner,
                         targetFile = section.getString("target-file"),
-                        reason = section.getString("reason") ?: "",
+                        reason = section.getString("reason")?.takeIf { it.isNotBlank() },
                         shot = section.getBoolean("shot", false),
                         resolved = section.getBoolean("resolved", false),
                     )

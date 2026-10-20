@@ -11,10 +11,11 @@ import org.bukkit.command.TabCompleter
 import org.bukkit.entity.Player
 
 /**
- * Player reports: {@code /report image} (map in main hand),
- * {@code /report player <name>}, the mod-dialog reason
- * ({@code /report reason <text>}) and the optional screenshot attachment
- * ({@code /report shot}). Admin review lives in {@code /admin report ...}.
+ * Command-line report path (for everyone, mandatory for players without the
+ * client mod): {@code /report <player>|- [grund]}. A screenshot is always
+ * taken when the mod can do it and the map in the main hand is appended if
+ * possible (see ReportManager#submitCommandReport). The richer report dialog
+ * opens from the "Melden" main-menu button.
  */
 class ReportCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter {
     override fun onCommand(
@@ -28,46 +29,24 @@ class ReportCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter
             return true
         }
 
-        when (args.getOrNull(0)?.lowercase()) {
-            null -> sendHelp(sender)
-
-            "image" -> {
-                if (args.size > 1) {
-                    sendHelp(sender)
-                    return true
-                }
-                respond(sender, plugin.reportManager.startImageReport(sender))
-            }
-
-            "player" -> {
-                val target = args.getOrNull(1)
-                if (target == null || args.size > 2) {
-                    sender.sendMessage(mm("<red>Verwendung: /report player &lt;name&gt;</red>"))
-                    return true
-                }
-                respond(sender, plugin.reportManager.startPlayerReport(sender, target))
-            }
-
-            "reason" -> {
-                if (args.size < 2) {
-                    sender.sendMessage(mm("<red>Verwendung: /report reason &lt;grund&gt;</red>"))
-                    return true
-                }
-                respond(sender, plugin.reportManager.submitReason(sender, args.slice(1 until args.size).joinToString(" ")))
-            }
-
-            "shot" -> {
-                if (args.size > 1) {
-                    sendHelp(sender)
-                    return true
-                }
-                respond(sender, plugin.reportManager.requestShot(sender))
-            }
-
-            else -> sendHelp(sender)
+        if (args.isEmpty()) {
+            sendHelp(sender)
+            return true
         }
+
+        if (args[0] == "-") {
+            // "-" means: no player target (reason/image only).
+            respond(sender, plugin.reportManager.submitCommandReport(sender, null, reasonOf(args)))
+            return true
+        }
+
+        respond(sender, plugin.reportManager.submitCommandReport(sender, args[0], reasonOf(args)))
         return true
     }
+
+    /** What was typed after the player token ({@code -}); empty strings become null. */
+    private fun reasonOf(args: Array<out String>): String? =
+        args.drop(1).joinToString(" ").trim().ifEmpty { null }
 
     private fun respond(player: Player, result: ReportManager.Result) {
         when (result) {
@@ -80,10 +59,10 @@ class ReportCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter
         player.sendMessage(
             mm(
                 """
-                <gold>=== Report-Befehle ===</gold>
-                <yellow>/report image</yellow><gray> - Das Bild der Karte in deiner Haupthand melden</gray>
-                <yellow>/report player &lt;name&gt;</yellow><gray> - Einen Spieler melden</gray>
-                <yellow>/report shot</yellow><gray> - Screenshot deines Bildschirms an den letzten Report anhängen</gray>
+                <gold>=== Report ===</gold>
+                <yellow>/report &lt;spieler|-&gt; [grund]</yellow><gray> - Spieler und/oder eine Bild-Karte (in der Haupthand) melden</gray>
+                <gray>Ein Screenshot deines Bildschirms wird automatisch angehängt.</gray>
+                <gray>Komfortabler: der "Melden"-Button im Hauptmenü öffnet den Report-Dialog.</gray>
                 """.trimIndent(),
             ),
         )
@@ -96,10 +75,8 @@ class ReportCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("image", "player", "reason", "shot").filter { it.startsWith(args[0].lowercase()) }
-        }
-        if (args.size == 2 && args[0].equals("player", ignoreCase = true)) {
-            return Bukkit.getOnlinePlayers().map { it.name }.filter { it.startsWith(args[1], ignoreCase = true) }
+            return (listOf("-") + Bukkit.getOnlinePlayers().map { it.name })
+                .filter { it.startsWith(args[0], ignoreCase = true) }
         }
         return emptyList()
     }

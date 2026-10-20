@@ -74,14 +74,6 @@ class TextInputManager(private val plugin: Diawars) {
             commandPrefix = "event create ",
             placeholder = "<name>",
         ),
-        REPORT_REASON(
-            headline = "Report",
-            chatIntro = "Bitte gib einen Grund für den Report ein:",
-            label = "Grund für den Report",
-            hint = "Warum meldest du das?",
-            commandPrefix = "report reason ",
-            placeholder = "<grund>",
-        ),
     }
 
     /**

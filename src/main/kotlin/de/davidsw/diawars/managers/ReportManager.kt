@@ -3,7 +3,7 @@ package de.davidsw.diawars.managers
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.stores.ReportEntry
-import de.davidsw.diawars.stores.ReportTargetType
+import de.davidsw.diawars.stores.ReportSource
 import de.davidsw.diawars.util.BedrockUtil
 import de.davidsw.diawars.util.MiniMessageHelper.escape
 import de.davidsw.diawars.util.MiniMessageHelper.mm
@@ -22,25 +22,30 @@ import java.util.UUID
 import javax.imageio.ImageIO
 
 /**
- * Player reports (images and players), with optional screenshot attachment.
+ * Player reports for images, players, screenshots and free-text reasons —
+ * any combination, at least one aspect.
  *
- * <p>Flow: the player starts a report (command or menu) for a target — an
- * image map in the main hand or another online player. A pending target is
- * remembered server-side; the reason comes through the client-mod text input
- * dialog ([TextInputManager.Prompt.REPORT_REASON], the mod runs
- * {@code /report reason <text>}). The reason completes the report and opens a
- * short window in which the reporter can append a screenshot of what they
- * currently see (<code>/report shot</code>): the server asks the client mod to
- * capture the screen, which then uploads the PNG through the regular chunked
- * image upload channels tagged with a {@code report} field, and the upload is
- * stored under <code>reports/&lt;id&gt;.png</code> instead of the gallery.</p>
+ * <p>Two submission paths:</p>
+ * <ul>
+ *   <li><b>Menu + client mod</b> ([ReportSource.MENU]): the "Melden" main-menu
+ *   button asks the mod to open the report dialog
+ *   ([DIALOG_CHANNEL], JSON: hand-image availability + reason cap). The mod
+ *   shows editable fields for player name and reason plus checkboxes for the
+ *   screenshot (pre-checked) and the map in the main hand (pre-checked when
+ *   the server saw one). On submit the dialog sends everything at once to
+ *   [SUBMIT_CHANNEL]; the server re-validates (online player, hand image,
+ *   non-empty report) and requests the screenshot immediately when chosen.</li>
+ *   <li><b>Command line</b> ([ReportSource.COMMAND], also for Bedrock and
+ *   players with an outdated mod): {@code /report <player>|- [grund]}. The
+ *   screenshot is always taken when the mod can do it and the hand image is
+ *   appended if possible.</li>
+ * </ul>
  *
- * <p>Bedrock players can report (chat-typed reason via the TextInputManager
- * fallback) but never attach screenshots (no client mod); documented parity
- * gap like the rest of the image feature.</p>
- *
- * <p>Admins review with {@code /admin report list|view|shot|resolve}; the
- * screenshot is handed out as a map rendered by
+ * <p>Screenshot upload reuses the regular chunked image pipeline tagged with
+ * the {@code report} field (see [ImageListener]); the attachment is stored
+ * under {@code reports/<id>.png} instead of the gallery. Admins review with
+ * {@code /admin report list|view|shot|resolve}, where every report is marked
+ * with its submission path; the screenshot is handed out as a map rendered by
  * [ReportShotRenderer].</p>
  */
 class ReportManager(private val plugin: Diawars) {
@@ -49,14 +54,17 @@ class ReportManager(private val plugin: Diawars) {
         /** Server -> client signal asking the mod to capture a screenshot. */
         const val SHOT_CHANNEL = "diawars:screenshot"
 
+        /** Server -> client signal to open the report dialog in the mod. */
+        const val DIALOG_CHANNEL = "diawars:report_dialog"
+
+        /** Client -> server submit of a completed report dialog. */
+        const val SUBMIT_CHANNEL = "diawars:report_submit"
+
         /** Upload-JSON field marking offer/chunks as a report screenshot. */
         const val REPORT_FIELD = "report"
 
-        /** How long the player has to answer the reason dialog. */
-        private const val PENDING_TIMEOUT_MILLIS = 2 * 60_000L
-
-        /** How long after the reason a screenshot may still be attached. */
-        const val SHOT_WINDOW_MILLIS = 10 * 60_000L
+        /** Upper bound for the free-text reason (dialog field + store). */
+        const val MAX_REASON_LENGTH = 240
 
         /** Upload session timeout in millis (mirrors ImageManager). */
         private const val SESSION_TIMEOUT_MILLIS = 120_000L
@@ -68,17 +76,6 @@ class ReportManager(private val plugin: Diawars) {
         data class Success(val message: String) : Result
         data class Error(val message: String) : Result
     }
-
-    sealed interface Target {
-        data class Image(val owner: UUID, val file: String) : Target
-        data class Player(val playerId: UUID, val name: String) : Target
-    }
-
-    private class Pending(val target: Target) {
-        val createdAt = System.currentTimeMillis()
-    }
-
-    private val pending = mutableMapOf<UUID, Pending>()
 
     private class ShotSession(
         val reportId: String,
@@ -138,82 +135,190 @@ class ReportManager(private val plugin: Diawars) {
     }
 
     // ------------------------------------------------------------------
-    // starting reports (commands + menus)
+    // opening the dialog (main-menu button)
     // ------------------------------------------------------------------
 
-    /** Reports the image of the map the player holds in their main hand. */
-    fun startImageReport(player: Player): Result {
-        val stack: ItemStack = player.inventory.itemInMainHand
-        val ref = plugin.imageManager.findImageRef(stack)
-            ?: return Result.Error("<red>Halte die Bild-Karte, die du melden willst, in der Haupthand!</red>")
-        setPending(player.uniqueId, Target.Image(ref.first, ref.second))
-        plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.REPORT_REASON)
-        return Result.Success("<gray>Bitte gib den Grund für deinen Report an.</gray>")
-    }
-
-    /** Reports an online player by name. */
-    fun startPlayerReport(player: Player, targetName: String): Result {
-        val target = Bukkit.getPlayerExact(targetName)
-            ?: return Result.Error("<red>Kein Spieler mit dem Namen <yellow>${escape(targetName)}</yellow> ist online!</red>")
-        if (target.uniqueId == player.uniqueId) {
-            return Result.Error("<red>Du kannst dich nicht selbst melden!</red>")
+    /**
+     * Opens the client-mod report dialog. Players without the dialog channel
+     * (Bedrock, outdated mod, mod-less admins) are redirected to the command
+     * line instead.
+     */
+    fun openDialog(player: Player) {
+        if (BedrockUtil.isBedrock(player) || DIALOG_CHANNEL !in player.listeningPluginChannels) {
+            player.sendMessage(mm(commandRedirect(player)))
+            return
         }
-        setPending(player.uniqueId, Target.Player(target.uniqueId, target.name))
-        plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.REPORT_REASON)
-        return Result.Success("<gray>Bitte gib den Grund für deinen Report an.</gray>")
+        val doc = JsonObject().apply {
+            addProperty("handImage", plugin.imageManager.findImageRef(player.inventory.itemInMainHand) != null)
+            addProperty("reasonMax", MAX_REASON_LENGTH)
+        }
+        try {
+            player.sendPluginMessage(plugin, DIALOG_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(doc.toString()))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not open report dialog for ${player.name}: ${e.message}")
+            player.sendMessage(mm(commandRedirect(player)))
+            return
+        }
+        // The dialog must show world + chat, not the menu inventory.
+        player.closeInventory()
     }
 
-    private fun setPending(playerId: UUID, target: Target) {
-        synchronized(pending) { pending[playerId] = Pending(target) }
+    /** How players without the mod can still report (chat-typed command). */
+    private fun commandRedirect(player: Player): String = if (BedrockUtil.isBedrock(player)) {
+        "<red>Reports schreibst du im Chat:</red> <yellow>/report &lt;spieler|-&gt; [grund]</yellow> " +
+                "<gray>— eine Bild-Karte in der Hand wird automatisch angehängt.</gray>"
+    } else {
+        "<red>Der Report-Dialog benötigt die aktuelle Diawars-Client-Mod!</red> " +
+                "<gray>Du kannst auch im Chat melden: <yellow>/report &lt;spieler|-&gt; [grund]</yellow> " +
+                "(Bild-Karte in der Hand wird automatisch angehängt).</gray>"
     }
 
-    /** Drops the pending target and any shot session (player quit / cleanup). */
+    // ------------------------------------------------------------------
+    // dialog submit (client -> server, runs separately from commands)
+    // ------------------------------------------------------------------
+
+    /**
+     * Completes a report submitted through the client-mod dialog. Player
+     * target and hand image resolve server-side (the mod only asks); the
+     * screenshot is requested immediately when chosen. At least one aspect
+     * must be present.
+     */
+    fun handleSubmit(player: Player, playerName: String?, reason: String?, shotRequested: Boolean, handImageRequested: Boolean): Result {
+        val body = clampReason(reason)
+        var targetPlayer: UUID? = null
+        var targetSnapshot: String? = null
+        if (!playerName.isNullOrBlank()) {
+            val target = Bukkit.getPlayerExact(playerName.trim())
+                ?: return Result.Error("<red>Kein Spieler mit dem Namen <yellow>${escape(playerName.trim())}</yellow> ist online!</red>")
+            if (target.uniqueId == player.uniqueId) {
+                return Result.Error("<red>Du kannst dich nicht selbst melden!</red>")
+            }
+            targetPlayer = target.uniqueId
+            targetSnapshot = target.name
+        }
+        // Server-Authoritative: a "hand image" is only ever the map in the main hand.
+        val handRef = if (handImageRequested) plugin.imageManager.findImageRef(player.inventory.itemInMainHand) else null
+        if (targetPlayer == null && handRef == null && body == null && !shotRequested) {
+            return Result.Error("<red>Der Report ist leer — fülle mindestens einen Punkt aus!</red>")
+        }
+
+        val entry = store.addReport(
+            reporter = player.uniqueId,
+            source = ReportSource.MENU,
+            targetPlayer = targetPlayer,
+            targetName = targetSnapshot,
+            targetOwner = handRef?.first,
+            targetFile = handRef?.second,
+            reason = body,
+        )
+        notifyAdmins(entry, player.name)
+
+        val withShot = requestShot(player, entry.id, shotRequested)
+        var message = buildSummary(entry, withShot)
+        if (shotRequested && !withShot) {
+            message += " <red>(Screenshot konnte nicht angefragt werden — Upload läuft bereits.)</red>"
+        }
+        return Result.Success(message)
+    }
+
+    // ------------------------------------------------------------------
+    // command line submit (/report <player>|- [grund])
+    // ------------------------------------------------------------------
+
+    /**
+     * Completes a report typed as a command. The screenshot is always taken
+     * when the mod can do it and the hand image is appended if possible.
+     */
+    fun submitCommandReport(player: Player, targetName: String?, reason: String?): Result {
+        val body = clampReason(reason)
+        var targetPlayer: UUID? = null
+        var targetSnapshot: String? = null
+        if (!targetName.isNullOrBlank()) {
+            val target = Bukkit.getPlayerExact(targetName)
+                ?: return Result.Error(
+                    "<red>Kein Spieler mit dem Namen <yellow>${escape(targetName)}</yellow> ist online! " +
+                            "Nutze <yellow>-</yellow> als Platzhalter, um ohne Spieler zu melden.</red>",
+                )
+            if (target.uniqueId == player.uniqueId) {
+                return Result.Error("<red>Du kannst dich nicht selbst melden!</red>")
+            }
+            targetPlayer = target.uniqueId
+            targetSnapshot = target.name
+        }
+        // Always appended if possible (server-side lookup, works for every client).
+        val handRef = plugin.imageManager.findImageRef(player.inventory.itemInMainHand)
+        if (targetPlayer == null && handRef == null && body == null) {
+            return Result.Error(
+                "<red>Der Report ist leer! Nutze <yellow>/report &lt;spieler|-&gt; [grund]</yellow> " +
+                        "oder halte die Bild-Karte, die du melden willst, in der Hand.</red>",
+            )
+        }
+
+        val entry = store.addReport(
+            reporter = player.uniqueId,
+            source = ReportSource.COMMAND,
+            targetPlayer = targetPlayer,
+            targetName = targetSnapshot,
+            targetOwner = handRef?.first,
+            targetFile = handRef?.second,
+            reason = body,
+        )
+        notifyAdmins(entry, player.name)
+
+        // The screenshot is always taken when the mod can do it.
+        val withShot = requestShot(player, entry.id, shotRequested = true)
+        return Result.Success(buildSummary(entry, withShot))
+    }
+
+    private fun clampReason(reason: String?): String? =
+        reason?.trim()?.take(MAX_REASON_LENGTH)?.takeIf { it.isNotEmpty() }
+
+    /** Aspects of the report for the reporter's confirmation message. */
+    private fun buildSummary(entry: ReportEntry, withShot: Boolean): String {
+        val parts = mutableListOf<String>()
+        if (entry.targetPlayer != null) parts += "<white>${escape(entry.targetName ?: "?")}</white>"
+        if (entry.targetOwner != null) parts += "<white>${escape(entry.targetFile ?: "?")}</white>"
+        if (entry.reason != null) parts += "<white>Grund</white>"
+        if (withShot) parts += "<white>Screenshot</white>"
+        val listing = if (parts.isEmpty()) "" else " <gray>(</gray>${parts.joinToString("<gray>, </gray>")}<gray>)</gray>"
+        return "<green>✓ Report <gold>#${entry.id}</gold> gemeldet!</green>$listing"
+    }
+
+    /**
+     * Sends the screenshot capture request; returns whether one started
+     * (needs the mod channel and no upload running).
+     */
+    private fun requestShot(player: Player, reportId: String, shotRequested: Boolean): Boolean {
+        if (!shotRequested || SHOT_CHANNEL !in player.listeningPluginChannels) {
+            return false
+        }
+        if (hasActiveSession(player.uniqueId)) {
+            return false
+        }
+        val doc = JsonObject().apply {
+            addProperty("report", reportId)
+            addProperty("file", "report-$reportId")
+        }
+        try {
+            player.sendPluginMessage(plugin, SHOT_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(doc.toString()))
+        } catch (e: Exception) {
+            plugin.logger.warning("Could not request screenshot for report $reportId: ${e.message}")
+            return false
+        }
+        return true
+    }
+
+    private fun hasActiveSession(playerId: UUID): Boolean =
+        synchronized(sessionLock) {
+            purgeExpiredLocked()
+            sessions[playerId] != null
+        }
+
+    /** Drops any shot session (player quit / cleanup). */
     fun clearPlayer(playerId: UUID) {
-        synchronized(pending) { pending.remove(playerId) }
         synchronized(sessionLock) {
             sessions.remove(playerId)?.let { deleteSessionFiles(playerId, it) }
         }
-    }
-
-    // ------------------------------------------------------------------
-    // reason dialog (runs /report reason <text>)
-    // ------------------------------------------------------------------
-
-    fun submitReason(player: Player, reason: String): Result {
-        val body = reason.trim()
-        if (body.isBlank()) {
-            return Result.Error("<red>Bitte gib einen Grund für den Report an!</red>")
-        }
-        val pendingReport = synchronized(pending) { pending[player.uniqueId] }
-            ?: return Result.Error(
-                "<red>Du hast gerade keinen laufenden Report! Starte einen über das Menü, " +
-                        "<yellow>/report image</yellow> oder <yellow>/report player &lt;name&gt;</yellow>.</red>",
-            )
-        if (System.currentTimeMillis() - pendingReport.createdAt > PENDING_TIMEOUT_MILLIS) {
-            synchronized(pending) { pending.remove(player.uniqueId) }
-            return Result.Error("<red>Die Eingabe hat zu lange gedauert — bitte starte den Report erneut.</red>")
-        }
-        synchronized(pending) { pending.remove(player.uniqueId) }
-
-        val entry = when (val target = pendingReport.target) {
-            is Target.Image -> store.addReport(
-                player.uniqueId, ReportTargetType.IMAGE, null, null, target.owner, target.file, body,
-            )
-
-            is Target.Player -> store.addReport(
-                player.uniqueId, ReportTargetType.PLAYER, target.playerId, target.name, null, null, body,
-            )
-        }
-
-        notifyAdmins(entry, player.name)
-
-        val hint = if (BedrockUtil.isBedrock(player)) {
-            "<gray>Ein Screenshot-Anhang ist auf Bedrock nicht möglich.</gray>"
-        } else {
-            "<gray>Du kannst binnen 10 Minuten einen Screenshot deines aktuellen Bildschirms anhängen: " +
-                    "<yellow><click:suggest_command:'/report shot'>/report shot</click></yellow></gray>"
-        }
-        return Result.Success("<green>✓ Report <gold>#${entry.id}</gold> gemeldet!</green> $hint")
     }
 
     private fun notifyAdmins(entry: ReportEntry, reporterName: String) {
@@ -221,65 +326,38 @@ class ReportManager(private val plugin: Diawars) {
             .filter { it.hasPermission("diawars.admin") }
             .forEach {
                 it.sendMessage(mm(
-                    "<yellow>⚠ <gold>$reporterName</gold> hat ${targetLabel(entry)} gemeldet " +
-                            "(ID: <white>${entry.id}</white>). Nutze <white>/admin report list</white> für Details.</yellow>",
+                    "<yellow>⚠ <gold>$reporterName</gold> hat ${targetText(entry)} gemeldet " +
+                            "(${sourceLabel(entry.source)}, ID: <white>${entry.id}</white>). " +
+                            "Nutze <white>/admin report list</white> für Details.</yellow>",
                 ))
             }
     }
 
-    /** Short description of the reported target for admin messages. */
-    private fun targetLabel(entry: ReportEntry): String = when (entry.type) {
-        ReportTargetType.IMAGE -> "<red>Bild</red> <white>${escape(entry.targetFile ?: "?")}</white> " +
-                "<gray>(von " + displayNameOf(entry.targetOwner) + ")</gray>"
-
-        ReportTargetType.PLAYER -> "<red>Spieler</red> <white>${escape(entry.targetName ?: "?")}</white>"
+    private fun sourceLabel(source: ReportSource): String = when (source) {
+        ReportSource.MENU -> "<dark_aqua>[Menü]</dark_aqua>"
+        ReportSource.COMMAND -> "<dark_aqua>[Befehl]</dark_aqua>"
     }
+
+    /** Short description of the reported aspects for admin messages. */
+    private fun targetText(entry: ReportEntry): String {
+        val parts = mutableListOf<String>()
+        if (entry.targetPlayer != null) parts += "<red>Spieler</red> <white>${escape(entry.targetName ?: "?")}</white>"
+        if (entry.targetOwner != null) parts += "<red>Bild</red> <white>${escape(entry.targetFile ?: "?")}</white> " +
+                "<gray>(von ${displayNameOf(entry.targetOwner)})</gray>"
+        if (entry.reason != null) parts += "<red>Grund</red> <white>${escape(shortReason(entry.reason))}</white>"
+        if (parts.isEmpty() && entry.shot) parts += "<red>Screenshot</red>"
+        if (parts.isEmpty()) return "<gray>keine Angaben</gray>"
+        return parts.joinToString("<gray> + </gray>")
+    }
+
+    private fun shortReason(text: String): String = if (text.length > 40) text.take(40) + "…" else text
 
     private fun displayNameOf(id: UUID?): String =
         if (id == null) "?" else de.davidsw.diawars.util.PlayerNameCache.nameOf(id)
 
     // ------------------------------------------------------------------
-    // screenshot attachment (diawars:screenshot -> offer/accept -> chunks)
+    // screenshot attachment (request -> offer/accept -> chunks)
     // ------------------------------------------------------------------
-
-    /**
-     * Marks that the reporter wants to attach a screenshot: validates the
-     * open report window and the client payload channel, then asks the mod to
-     * capture the screen and upload it (tagged with the report id).
-     */
-    fun requestShot(player: Player): Result {
-        if (BedrockUtil.isBedrock(player)) {
-            return Result.Error("<red>Screenshot-Anhänge sind auf Bedrock nicht möglich.</red>")
-        }
-        val now = System.currentTimeMillis()
-        val entry = store.getAll()
-            .filter { it.reporter == player.uniqueId && !it.resolved && !it.shot && now - it.reportedAt * 1000 <= SHOT_WINDOW_MILLIS }
-            .maxByOrNull { it.reportedAt }
-            ?: return Result.Error(
-                "<red>Du hast keinen Report, an den noch ein Screenshot angehängt werden kann " +
-                        "(Zeitfenster: ${SHOT_WINDOW_MILLIS / 60_000} Minuten ab Report).</red>",
-            )
-        if (SHOT_CHANNEL !in player.listeningPluginChannels) {
-            return Result.Error("<red>Der Screenshot-Upload benötigt die aktuelle Diawars-Client-Mod!</red>")
-        }
-        synchronized(sessionLock) {
-            purgeExpiredLocked()
-            if (sessions[player.uniqueId] != null) {
-                return Result.Error("<red>Bereits ein Screenshot-Upload aktiv, bitte warten!</red>")
-            }
-        }
-        val doc = JsonObject().apply {
-            addProperty("report", entry.id)
-            addProperty("file", "report-${entry.id}")
-        }
-        try {
-            player.sendPluginMessage(plugin, SHOT_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(doc.toString()))
-        } catch (e: Exception) {
-            plugin.logger.warning("Could not request screenshot from ${player.name}: ${e.message}")
-            return Result.Error("<red>Der Screenshot konnte nicht angefordert werden!</red>")
-        }
-        return Result.Success("<gray>📷 Screenshot wird aufgenommen und hochgeladen …</gray>")
-    }
 
     /**
      * Handles a report-screenshot upload offer (routed here by
@@ -293,9 +371,6 @@ class ReportManager(private val plugin: Diawars) {
                 "Dieser Report ist unbekannt, abgeschlossen oder gehört dir nicht."
 
             entry.shot -> "An diesem Report hängt bereits ein Screenshot."
-
-            System.currentTimeMillis() - entry.reportedAt * 1000 > SHOT_WINDOW_MILLIS ->
-                "Zeitfenster überschritten (max. ${SHOT_WINDOW_MILLIS / 60_000} Minuten ab Report)."
 
             bytes < 1 || bytes > ImageManager.MAX_UPLOAD_BYTES || total < 1 ||
                     total > ImageManager.MAX_NEGOTIATED_PARTS || total.toLong() != ImageManager.expectedParts(bytes) ->
@@ -478,8 +553,10 @@ class ReportManager(private val plugin: Diawars) {
         }
         val lines = mutableListOf("<gold>=== Offene Reports (${reports.size}) ===</gold>")
         reports.forEach { report ->
-            lines += "<gray>- <yellow>#${report.id}</yellow> <white>${displayNameOf(report.reporter)}</white>: " +
-                    "${targetLabel(report)} ${if (report.shot) "<dark_aqua>[Screenshot]" else ""}</gray>"
+            val reporterName = displayNameOf(report.reporter)
+            val shotMark = if (report.shot) " <dark_aqua>[Screenshot]</dark_aqua>" else ""
+            lines += "<gray>- <yellow>#${report.id}</yellow> ${sourceLabel(report.source)} <white>$reporterName</white>: " +
+                    "${targetText(report)}$shotMark</gray>"
         }
         return lines
     }
@@ -489,11 +566,21 @@ class ReportManager(private val plugin: Diawars) {
         val lines = mutableListOf(
             "<gold>=== Report #$id ===</gold>",
             "<gray>Von:</gray> <white>${displayNameOf(report.reporter)}</white> <gray>am ${DATE_FORMAT.format(Date(report.reportedAt * 1000))}</gray>",
-            "<gray>Ziel:</gray> ${targetLabel(report)}",
-            "<gray>Grund:</gray> <white>${escape(report.reason)}</white>",
-            "<gray>Screenshot:</gray> " + if (report.shot) "<green>angehängt</green> <gray>(</gray><yellow>/admin report shot $id</yellow><gray>)</gray>" else "<red>nicht vorhanden</red>",
-            "<gray>Status:</gray> " + (if (report.resolved) "<green>behandelt</green>" else "<yellow>offen</yellow>"),
+            "<gray>Eingereicht über:</gray> ${sourceLabel(report.source)}",
+            "<gray>Grund:</gray> " + (report.reason?.let { "<white>${escape(it)}</white>" } ?: "<dark_gray>—</dark_gray>"),
         )
+        if (report.targetPlayer != null) {
+            lines += "<gray>Spieler:</gray> <white>${escape(report.targetName ?: "?")}</white>"
+        }
+        if (report.targetOwner != null) {
+            lines += "<gray>Bild:</gray> <white>${escape(report.targetFile ?: "?")}</white> <gray>(von ${displayNameOf(report.targetOwner)})</gray>"
+        }
+        lines += "<gray>Screenshot:</gray> " + if (report.shot) {
+            "<green>angehängt</green> <gray>(</gray><yellow>/admin report shot $id</yellow><gray>)</gray>"
+        } else {
+            "<dark_gray>—</dark_gray>"
+        }
+        lines += "<gray>Status:</gray> " + (if (report.resolved) "<green>behandelt</green>" else "<yellow>offen</yellow>")
         return Result.Success(lines.joinToString("\n"))
     }
 
