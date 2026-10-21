@@ -42,8 +42,10 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             }
 
             "get" -> {
-                val file = args.getOrNull(1)
-                if (file == null || args.size > 2) {
+                // Image names may contain spaces (split uploads use "name (1)"),
+                // so everything after "get" is the file name.
+                val file = args.drop(1).joinToString(" ").trim()
+                if (file.isEmpty()) {
                     sendUsage(sender)
                     return true
                 }
@@ -95,9 +97,10 @@ class ImageCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         if (args.size == 1) {
             return listOf("get", "upload").filter { it.startsWith(args[0].lowercase()) }
         }
-        if (args.size == 2 && args[0].equals("get", ignoreCase = true)) {
+        if (args.size >= 2 && args[0].equals("get", ignoreCase = true)) {
+            val prefix = args.drop(1).joinToString(" ")
             return plugin.imageManager.listImages(sender.uniqueId)
-                .filter { it.startsWith(args[1], ignoreCase = true) }
+                .filter { it.startsWith(prefix, ignoreCase = true) }
         }
         return emptyList()
     }

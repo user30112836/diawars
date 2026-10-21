@@ -57,8 +57,8 @@ Packages: `commands/` (executors) → `managers/` (logic) → `stores/` (YAML pe
 
 ## Image uploads
 
-- Image file names allow `A-Za-z0-9._()-` (max 32 chars, `all` reserved) on both the plugin and the mod `sanitize` rules — spaces stay forbidden because names are command tokens.
-- Split uploads: one image uploads as an N×N grid ("Aufteilen" toggle on the upload screen, grid stepper + live grid overlay on the crop screen). Each cell uploads as `base(k)` row-major (k starts at 1) through the normal offer/chunk pipeline, chained when the connection is idle (`ImageUploader` batch mode + `tickBatch`). Before anything uploads the mods send `diawars:image_check` (serverbound) with every segment name; `ImageManager.handleNameCheck` rejects the whole grid if any name is invalid/taken or the image limit has no headroom, answering `diawars:image_check_ok` `{"ok": false, "error": ...}` — the client cancels the entire upload and shows the (tag-stripped) message in the upload dialog.
+- Image file names allow `A-Za-z0-9 ._-()` (max 32 chars, `all` reserved) on both the plugin and the mod `sanitize` rules — spaces are allowed (split segments are `name (1)` style), so `/image get` joins all remaining args into the file name.
+- Split uploads: one image uploads as a rows×cols grid ("Aufteilen" toggle + "Zeilen"/"Spalten" steppers live on the crop screen, not the upload screen). Each cell uploads as `base (k)` row-major (k starts at 1) through the normal offer/chunk pipeline, chained when the connection is idle (`ImageUploader` batch mode + `tickBatch`). Rectangular cells are centred on a square canvas with transparent padding (maps are 1:1). Before anything uploads the mods send `diawars:image_check` (serverbound) with every segment name; `ImageManager.handleNameCheck` rejects the whole grid if any name is invalid/taken or the image limit has no headroom, answering `diawars:image_check_ok` `{"ok": false, "error": ...}` — the client cancels the entire upload and shows the (tag-stripped) message in the upload dialog.
 
 ## Report system
 

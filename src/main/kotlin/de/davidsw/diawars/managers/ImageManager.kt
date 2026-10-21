@@ -63,7 +63,7 @@ class ImageManager(private val plugin: Diawars) {
         /** Max segments of a split (N×N) upload: 5×5 = 25 (mirrors the mods). */
         const val MAX_SPLIT_SEGMENTS = 25
 
-        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9._()-]{1,32}$")
+        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9 ._-()]{1,32}$")
 
         /** Expected part count for B decoded bytes at [MAX_CHUNK_CHARS] chars each. */
         fun expectedParts(bytes: Long): Long {
@@ -441,7 +441,7 @@ class ImageManager(private val plugin: Diawars) {
         }
         val invalid = names.firstOrNull { !isValidFileName(it) }
         if (invalid != null) {
-            sendCheckOk(player, false, "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) (max. 32 Zeichen).</red>")
+            sendCheckOk(player, false, "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) und Leerzeichen (max. 32 Zeichen).</red>")
             return
         }
         val count = getImageCount(player.uniqueId)
@@ -495,7 +495,7 @@ class ImageManager(private val plugin: Diawars) {
         }
         if (!isValidFileName(file)) {
             sendAccept(player, file, false, null,
-                "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) (max. 32 Zeichen). \"all\" ist reserviert.</red>")
+                "<red>Ungültiger Dateiname! Erlaubt sind Buchstaben, Zahlen sowie . _ - ( ) und Leerzeichen (max. 32 Zeichen). \"all\" ist reserviert.</red>")
             return
         }
         if (bytes < 1 || bytes > MAX_UPLOAD_BYTES || total < 1 || total > MAX_NEGOTIATED_PARTS ||
