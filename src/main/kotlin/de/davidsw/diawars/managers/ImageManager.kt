@@ -63,7 +63,7 @@ class ImageManager(private val plugin: Diawars) {
         /** Max segments of a split (N×N) upload: 5×5 = 25 (mirrors the mods). */
         const val MAX_SPLIT_SEGMENTS = 25
 
-        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9 ._-()]{1,32}$")
+        private val FILE_NAME_REGEX = Regex("^[A-Za-z0-9 ._()-]{1,32}$")
 
         /** Expected part count for B decoded bytes at [MAX_CHUNK_CHARS] chars each. */
         fun expectedParts(bytes: Long): Long {
