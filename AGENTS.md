@@ -36,6 +36,8 @@ Packages: `commands/` (executors) → `managers/` (logic) → `stores/` (YAML pe
 
 ## Gotchas
 
+- Char-class regexes: keep `-` at the END of the class (`[A-Za-z0-9 ._()-]`) — a `-` in the middle (e.g. `_-(`) parses as a character range and throws `PatternSyntaxException` at class init (crashed plugin + both mods once).
+
 - Persistence: extend `YamlStore`; register instance in `Store.all` (else never flushed). Use `markDirty()` on hot paths, `saveImmediately()` sparingly, `flushNow()` only for custody transfers. Flush task interval comes from `storage.flush-interval-seconds`.
 - Player-originated text must go through `MiniMessageHelper.escape()` before `mm()`/`pmm()` (past XSS fix).
 - Menus re-render every 40 ticks — keep `populate*` cheap (no scans/lookups per viewer).
