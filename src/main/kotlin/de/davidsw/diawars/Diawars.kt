@@ -22,6 +22,7 @@ import de.davidsw.diawars.listeners.DiamondBundleListener
 import de.davidsw.diawars.listeners.DiamondLimitListener
 import de.davidsw.diawars.listeners.DiamondListener
 import de.davidsw.diawars.listeners.EventListener
+import de.davidsw.diawars.listeners.HandshakeListener
 import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.listeners.InventoryInspectListener
 import de.davidsw.diawars.listeners.LobbyListener
@@ -284,6 +285,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(recipeManager, this)
 
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
+        server.messenger.registerIncomingPluginChannel(this, HandshakeListener.CHANNEL, HandshakeListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.REQ_CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.OFFER_CHANNEL, ImageListener(this))
@@ -293,6 +295,7 @@ class Diawars : JavaPlugin() {
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.CHECK_OK_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, HandshakeListener.ACK_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, TextInputManager.CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ReportManager.SHOT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ReportManager.DIALOG_CHANNEL)

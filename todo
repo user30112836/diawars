@@ -44,7 +44,7 @@ instantly, of them having to rejoin the event for the changes to take effect.
 
 Event tools:
 The builders should be able to build with special operator blocks. Since they aren't admin on the server they normally don't have acces to these 
-items. Therefore in the menu there should be a new submenu where there is a list of these items and when the player clicks one of them he should
+items. Therefore in the menu there should be a new submenu where there is a list of these items and when the player clicks one of them he should 
 receive them. If his inventory is full he should receive an error message advising him to clear an inventory slot. The player should also be able to 
 receive the items via "/event item <item>". This functionallity should obviously only be accessible inside of event world during the building phase.
 The items players should be able to receive through this are: Barrier, Structure Void, Debug Stick, Light (every level), Painting (Earth, Fire,
@@ -54,3 +54,4 @@ Player World:
 When players are in event worlds the diamond amount in the tab bar should be replaced with the event name. This name should also be colored in
 regards to the current state of the event. BUILDING -> yellow, ACTIVE -> green, REVIEW -> gray. If the name is longer than 15 symbols, only the first
 12 should be shown followed by "...".
+
