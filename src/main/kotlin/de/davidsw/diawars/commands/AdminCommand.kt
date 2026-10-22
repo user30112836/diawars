@@ -685,7 +685,9 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
             return
         }
-        val result = plugin.imageManager.giveImage(sender, target.uniqueId, args[1])
+        // File names may contain spaces: join everything after the player name.
+        val file = args.drop(1).joinToString(" ").trim()
+        val result = plugin.imageManager.giveImage(sender, target.uniqueId, file)
         when (result) {
             is de.davidsw.diawars.managers.ImageManager.Result.Success -> sender.sendMessage(mm(result.message))
             is de.davidsw.diawars.managers.ImageManager.Result.Error -> sender.sendMessage(mm(result.message))
@@ -702,17 +704,19 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             sender.sendMessage(mm("<red>Dieser Spieler ist unbekannt!</red>"))
             return
         }
-        if (args[1].equals("all", ignoreCase = true)) {
+        // File names may contain spaces: join everything after the player name.
+        val file = args.drop(1).joinToString(" ").trim()
+        if (file.equals("all", ignoreCase = true)) {
             val removed = plugin.imageManager.deleteAllImages(target.uniqueId)
             sender.sendMessage(mm("<green>✓ <gold>$removed</gold> Bild(er) von <gold>${escape(target.name ?: "?")}</gold> gelöscht!</green>"))
             return
         }
-        if (!plugin.imageManager.hasImage(target.uniqueId, args[1])) {
+        if (!plugin.imageManager.hasImage(target.uniqueId, file)) {
             sender.sendMessage(mm("<red>Dieses Bild existiert nicht!</red>"))
             return
         }
-        plugin.imageManager.deleteImage(target.uniqueId, args[1])
-        sender.sendMessage(mm("<green>✓ Bild <gold>${escape(args[1])}</gold> von <gold>${escape(target.name ?: "?")}</gold> gelöscht!</green>"))
+        plugin.imageManager.deleteImage(target.uniqueId, file)
+        sender.sendMessage(mm("<green>✓ Bild <gold>${escape(file)}</gold> von <gold>${escape(target.name ?: "?")}</gold> gelöscht!</green>"))
     }
 
     private fun sendImageHelp(sender: CommandSender) {
