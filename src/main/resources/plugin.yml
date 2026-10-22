@@ -60,9 +60,13 @@ commands:
     description: Schaltet Nachtsicht an oder aus
     usage: /<command> [on|off]
     permission: diawars.use
+  mods:
+    description: Zeigt die erlaubten Mods im Client-Mod-Dialog (mit Anfragen)
+    usage: /<command>
+    permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Report-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder, Config)
-    usage: /<command> <reload|inv|log|bug|report|event|pvp|lobby|msg|image|config>
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Report-, Mod-Anfrage-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder, Config)
+    usage: /<command> <reload|inv|log|bug|report|mods|event|pvp|lobby|msg|image|config>
     permission: diawars.admin
 
 permissions:

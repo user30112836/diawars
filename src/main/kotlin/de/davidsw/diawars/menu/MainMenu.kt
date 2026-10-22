@@ -20,6 +20,7 @@ class MainMenu(private val plugin: Diawars) {
         private const val SLOT_TOGGLES    = 33
         private const val SLOT_REPORT     = 38
         private const val SLOT_BUG_REPORT = 40
+        private const val SLOT_MODS       = 42
     }
 
     fun populateMainMenu(inv: Inventory, player: Player) {
@@ -179,7 +180,37 @@ class MainMenu(private val plugin: Diawars) {
             ),
             glow = false,
         ))
+
+        // Mod whitelist (disabled on Bedrock: no client mod for the dialog
+        // and its requests)
+        if (BedrockUtil.isBedrock(player)) {
+            inv.setItem(SLOT_MODS, item(
+                material = Material.BARRIER,
+                name = mm("<gray><bold>Erlaubte Mods</bold></gray>"),
+                lore = listOf(
+                    mm("<gray>Auf Bedrock nicht verfügbar</gray>"),
+                ),
+                glow = false,
+            ))
+        } else {
+            inv.setItem(SLOT_MODS, item(
+                material = Material.SPYGLASS,
+                name = mm("<aqua><bold>Erlaubte Mods</bold></aqua>"),
+                lore = listOf(
+                    mm("<gray>${pluralMods(plugin.modWhitelistManager.getAllowedMods().size)} auf diesem Server erlaubt</gray>"),
+                    mm(""),
+                    mm("<gray>Neue Mods kannst du im Dialog</gray>"),
+                    mm("<gray>als Anfrage einreichen</gray>"),
+                    mm(""),
+                    mm("<yellow>Klicken zum Öffnen</yellow>"),
+                ),
+                glow = false,
+            ))
+        }
     }
+
+    /** "1 Mod" / "27 Mods" for the whitelist button lore. */
+    private fun pluralMods(count: Int): String = "$count Mod${if (count == 1) "" else "s"}"
 
     fun handleMainClick(player: Player, slot: Int) {
         when (slot) {
@@ -231,6 +262,15 @@ class MainMenu(private val plugin: Diawars) {
             SLOT_REPORT -> plugin.reportManager.openDialog(player)
 
             SLOT_BUG_REPORT -> plugin.textInputManager.openPrompt(player, TextInputManager.Prompt.BUG_REPORT)
+
+            SLOT_MODS -> {
+                // Disabled button (Bedrock): the lore explains why, just close.
+                if (BedrockUtil.isBedrock(player)) {
+                    player.closeInventory()
+                } else {
+                    plugin.modWhitelistManager.openDialog(player)
+                }
+            }
         }
     }
 }

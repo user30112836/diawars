@@ -6,75 +6,69 @@
 # ggf. hier zusätzlich zur Fabric-Schreibweise eintragen.
 #
 # Die Liste ist zweigeteilt (beide Abschnitte bitte alphabetisch sortiert halten):
-# - allowed_mods: Mods, die Spieler selbst installieren. Daraus erzeugt das
-#   Plugin automatisch die „Erlaubte Mods"-Seiten der Serverregeln.
+# - allowed_mods: Mods, die Spieler selbst installieren. Jede Zeile hat zwei
+#   Felder: "check" steht auf der Mod-Id, auf die der Client-Info-Check prüft,
+#   "display" ist der Name, den Spieler in der Mod-Liste sehen (Menü-/mods-
+#   Dialog der Client-Mod). Einzeilige Ids sind weiterhin erlaubt — dann wird
+#   der Anzeigename automatisch aus der Id abgeleitet.
 # - libraries: Abhängigkeiten, die von den Mods oben automatisch mitgebracht
 #   werden. Spieler installieren diese nicht selbst; sie sind nur gelistet,
-#   damit der Check sie nicht blockiert.
+#   damit der Check sie nicht blockiert (Prüfung nur auf der Id).
 
 allowed_mods:
-  - "appleskin"
-  - "betterf3"
-  - "betterstats"
-  - "bobby"
-  - "cloth-config"
-  - "clumps"
-  - "distanthorizons"
-  - "dynamic_fps"
-  - "entityculling"
-  - "fastipping"
-  - "ferritecore"
-  - "gammautils"
-  - "iris"
-  - "jade"
-  - "lithium"
-  - "modmenu"
-  - "oculus"
-  - "shulkerboxtooltip"
-  - "sodium"
-  - "tcdcommons"
-  - "voicechat"
-  - "worldeditcui"
-  - "xaerolib"
-  - "xaerominimap"
-  - "xaeroworldmap"
-  - "yet_another_config_lib_v3"
-  - "zoomify"
+  - check: "appleskin"
+    display: "AppleSkin"
+  - check: "betterf3"
+    display: "BetterF3"
+  - check: "betterstats"
+    display: "Better Statistics Screen"
+  - check: "bobby"
+    display: "Bobby"
+  - check: "cloth-config"
+    display: "Cloth Config"
+  - check: "clumps"
+    display: "Clumps"
+  - check: "distanthorizons"
+    display: "Distant Horizons"
+  - check: "dynamic_fps"
+    display: "Dynamic FPS"
+  - check: "entityculling"
+    display: "EntityCulling"
+  - check: "fastipping"
+    display: "Fast IPPing"
+  - check: "ferritecore"
+    display: "FerriteCore"
+  - check: "gammautils"
+    display: "Gamma Utils"
+  - check: "iris"
+    display: "Iris"
+  - check: "jade"
+    display: "Jade"
+  - check: "lithium"
+    display: "Lithium"
+  - check: "modmenu"
+    display: "Mod Menu"
+  - check: "oculus"
+    display: "Oculus"
+  - check: "shulkerboxtooltip"
+    display: "Shulker Box Tooltip"
+  - check: "sodium"
+    display: "Sodium"
+  - check: "tcdcommons"
+    display: "TCD Commons"
+  - check: "voicechat"
+    display: "Simple Voice Chat"
+  - check: "worldeditcui"
+    display: "WorldEdit CUI"
+  - check: "xaerolib"
+    display: "XaeroLib"
+  - check: "xaerominimap"
+    display: "Xaero's Minimap"
+  - check: "xaeroworldmap"
+    display: "Xaero's World Map"
+  - check: "yet_another_config_lib_v3"
+    display: "Yet Another Config Lib"
+  - check: "zoomify"
+    display: "Zoomify"
 
 libraries:
-  - "cloth-basic-math" # cloth-config
-  - "com_twelvemonkeys_common_common-image" # yet_another_config_lib
-  - "com_twelvemonkeys_common_common-io" # yet_another_config_lib
-  - "com_twelvemonkeys_common_common-lang" # yet_another_config_lib
-  - "com_twelvemonkeys_imageio_imageio-core" # yet_another_config_lib
-  - "com_twelvemonkeys_imageio_imageio-metadata" # yet_another_config_lib
-  - "com_twelvemonkeys_imageio_imageio-webp" # yet_another_config_lib
-  - "com_typesafe_config" # bobby
-  - "dynamic_fps_common" # dynamic_fps
-  - "io_github_douira_glsl-transformer" # iris
-  - "io_leangen_geantyref_geantyref" # bobby
-  - "net_lostluma_battery" # dynamic_fps
-  - "org_anarres_jcpp" # iris
-  - "org_antlr_antlr4-runtime" # iris
-  - "org_jetbrains_kotlin_kotlin-reflect"
-  - "org_jetbrains_kotlin_kotlin-stdlib"
-  - "org_jetbrains_kotlin_kotlin-stdlib-jdk7"
-  - "org_jetbrains_kotlin_kotlin-stdlib-jdk8"
-  - "org_jetbrains_kotlinx_atomicfu-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-coroutines-core-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-coroutines-jdk8"
-  - "org_jetbrains_kotlinx_kotlinx-datetime-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-io-bytestring-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-io-core-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-serialization-cbor-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-serialization-core-jvm"
-  - "org_jetbrains_kotlinx_kotlinx-serialization-json-jvm"
-  - "org_quiltmc_parsers_gson" # yet_another_config_lib
-  - "org_quiltmc_parsers_json" # yet_another_config_lib
-  - "org_spongepowered_configurate-core" # bobby
-  - "org_spongepowered_configurate-hocon" # bobby
-  - "placeholder-api" # appleskin
-  - "transition" # entityculling
-  - "trender" # entityculling
-  - "voicechat_api" # voicechat
-  - "worldeditcui_protocol" # worldeditcui

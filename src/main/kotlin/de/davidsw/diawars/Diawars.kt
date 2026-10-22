@@ -7,6 +7,7 @@ import de.davidsw.diawars.commands.ImageCommand
 import de.davidsw.diawars.commands.InvCommand
 import de.davidsw.diawars.commands.LobbyCommand
 import de.davidsw.diawars.commands.MenuCommand
+import de.davidsw.diawars.commands.ModsCommand
 import de.davidsw.diawars.commands.NightVisionCommand
 import de.davidsw.diawars.commands.PvPCommand
 import de.davidsw.diawars.commands.ReportCommand
@@ -36,6 +37,7 @@ import de.davidsw.diawars.listeners.PvPListener
 import de.davidsw.diawars.listeners.ReportListener
 import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.VaultListener
+import de.davidsw.diawars.listeners.WhitelistListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
 import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
@@ -83,6 +85,7 @@ import de.davidsw.diawars.stores.ImageBanStore
 import de.davidsw.diawars.stores.ImageLimitStore
 import de.davidsw.diawars.stores.ImageMapStore
 import de.davidsw.diawars.stores.MessageStore
+import de.davidsw.diawars.stores.ModRequestStore
 import de.davidsw.diawars.stores.NightVisionStore
 import de.davidsw.diawars.stores.OnboardingStore
 import de.davidsw.diawars.stores.PlayerSpawnStore
@@ -134,6 +137,7 @@ class Store(
     val imageBanStore: ImageBanStore,
     val nightVisionStore: NightVisionStore,
     val reportStore: ReportStore,
+    val modRequestStore: ModRequestStore,
 ) {
     private val all: List<YamlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
@@ -141,6 +145,7 @@ class Store(
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
         imageLimitStore, imageMapStore, imageBanStore, nightVisionStore, reportStore,
+        modRequestStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -205,6 +210,7 @@ class Diawars : JavaPlugin() {
             imageBanStore = ImageBanStore(this),
             nightVisionStore = NightVisionStore(this),
             reportStore = ReportStore(this),
+            modRequestStore = ModRequestStore(this),
         )
 
         teamManager = TeamManager(this)
@@ -281,6 +287,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(ClientInfoListener(this), this)
         server.pluginManager.registerEvents(ImageListener(this), this)
         server.pluginManager.registerEvents(ReportListener(this), this)
+        server.pluginManager.registerEvents(WhitelistListener(this), this)
         server.pluginManager.registerEvents(NightVisionListener(this), this)
         server.pluginManager.registerEvents(recipeManager, this)
 
@@ -299,6 +306,12 @@ class Diawars : JavaPlugin() {
         server.messenger.registerOutgoingPluginChannel(this, TextInputManager.CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ReportManager.SHOT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ReportManager.DIALOG_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, ModWhitelistManager.DIALOG_CHANNEL)
+        server.messenger.registerIncomingPluginChannel(
+            this,
+            ModWhitelistManager.REQUEST_CHANNEL,
+            WhitelistListener(this),
+        )
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
@@ -314,6 +327,7 @@ class Diawars : JavaPlugin() {
         getCommand("image")?.setExecutor(ImageCommand(this))
         getCommand("report")?.setExecutor(ReportCommand(this))
         getCommand("nightvision")?.setExecutor(NightVisionCommand(this))
+        getCommand("mods")?.setExecutor(ModsCommand(this))
 
         if (config.getBoolean("border.enabled", true)) {
             borderManager.startBorderDisplay()
