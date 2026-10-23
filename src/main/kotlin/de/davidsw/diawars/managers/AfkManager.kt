@@ -11,12 +11,16 @@ import java.util.concurrent.ConcurrentHashMap
 class AfkManager(private val plugin: Diawars) {
     private val lastActivity = ConcurrentHashMap<UUID, Int>()
     private val afkPlayers = mutableSetOf<UUID>()
+    private val lastRecorded = ConcurrentHashMap<UUID, Int>()
     private var taskId = -1
 
     private val afkThresholdTicks get() = plugin.config.getInt("afk.threshold-seconds", 300) * 20
 
     fun recordActivity(playerId: UUID) {
-        lastActivity[playerId] = getCurrentTick()
+        val now = getCurrentTick()
+        if (lastRecorded[playerId] == now) return
+        lastRecorded[playerId] = now
+        lastActivity[playerId] = now
         if (afkPlayers.remove(playerId)) {
             getPlayer(playerId)?.let {
                 updateListName(it, false)
@@ -34,6 +38,7 @@ class AfkManager(private val plugin: Diawars) {
     fun cleanupPlayer(playerId: UUID) {
         lastActivity.remove(playerId)
         afkPlayers.remove(playerId)
+        lastRecorded.remove(playerId)
     }
 
     fun start() {

@@ -25,6 +25,7 @@ data class GameEvent(
 
 class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
     private val cache = mutableMapOf<String, GameEvent>()
+    private val byWorld = mutableMapOf<String, String>() // worldName -> eventId
     private val usedIds = mutableSetOf<String>()
 
     init {
@@ -39,7 +40,7 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
 
     fun getByState(state: EventState): List<GameEvent> = cache.values.filter { it.state == state }
 
-    fun getByWorld(worldName: String): GameEvent? = cache.values.firstOrNull { it.worldName == worldName }
+    fun getByWorld(worldName: String): GameEvent? = byWorld[worldName]?.let { cache[it] }
 
     fun generateId(name: String): String {
         val id = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_').ifBlank { throw IllegalArgumentException("Das Event braucht einen Namen!") }
@@ -50,11 +51,13 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
     fun addEvent(event: GameEvent) {
         cache[event.id] = event
         usedIds.add(event.id)
+        byWorld[event.worldName] = event.id
         saveImmediately()
     }
 
     fun removeEvent(id: String) {
-        cache.remove(id)
+        val ev = cache.remove(id)
+        if (ev != null) byWorld.remove(ev.worldName)
         saveImmediately()
     }
 
@@ -78,16 +81,18 @@ class EventStore(plugin: Diawars) : YamlStore(plugin, "events.yml") {
             try {
                 val section = yaml.getConfigurationSection(id) ?: continue
                 val creatorString = section.getString("creator") ?: continue
+                val worldName = section.getString("world") ?: "event_$id"
                 cache[id] = GameEvent(
                     id = id,
                     name = section.getString("name") ?: id,
                     creator = UUID.fromString(creatorString),
                     state = EventState.valueOf(section.getString("state") ?: "BUILDING"),
-                    worldName = section.getString("world") ?: "event_$id",
+                    worldName = worldName,
                     startTime = section.getLong("start-time", 0L),
                     endTime = section.getLong("end-time", 0L),
                 )
                 usedIds.add(id)
+                byWorld[worldName] = id
             } catch (e: Exception) {
                 plugin.logger.warning("Could not load event $id: ${e.message}")
             }

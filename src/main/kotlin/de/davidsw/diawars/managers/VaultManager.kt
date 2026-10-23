@@ -68,10 +68,18 @@ class VaultManager(private val plugin: Diawars) {
         }
 
         regions = list
+        sortedVaultsCache = null
         plugin.logger.info("Loaded ${regions.size} vault region(s).")
     }
 
+    private var sortedVaultsCache: List<VaultRegion>? = null
     fun getAllVaults(): List<VaultRegion> = regions
+    fun getSortedVaults(): List<VaultRegion> {
+        sortedVaultsCache?.let { return it }
+        val sorted = regions.sortedWith(compareBy({ it.team.configKey }, { it.id }))
+        sortedVaultsCache = sorted
+        return sorted
+    }
     fun getVaultAt(location: Location): VaultRegion? = regions.firstOrNull { it.contains(location) }
     fun getVaultsForTeam(team: Team): List<VaultRegion> = regions.filter { it.team == team }
 

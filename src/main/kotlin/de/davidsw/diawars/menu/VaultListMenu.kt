@@ -42,8 +42,7 @@ class VaultListMenu(private val plugin: Diawars) {
     fun populateVaultListMenu(inv: Inventory, player: Player) {
         ALL_SLOTS.forEach { inv.setItem(it, null) }
 
-        val vaults = plugin.vaultManager.getAllVaults()
-            .sortedWith(compareBy({ it.team.configKey }, { it.id }))
+        val vaults = plugin.vaultManager.getSortedVaults()
         val totalPages = if (vaults.isEmpty()) 1 else ((vaults.size - 1) / PAGE_SIZE) + 1
         val page = (currentPage[player.uniqueId] ?: 0).coerceIn(0, totalPages - 1)
         currentPage[player.uniqueId] = page
@@ -116,7 +115,7 @@ class VaultListMenu(private val plugin: Diawars) {
             }
 
             SLOT_NEXT_PAGE -> {
-                val vaults = plugin.vaultManager.getAllVaults()
+                val vaults = plugin.vaultManager.getSortedVaults()
                 val totalPages = if (vaults.isEmpty()) 1 else ((vaults.size - 1) / PAGE_SIZE) + 1
                 val page = currentPage[player.uniqueId] ?: 0
                 if (page < totalPages - 1) {

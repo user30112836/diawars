@@ -2,6 +2,7 @@ package de.davidsw.diawars.util
 
 import org.bukkit.Bukkit
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 object PlayerNameCache {
     private const val TTL_MILLIS = 60_000L
@@ -9,9 +10,8 @@ object PlayerNameCache {
 
     private data class Entry(val name: String, val storedAt: Long)
 
-    private val cache = mutableMapOf<UUID, Entry>()
+    private val cache = ConcurrentHashMap<UUID, Entry>()
 
-    @Synchronized
     fun nameOf(playerId: UUID): String {
         val now = System.currentTimeMillis()
         cache[playerId]?.let { if (now - it.storedAt < TTL_MILLIS) return it.name }

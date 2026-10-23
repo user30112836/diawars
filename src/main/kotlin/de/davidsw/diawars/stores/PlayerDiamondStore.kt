@@ -11,6 +11,8 @@ import kotlin.collections.iterator
 class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.yml") {
     private val cache = mutableMapOf<UUID, Int>()
     private val names = mutableMapOf<UUID, String>()
+    private val teamTotals = mutableMapOf<Team, Int>()
+    private var teamTotalsInitialized = false
 
     init {
         load()
@@ -51,7 +53,16 @@ class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.ym
     }
 
     fun getTotalTeamCount(team: Team): Int {
-        return plugin.teamManager.getTeamMembers(team).sumOf { getStoredCount(it) }
+        if (!teamTotalsInitialized) rebuildTeamTotals()
+        return teamTotals.getOrDefault(team, 0)
+    }
+
+    private fun rebuildTeamTotals() {
+        teamTotals.clear()
+        teamTotalsInitialized = true
+        for (team in Team.entries) {
+            teamTotals[team] = plugin.teamManager.getTeamMembers(team).sumOf { getStoredCount(it) }
+        }
     }
 
     override fun readFrom(yaml: YamlConfiguration) {
@@ -66,12 +77,19 @@ class PlayerDiamondStore(plugin: Diawars) : YamlStore(plugin, "diamond_scores.ym
             }
         }
 
+        rebuildTeamTotals()
         plugin.logger.info("Loaded diamond scores for ${cache.size} player(s).")
     }
 
     private fun updateCache(playerId: UUID, playerName: String, count: Int) {
+        val old = cache.getOrDefault(playerId, 0)
         cache[playerId] = count
         names[playerId] = playerName
+        val team = plugin.teamManager.getPlayerTeam(playerId)
+        if (team != null && old != count) {
+            if (!teamTotalsInitialized) rebuildTeamTotals()
+            teamTotals[team] = (teamTotals.getOrDefault(team, 0) + (count - old))
+        }
     }
 
     override fun writeTo(yaml: YamlConfiguration) {

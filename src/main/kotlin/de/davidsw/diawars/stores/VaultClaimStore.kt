@@ -12,13 +12,14 @@ data class VaultClaim(
 
 class VaultClaimStore(plugin: Diawars) : YamlStore(plugin, "vault_claims.yml") {
     private val claimsByVault = mutableMapOf<String, VaultClaim>()
+    private val claimByOwner = mutableMapOf<UUID, VaultClaim>()
 
     init {
         load()
     }
 
     fun getClaim(vaultId: String): VaultClaim? = claimsByVault[vaultId]
-    fun getClaimByOwner(playerId: UUID): VaultClaim? = claimsByVault.values.firstOrNull { it.owner == playerId }
+    fun getClaimByOwner(playerId: UUID): VaultClaim? = claimByOwner[playerId]
     fun getClaimsInvitedTo(playerId: UUID):  List<VaultClaim> = claimsByVault.values.filter { playerId in it.invited }
 
     fun isVaultClaimed(vaultId: String): Boolean = claimsByVault.containsKey(vaultId)
@@ -26,12 +27,15 @@ class VaultClaimStore(plugin: Diawars) : YamlStore(plugin, "vault_claims.yml") {
     fun hasClaimedAnyVault(playerId: UUID): Boolean = getClaimByOwner(playerId) != null
 
     fun claim(vaultId: String, playerId: UUID) {
-        claimsByVault[vaultId] = VaultClaim(vaultId, playerId)
+        val c = VaultClaim(vaultId, playerId)
+        claimsByVault[vaultId] = c
+        claimByOwner[playerId] = c
         saveImmediately()
     }
 
     fun unclaim(vaultId: String) {
-        claimsByVault.remove(vaultId)
+        val c = claimsByVault.remove(vaultId)
+        if (c != null) claimByOwner.remove(c.owner)
         saveImmediately()
     }
 
@@ -59,7 +63,9 @@ class VaultClaimStore(plugin: Diawars) : YamlStore(plugin, "vault_claims.yml") {
                 val invited = section.getStringList("invited")
                     .mapNotNull { runCatching { UUID.fromString(it) }.getOrNull() }
                     .toMutableSet()
-                claimsByVault[vaultId] = VaultClaim(vaultId, owner, invited)
+                val c = VaultClaim(vaultId, owner, invited)
+                claimsByVault[vaultId] = c
+                claimByOwner[owner] = c
             } catch (e: Exception) {
                 plugin.logger.warning("Could not load vault claim for $vaultId: ${e.message}")
             }

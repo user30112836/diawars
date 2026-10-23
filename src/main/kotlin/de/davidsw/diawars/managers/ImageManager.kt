@@ -1036,7 +1036,7 @@ class ImageManager(private val plugin: Diawars) {
     private fun startDownloadPump() {
         synchronized(downloadQueues) {
             if (downloadPump != null) return
-            downloadPump = plugin.server.scheduler.runTaskTimer(plugin, Runnable { pumpDownloads() }, 1L, 1L)
+            downloadPump = plugin.server.scheduler.runTaskTimer(plugin, Runnable { pumpDownloads() }, 1L, 2L)
         }
     }
 
