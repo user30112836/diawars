@@ -8,7 +8,7 @@ import java.time.format.DateTimeParseException
 
 object DateTimeParser {
     private val FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy-HH:mm")
-    const val FORMAT_HINT = "TT.MM.JJJJ-HH.mm"
+    const val FORMAT_HINT = "TT.MM.JJJJ-HH:mm"
 
     fun parseToEpochSeconds(input: String): Long? {
         return try {
