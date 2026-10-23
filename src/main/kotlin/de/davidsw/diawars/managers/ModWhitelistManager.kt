@@ -33,13 +33,14 @@ data class AllowedMod(val checkId: String, val displayName: String)
  * </ul></p>
  *
  * <p>Players open the list in the client-mod dialog ([DIALOG_CHANNEL], JSON:
- * display names + request cap) via the main-menu button or
- * <code>/mods</code>; a request for a new mod ([REQUEST_CHANNEL], JSON: name)
- * only needs its display name, is de-duplicated against the whitelist and
- * open requests, then lands in the [de.davidsw.diawars.stores.ModRequestStore]
- * for admin review (<code>/admin mods list|resolve</code>). Bedrock players
- * have no client mod for this: no menu button, the command answers with an
- * error; players with an outdated mod get the list in chat instead.</p>
+ * display names, the player's installed ones + request cap) via the main-menu
+ * button or <code>/mods</code>; a request for a new mod ([REQUEST_CHANNEL],
+ * JSON: name) only needs its display name, is de-duplicated against the
+ * whitelist and open requests, then lands in the
+ * [de.davidsw.diawars.stores.ModRequestStore] for admin review
+ * (<code>/admin mods list|resolve</code>). Bedrock players have no client
+ * mod for this: no menu button, the command answers with an error; players
+ * with an outdated mod get the list in chat instead.</p>
  */
 class ModWhitelistManager(private val plugin: Diawars) {
     companion object {
@@ -142,8 +143,19 @@ class ModWhitelistManager(private val plugin: Diawars) {
             sendChatList(player)
             return
         }
+        // Mods the player actually has loaded (reported via client_info), so
+        // the dialog can highlight them in the list. Matched by check id.
+        val activeModIds = plugin.store.clientInfoStore.get(player.uniqueId)
+            ?.activeMods
+            ?.map { it.id.lowercase() }
+            ?.toSet()
+            .orEmpty()
         val doc = JsonObject().apply {
             add("mods", JsonArray().apply { allowedMods.forEach { add(it.displayName) } })
+            add("installed", JsonArray().apply {
+                allowedMods.filter { it.checkId.lowercase() in activeModIds }
+                    .forEach { add(it.displayName) }
+            })
             addProperty("requestMax", MAX_REQUEST_LENGTH)
         }
         try {

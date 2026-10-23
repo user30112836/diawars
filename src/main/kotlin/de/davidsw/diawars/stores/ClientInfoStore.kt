@@ -77,6 +77,11 @@ class ClientInfoStore(
         return playerId in reportedPlayers
     }
 
+    /** Last reported client info for [playerId], or null if it never reported. */
+    fun get(playerId: UUID): ClientInfo? {
+        return cache[playerId]
+    }
+
     fun addReported(playerId: UUID) {
         reportedPlayers.add(playerId)
     }
