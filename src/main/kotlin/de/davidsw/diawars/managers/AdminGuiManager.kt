@@ -249,20 +249,34 @@ class AdminGuiManager(private val plugin: Diawars) {
     }
 
     private fun buildEvents(stateFilter: String): JsonObject {
-        val state = when (stateFilter.lowercase()) {
-            "pending" -> EventState.SUBMITTED
-            "accepted" -> EventState.ACCEPTED
-            else -> EventState.ACTIVE
-        }
+        val filter = stateFilter.lowercase()
         val items = JsonArray()
-        plugin.eventManager.listByState(state).forEach { event ->
-            items.add(JsonObject().apply {
-                addProperty("id", event.id)
-                addProperty("name", event.name)
-                addProperty("creator", PlayerNameCache.nameOf(event.creator))
-                addProperty("start", if (event.startTime > 0) DateTimeParser.parseToString(event.startTime) else "")
-                addProperty("end", if (event.endTime > 0) DateTimeParser.parseToString(event.endTime) else "")
-            })
+        if (filter == "past") {
+            // Past events: ENDED (plus legacy REJECTED entries), newest first.
+            plugin.eventManager.listPastEvents().forEach { event ->
+                items.add(JsonObject().apply {
+                    addProperty("id", event.id)
+                    addProperty("name", event.name)
+                    addProperty("creator", PlayerNameCache.nameOf(event.creator))
+                    addProperty("start", if (event.startTime > 0) DateTimeParser.parseToString(event.startTime) else "")
+                    addProperty("end", if (event.endTime > 0) DateTimeParser.parseToString(event.endTime) else "")
+                })
+            }
+        } else {
+            val state = when (filter) {
+                "pending" -> EventState.SUBMITTED
+                "accepted" -> EventState.ACCEPTED
+                else -> EventState.ACTIVE
+            }
+            plugin.eventManager.listByState(state).forEach { event ->
+                items.add(JsonObject().apply {
+                    addProperty("id", event.id)
+                    addProperty("name", event.name)
+                    addProperty("creator", PlayerNameCache.nameOf(event.creator))
+                    addProperty("start", if (event.startTime > 0) DateTimeParser.parseToString(event.startTime) else "")
+                    addProperty("end", if (event.endTime > 0) DateTimeParser.parseToString(event.endTime) else "")
+                })
+            }
         }
         return JsonObject().apply { add("items", items) }
     }

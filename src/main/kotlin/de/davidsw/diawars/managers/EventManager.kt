@@ -277,6 +277,67 @@ class EventManager(private val plugin: Diawars) {
         return Result.Success("<yellow>Event <gold>${escape(event.name)}</gold> wurde abgelehnt und zurück in die Bearbeitung versetzt.</yellow>")
     }
 
+    /**
+     * Admin state change for past events: puts an ENDED (or live) event back
+     * into BUILDING — the creator resumes with `/event resume`; live ones get
+     * the same teardown as a normal end (sessions kicked, world saved and
+     * unloaded, folder kept) — or into ACCEPTED with a fresh timeframe.
+     * Re-accepting grants no new accept reward and must end in the future,
+     * otherwise the checker would end the event again immediately.
+     */
+    fun adminSetState(id: String, building: Boolean, startEpoch: Long, endEpoch: Long): Result {
+        val event = store.getEvent(id) ?: return Result.Error("<red>Unbekanntes Event!</red>")
+
+        if (building) {
+            endEvent(id) // no-op for ENDED events; kicks sessions and unloads the world otherwise
+            event.state = EventState.BUILDING
+            event.startTime = 0L
+            event.endTime = 0L
+            store.markDirty()
+
+            plugin.messageManager.sendOrQueue(
+                event.creator,
+                "<green>Dein Event <gold>${escape(event.name)}</gold> wurde von einem Admin zurück in die Bearbeitung versetzt! " +
+                        "Nutze <yellow>/event resume</yellow> um weiterzubauen.</green>"
+            )
+            return Result.Success(
+                "<green>Event <gold>${escape(event.name)}</gold> wurde zurück in die Bearbeitung versetzt. " +
+                        "Der Ersteller kann mit <yellow>/event resume</yellow> weiterbauen.</green>"
+            )
+        }
+
+        if (endEpoch <= startEpoch) return Result.Error("<red>Das Ende muss nach dem Start liegen!</red>")
+        val now = System.currentTimeMillis() / 1000
+        if (endEpoch <= now) return Result.Error("<red>Das Ende darf nicht in der Vergangenheit liegen!</red>")
+
+        event.startTime = startEpoch
+        event.endTime = endEpoch
+        event.state = EventState.ACCEPTED
+        store.markDirty()
+
+        val startText = DateTimeParser.parseToString(startEpoch)
+        val endText = DateTimeParser.parseToString(endEpoch)
+
+        plugin.messageManager.sendOrQueue(
+            event.creator,
+            "<green>Dein Event <gold>${escape(event.name)}</gold> wurde von einem Admin neu terminiert! " +
+                    "Start: <yellow>$startText</yellow>, Ende: <yellow>$endText</yellow></green>"
+        )
+
+        return Result.Success(
+            "<green>Event <gold>${escape(event.name)}</gold> wurde auf 'angenommen' gesetzt. " +
+                    "Start: $startText, Ende: $endText (keine neue Annehmen-Belohnung).</green>"
+        )
+    }
+
+    /**
+     * All past events: today nothing lives in REJECTED (rejects go back to
+     * BUILDING), but legacy entries stay visible. Newest first by end time.
+     */
+    fun listPastEvents(): List<GameEvent> = store.getAll()
+        .filter { it.state == EventState.ENDED || it.state == EventState.REJECTED }
+        .sortedByDescending { it.endTime }
+
     // ------------------------------------------------------------------
     // Scheduling (start/end of the timeframe)
     // ------------------------------------------------------------------

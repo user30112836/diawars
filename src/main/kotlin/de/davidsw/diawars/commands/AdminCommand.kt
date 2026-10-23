@@ -347,6 +347,30 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 respondEvent(sender, plugin.eventManager.rejectEvent(args[1], args.drop(2).joinToString(" ")))
             }
 
+            "set" -> {
+                if (args.size < 3) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin event set &lt;id&gt; &lt;building|accepted&gt; [start] [ende]</red>"))
+                    return
+                }
+                when (args[2].lowercase()) {
+                    "building" -> respondEvent(sender, plugin.eventManager.adminSetState(args[1], building = true, 0L, 0L))
+                    "accepted" -> {
+                        if (args.size < 5) {
+                            sender.sendMessage(mm("<red>Verwendung: /admin event set &lt;id&gt; accepted &lt;start&gt; &lt;ende&gt;</red>"))
+                            return
+                        }
+                        val startEpoch = DateTimeParser.parseToEpochSeconds(args[3])
+                        val endEpoch = DateTimeParser.parseToEpochSeconds(args[4])
+                        if (startEpoch == null || endEpoch == null) {
+                            sender.sendMessage(mm("<red>Ungültiges Datum/Uhrzeit! Format: ${DateTimeParser.FORMAT_HINT} (z.B. 10.07.2026-18:00)</red>"))
+                            return
+                        }
+                        respondEvent(sender, plugin.eventManager.adminSetState(args[1], building = false, startEpoch, endEpoch))
+                    }
+                    else -> sender.sendMessage(mm("<red>Verwendung: /admin event set &lt;id&gt; &lt;building|accepted&gt; [start] [ende]</red>"))
+                }
+            }
+
             "reward" -> {
                 if (args.size < 3) {
                     sender.sendMessage(mm("<red>Verwendung: /admin event reward &lt;spieler&gt; &lt;anzahl&gt;</red>"))
@@ -377,12 +401,30 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
 
     private fun handleEventList(sender: Player, args: List<String>) {
         val filter = args.getOrNull(0)?.lowercase()
+        if (filter == "past" || filter == "ended") {
+            val past = plugin.eventManager.listPastEvents()
+            if (past.isEmpty()) {
+                sender.sendMessage(mm("<gray>Keine Events in diesem Status gefunden.</gray>"))
+                return
+            }
+            val lines = mutableListOf("<gold>=== Events (VERGANGEN) ===</gold>")
+            past.forEach { event ->
+                val timeInfo = if (event.endTime > 0) {
+                    " <dark_gray>(beendet: ${DateTimeParser.parseToString(event.endTime)})</dark_gray>"
+                } else {
+                    ""
+                }
+                lines += "<gray>- <yellow>${event.id}</yellow> <white>${escape(event.name)}</white>$timeInfo</gray>"
+            }
+            sender.sendMessage(mm(lines.joinToString("\n")))
+            return
+        }
         val state = when (filter) {
             "pending" -> EventState.SUBMITTED
             "accepted" -> EventState.ACCEPTED
             "active", null -> EventState.ACTIVE
             else -> {
-                sender.sendMessage(mm("<red>Verwendung: /admin event list &lt;pending|accepted|active&gt;</red>"))
+                sender.sendMessage(mm("<red>Verwendung: /admin event list &lt;pending|accepted|active|past&gt;</red>"))
                 return
             }
         }
@@ -420,8 +462,9 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>
                 <yellow>/admin event accept &lt;id&gt; &lt;start&gt; &lt;ende&gt;</yellow><gray> - Event annehmen (Format: ${DateTimeParser.FORMAT_HINT})</gray>
                 <yellow>/admin event reject &lt;id&gt; &lt;grund&gt;</yellow><gray> - Event ablehnen</gray>
+                <yellow>/admin event set &lt;id&gt; &lt;building|accepted&gt; [start] [ende]</yellow><gray> - Zustand zurücksetzen (Format: ${DateTimeParser.FORMAT_HINT})</gray>
                 <yellow>/admin event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten an Spieler vergeben</gray>
-                <yellow>/admin event list &lt;pending|accepted|active&gt;</yellow><gray> - Events auflisten</gray>
+                <yellow>/admin event list &lt;pending|accepted|active|past&gt;</yellow><gray> - Events auflisten</gray>
                 """.trimIndent(),
             ),
         )
@@ -834,8 +877,9 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin event review &lt;id&gt;</yellow><gray> - Eingereichtes Event prüfen</gray>
                 <yellow>/admin event accept &lt;id&gt; &lt;start&gt; &lt;ende&gt;</yellow><gray> - Event annehmen</gray>
                 <yellow>/admin event reject &lt;id&gt; &lt;grund&gt;</yellow><gray> - Event ablehnen</gray>
+                <yellow>/admin event set &lt;id&gt; &lt;building|accepted&gt; [start] [ende]</yellow><gray> - Zustand zurücksetzen</gray>
                 <yellow>/admin event reward &lt;spieler&gt; &lt;anzahl&gt;</yellow><gray> - Diamanten vergeben</gray>
-                <yellow>/admin event list &lt;pending|accepted|active&gt;</yellow><gray> - Events auflisten</gray>
+                <yellow>/admin event list &lt;pending|accepted|active|past&gt;</yellow><gray> - Events auflisten</gray>
                 <yellow>/admin pvp &lt;spieler|all&gt; &lt;on|off&gt;</yellow><gray> - PvP-Status setzen</gray>
                 <yellow>/admin lobby lock|unlock|status</yellow><gray> - Lobby sperren/freigeben</gray>
                 <yellow>/admin msg &lt;spieler|team-a|team-b|all&gt; &lt;nachricht&gt;</yellow><gray> - Nachricht mit [Server]-Tag senden</gray>
@@ -914,7 +958,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
 
             "event" -> {
                 if (args.size == 2) {
-                    return listOf("review", "accept", "reject", "reward", "list")
+                    return listOf("review", "accept", "reject", "set", "reward", "list")
                         .filter { it.startsWith(args[1].lowercase()) }
                 }
                 if (args.size == 3) {
@@ -922,13 +966,20 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                         "review", "accept", "reject" ->
                             return plugin.eventManager.listByState(EventState.SUBMITTED).map { it.id }
                                 .filter { it.startsWith(args[2].lowercase()) }
+                        "set" ->
+                            return plugin.store.eventStore.getAll().sortedBy { it.id }.map { it.id }
+                                .filter { it.startsWith(args[2].lowercase()) }
                         "reward" ->
                             return plugin.server.onlinePlayers.map { it.name }
                                 .filter { it.startsWith(args[2], ignoreCase = true) }
                         "list" ->
-                            return listOf("pending", "accepted", "active")
+                            return listOf("pending", "accepted", "active", "past")
                                 .filter { it.startsWith(args[2].lowercase()) }
                     }
+                }
+                if (args.size == 4 && args[1].equals("set", ignoreCase = true)) {
+                    return listOf("building", "accepted")
+                        .filter { it.startsWith(args[3].lowercase()) }
                 }
             }
 
