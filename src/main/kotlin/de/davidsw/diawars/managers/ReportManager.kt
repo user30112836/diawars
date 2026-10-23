@@ -122,6 +122,21 @@ class ReportManager(private val plugin: Diawars) {
 
     private fun shotFile(id: String): File = File(reportsDir(), "$id.png")
 
+    /**
+     * Raw screenshot PNG for the admin mod viewer (see ImageManager
+     * requestAdminShot). Ids come from the admin channel, so they are
+     * strictly validated: report-id charset only and no path tricks.
+     */
+    fun shotBytes(id: String): ByteArray? {
+        if (!id.matches(Regex("[A-Za-z0-9_-]{1,64}"))) return null
+        return try {
+            val f = shotFile(id)
+            if (f.isFile) f.readBytes() else null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     /** Decoded 128x128 preview of the attached screenshot for map rendering. */
     fun loadShotImage(id: String): java.awt.image.BufferedImage? {
         val f = shotFile(id)

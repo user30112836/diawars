@@ -203,6 +203,13 @@ class ImageListener(
         try {
             val root = GSON.fromJson(json, JsonObject::class.java)
                 ?: throw IllegalArgumentException("JSON is null")
+            val knownHash = root.get("knownHash")?.takeIf { it.isJsonPrimitive }?.asString
+            val shotId = root.get("shot")?.takeIf { it.isJsonPrimitive }?.asString
+            if (shotId != null) {
+                // Report screenshot pull (pseudo owner = ImageManager.SHOT_OWNER).
+                plugin.imageManager.requestAdminShot(player, shotId, knownHash)
+                return
+            }
             val owner = root.get("owner")?.takeIf { it.isJsonPrimitive }?.asString?.let {
                 try {
                     UUID.fromString(it)
@@ -212,7 +219,6 @@ class ImageListener(
             } ?: throw IllegalArgumentException("Missing owner")
             val file = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
                 ?: throw IllegalArgumentException("Missing file")
-            val knownHash = root.get("knownHash")?.takeIf { it.isJsonPrimitive }?.asString
             plugin.imageManager.requestAdminImage(player, owner, file, knownHash)
         } catch (e: Exception) {
             plugin.logger.warning("Invalid admin image request from ${player.name}: ${e.message}")

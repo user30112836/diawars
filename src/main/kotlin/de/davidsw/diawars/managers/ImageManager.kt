@@ -57,6 +57,13 @@ class ImageManager(private val plugin: Diawars) {
         /** Download chunks per player per tick (large images need throughput). */
         const val DOWNLOAD_CHUNKS_PER_TICK = 32
 
+        /**
+         * Pseudo owner the admin mod's report screenshot pulls use (file
+         * {@code "<reportId>.png"}); the admin mod caches those like any other
+         * image under this owner key, so it must match the client's constant.
+         */
+        const val SHOT_OWNER = "reports"
+
         /** Upload session timeout in millis. */
         const val SESSION_TIMEOUT_MILLIS = 120_000L
 
@@ -963,7 +970,8 @@ class ImageManager(private val plugin: Diawars) {
 
     private data class Download(
         val mapId: Int?,
-        val owner: UUID,
+        /** Owner UUID string; report shots use the [SHOT_OWNER] pseudo owner. */
+        val owner: String,
         val file: String,
         val hash: String,
         val chunks: List<String>,
@@ -994,7 +1002,7 @@ class ImageManager(private val plugin: Diawars) {
         if (ref.deleted) {
             // Keep the mapping (it carries the placeholder) and answer
             // with the file name so the client can purge its cache.
-            sendDownloadJson(player, errorJson(mapId, ref.owner, ref.file, "unknown"), ImageListener.DATA_CHANNEL)
+            sendDownloadJson(player, errorJson(mapId, ref.owner.toString(), ref.file, "unknown"), ImageListener.DATA_CHANNEL)
             return
         }
         fullDownload(player, ref.owner, ref.file, knownHash, mapId, ImageListener.DATA_CHANNEL)
@@ -1008,7 +1016,7 @@ class ImageManager(private val plugin: Diawars) {
      */
     fun requestAdminImage(player: Player, owner: UUID, file: String, knownHash: String?) {
         if (!isValidFileName(file)) {
-            sendDownloadJson(player, errorJson(null, owner, file, "unknown"), ImageListener.ADMIN_DATA_CHANNEL)
+            sendDownloadJson(player, errorJson(null, owner.toString(), file, "unknown"), ImageListener.ADMIN_DATA_CHANNEL)
             return
         }
         fullDownload(player, owner, file, knownHash, null, ImageListener.ADMIN_DATA_CHANNEL)
@@ -1023,20 +1031,38 @@ class ImageManager(private val plugin: Diawars) {
         if (isBanned(owner)) {
             // Maps of a banned player show the placeholder; hand out no
             // full-resolution copy (also purges the client's cached one).
-            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
+            sendDownloadJson(player, errorJson(mapId, owner.toString(), file, "unknown"), outChannel)
             return
         }
 
         val bytes = fullImageBytes(owner, file)
         if (bytes == null) {
             if (mapId != null) plugin.store.imageMapStore.removeMap(mapId)
-            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
+            sendDownloadJson(player, errorJson(mapId, owner.toString(), file, "unknown"), outChannel)
             return
         }
         val hash = fullImageHash(owner, file) ?: run {
-            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
+            sendDownloadJson(player, errorJson(mapId, owner.toString(), file, "unknown"), outChannel)
             return
         }
+        enqueueDownload(player, mapId, owner.toString(), file, knownHash, outChannel, bytes, hash)
+    }
+
+    /**
+     * Hash/knownHash check + chunk budget + queue for one ready download.
+     * Shared by player images ([fullDownload]) and report shots
+     * ([requestAdminShot]).
+     */
+    private fun enqueueDownload(
+        player: Player,
+        mapId: Int?,
+        owner: String,
+        file: String,
+        knownHash: String?,
+        outChannel: String,
+        bytes: ByteArray,
+        hash: String,
+    ) {
         if (knownHash != null && knownHash.equals(hash, ignoreCase = true)) {
             sendDownloadJson(player, unchangedJson(mapId, owner, file, hash), outChannel)
             return
@@ -1057,6 +1083,24 @@ class ImageManager(private val plugin: Diawars) {
                 .add(Download(mapId, owner, file, hash, chunks, outChannel))
         }
         startDownloadPump()
+    }
+
+    /**
+     * Admin mod report screenshots: pulls the raw report shot PNG through the
+     * dedicated admin image channel with the pseudo owner [SHOT_OWNER] and
+     * the file "<reportId>.png", so the client caches it like any other
+     * image (same hash negotiation, same disk layout). Report ids are
+     * validated by [ReportManager.shotBytes].
+     */
+    fun requestAdminShot(player: Player, reportId: String, knownHash: String?) {
+        val file = "$reportId.png"
+        val bytes = plugin.reportManager.shotBytes(reportId)
+        if (bytes == null) {
+            sendDownloadJson(player, errorJson(null, SHOT_OWNER, file, "unknown"), ImageListener.ADMIN_DATA_CHANNEL)
+            return
+        }
+        val hash = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        enqueueDownload(player, null, SHOT_OWNER, file, knownHash, ImageListener.ADMIN_DATA_CHANNEL, bytes, hash)
     }
 
     fun cancelDownloads(playerId: UUID) {
@@ -1105,7 +1149,7 @@ class ImageManager(private val plugin: Diawars) {
     private fun dataJson(d: Download, part: Int, total: Int): String {
         val root = JsonObject()
         if (d.mapId != null) root.addProperty("mapId", d.mapId)
-        root.addProperty("owner", d.owner.toString())
+        root.addProperty("owner", d.owner)
         root.addProperty("file", d.file)
         root.addProperty("hash", d.hash)
         root.addProperty("part", part)
@@ -1114,20 +1158,20 @@ class ImageManager(private val plugin: Diawars) {
         return root.toString()
     }
 
-    private fun unchangedJson(mapId: Int?, owner: UUID, file: String, hash: String): String {
+    private fun unchangedJson(mapId: Int?, owner: String?, file: String?, hash: String): String {
         val root = JsonObject()
         if (mapId != null) root.addProperty("mapId", mapId)
-        root.addProperty("owner", owner.toString())
-        root.addProperty("file", file)
+        if (owner != null) root.addProperty("owner", owner)
+        if (file != null) root.addProperty("file", file)
         root.addProperty("hash", hash)
         root.addProperty("unchanged", true)
         return root.toString()
     }
 
-    private fun errorJson(mapId: Int?, owner: UUID?, file: String?, reason: String): String {
+    private fun errorJson(mapId: Int?, owner: String?, file: String?, reason: String): String {
         val root = JsonObject()
         if (mapId != null) root.addProperty("mapId", mapId)
-        if (owner != null) root.addProperty("owner", owner.toString())
+        if (owner != null) root.addProperty("owner", owner)
         if (file != null) root.addProperty("file", file)
         root.addProperty("error", reason)
         return root.toString()

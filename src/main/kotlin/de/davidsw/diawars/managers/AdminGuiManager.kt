@@ -226,6 +226,8 @@ class AdminGuiManager(private val plugin: Diawars) {
             addProperty("source", report.source.name)
             addProperty("player", report.targetName)
             addProperty("imageOwner", report.targetOwner?.let { PlayerNameCache.nameOf(it) })
+            // Raw owner UUID for the admin mod's image viewer pull.
+            addProperty("imageOwnerUuid", report.targetOwner?.toString())
             addProperty("image", report.targetFile)
             addProperty("reason", report.reason)
             addProperty("shot", report.shot)
