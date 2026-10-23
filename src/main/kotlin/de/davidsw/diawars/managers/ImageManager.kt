@@ -332,6 +332,19 @@ class ImageManager(private val plugin: Diawars) {
             } catch (e: Exception) {
                 plugin.logger.warning("Could not notify ${player.name} about the deleted image: ${e.message}")
             }
+            try {
+                // The admin mod viewer caches the same way; admins with both
+                // mods purge twice (harmless).
+                if (plugin.adminGuiManager.hasAdminMod(player.uniqueId)) {
+                    player.sendPluginMessage(
+                        plugin,
+                        ImageListener.ADMIN_DATA_CHANNEL,
+                        ImageListener.writeVarIntPrefixedUtf8(json),
+                    )
+                }
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not notify ${player.name} about the deleted image (admin): ${e.message}")
+            }
         }
     }
 
@@ -954,6 +967,8 @@ class ImageManager(private val plugin: Diawars) {
         val file: String,
         val hash: String,
         val chunks: List<String>,
+        /** Plugin channel the chunks go out on (player mod or admin mod). */
+        val outChannel: String,
         var next: Int = 0,
     )
 
@@ -962,61 +977,76 @@ class ImageManager(private val plugin: Diawars) {
     private var downloadPumpRunning = false
 
     /**
-     * Queues the full-resolution image for download. Resolves owner/file
-     * either directly or via the map id ([de.davidsw.diawars.stores.ImageMapStore]).
-     * A matching [knownHash] short-circuits the transfer ("unchanged").
+     * Queues the full-resolution image for download. The public map channel
+     * resolves only via the map id ([de.davidsw.diawars.stores.ImageMapStore]);
+     * direct owner/file addressing belongs to the admin mod's dedicated
+     * channel pair ([requestAdminImage]), so no client can name arbitrary
+     * images of other players. A matching [knownHash] short-circuits the
+     * transfer ("unchanged").
      */
     fun requestFullImage(player: Player, mapId: Int?, owner: UUID?, file: String?, knownHash: String?) {
-        val resolvedOwner: UUID
-        val resolvedFile: String
-        if (owner != null && file != null && isValidFileName(file)) {
-            resolvedOwner = owner
-            resolvedFile = file
-        } else if (mapId != null) {
-            val ref = plugin.store.imageMapStore.get(mapId)
-            if (ref == null) {
-                sendDownloadJson(player, errorJson(mapId, null, null, "unknown"))
-                return
-            }
-            if (ref.deleted) {
-                // Keep the mapping (it carries the placeholder) and answer
-                // with the file name so the client can purge its cache.
-                sendDownloadJson(player, errorJson(mapId, ref.owner, ref.file, "unknown"))
-                return
-            }
-            resolvedOwner = ref.owner
-            resolvedFile = ref.file
-        } else {
+        if (mapId == null) return
+        val ref = plugin.store.imageMapStore.get(mapId)
+        if (ref == null) {
+            sendDownloadJson(player, errorJson(mapId, null, null, "unknown"), ImageListener.DATA_CHANNEL)
             return
         }
+        if (ref.deleted) {
+            // Keep the mapping (it carries the placeholder) and answer
+            // with the file name so the client can purge its cache.
+            sendDownloadJson(player, errorJson(mapId, ref.owner, ref.file, "unknown"), ImageListener.DATA_CHANNEL)
+            return
+        }
+        fullDownload(player, ref.owner, ref.file, knownHash, mapId, ImageListener.DATA_CHANNEL)
+    }
 
-        if (isBanned(resolvedOwner)) {
+    /**
+     * Admin mod image inspection: full-resolution pull with direct owner/file
+     * addressing on the dedicated admin channel pair. Same pipeline, hash
+     * negotiation and chunked answers as the map downloads; the caller (see
+     * [ImageListener]) has already enforced the admin permission.
+     */
+    fun requestAdminImage(player: Player, owner: UUID, file: String, knownHash: String?) {
+        if (!isValidFileName(file)) {
+            sendDownloadJson(player, errorJson(null, owner, file, "unknown"), ImageListener.ADMIN_DATA_CHANNEL)
+            return
+        }
+        fullDownload(player, owner, file, knownHash, null, ImageListener.ADMIN_DATA_CHANNEL)
+    }
+
+    /**
+     * Resolves, validates and queues one full image download; the answer
+     * goes out on the given plugin channel (unchanged/error singles and the
+     * chunked {@code diawars:*_data} alike).
+     */
+    private fun fullDownload(player: Player, owner: UUID, file: String, knownHash: String?, mapId: Int?, outChannel: String) {
+        if (isBanned(owner)) {
             // Maps of a banned player show the placeholder; hand out no
             // full-resolution copy (also purges the client's cached one).
-            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
+            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
             return
         }
 
-        val bytes = fullImageBytes(resolvedOwner, resolvedFile)
+        val bytes = fullImageBytes(owner, file)
         if (bytes == null) {
             if (mapId != null) plugin.store.imageMapStore.removeMap(mapId)
-            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
+            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
             return
         }
-        val hash = fullImageHash(resolvedOwner, resolvedFile) ?: run {
-            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "unknown"))
+        val hash = fullImageHash(owner, file) ?: run {
+            sendDownloadJson(player, errorJson(mapId, owner, file, "unknown"), outChannel)
             return
         }
         if (knownHash != null && knownHash.equals(hash, ignoreCase = true)) {
-            sendDownloadJson(player, unchangedJson(mapId, resolvedOwner, resolvedFile, hash))
+            sendDownloadJson(player, unchangedJson(mapId, owner, file, hash), outChannel)
             return
         }
 
         val base64 = Base64.getEncoder().encodeToString(bytes)
         val total = (base64.length + MAX_CHUNK_CHARS - 1) / MAX_CHUNK_CHARS
         if (total > MAX_NEGOTIATED_PARTS) {
-            plugin.logger.warning("Image $resolvedFile of $resolvedOwner exceeds download chunk budget ($total parts).")
-            sendDownloadJson(player, errorJson(mapId, resolvedOwner, resolvedFile, "too-big"))
+            plugin.logger.warning("Image $file of $owner exceeds download chunk budget ($total parts).")
+            sendDownloadJson(player, errorJson(mapId, owner, file, "too-big"), outChannel)
             return
         }
         val chunks = (0 until total).map { i ->
@@ -1024,7 +1054,7 @@ class ImageManager(private val plugin: Diawars) {
         }
         synchronized(downloadQueues) {
             downloadQueues.getOrPut(player.uniqueId) { ArrayDeque() }
-                .add(Download(mapId, resolvedOwner, resolvedFile, hash, chunks))
+                .add(Download(mapId, owner, file, hash, chunks, outChannel))
         }
         startDownloadPump()
     }
@@ -1059,7 +1089,7 @@ class ImageManager(private val plugin: Diawars) {
                     val json = dataJson(head, head.next, head.chunks.size)
                     head.next++
                     sent++
-                    sendDownloadJson(player, json)
+                    sendDownloadJson(player, json, head.outChannel)
                     if (head.next >= head.chunks.size) queue.removeFirst()
                 }
                 if (queue.isEmpty()) done.add(playerId)
@@ -1103,9 +1133,9 @@ class ImageManager(private val plugin: Diawars) {
         return root.toString()
     }
 
-    private fun sendDownloadJson(player: Player, json: String) {
+    private fun sendDownloadJson(player: Player, json: String, outChannel: String) {
         try {
-            player.sendPluginMessage(plugin, ImageListener.DATA_CHANNEL, ImageListener.writeVarIntPrefixedUtf8(json))
+            player.sendPluginMessage(plugin, outChannel, ImageListener.writeVarIntPrefixedUtf8(json))
         } catch (e: Exception) {
             plugin.logger.warning("Could not send image data to ${player.name}: ${e.message}")
             cancelDownloads(player.uniqueId)

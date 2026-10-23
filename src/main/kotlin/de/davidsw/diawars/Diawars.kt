@@ -303,9 +303,12 @@ class Diawars : JavaPlugin() {
         server.messenger.registerIncomingPluginChannel(this, ImageListener.REQ_CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.OFFER_CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ImageListener.CHECK_CHANNEL, ImageListener(this))
+        // Diawars Admin client mod image inspection (see ImageListener).
+        server.messenger.registerIncomingPluginChannel(this, ImageListener.ADMIN_REQ_CHANNEL, ImageListener(this))
         server.messenger.registerIncomingPluginChannel(this, ReportManager.SUBMIT_CHANNEL, ReportListener(this))
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.OPEN_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.DATA_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, ImageListener.ADMIN_DATA_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.ACCEPT_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, ImageListener.CHECK_OK_CHANNEL)
         server.messenger.registerOutgoingPluginChannel(this, HandshakeListener.ACK_CHANNEL)

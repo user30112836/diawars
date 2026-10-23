@@ -45,6 +45,12 @@ class ImageListener(
         /** Server answers split name checks (ok/error) through this channel. */
         const val CHECK_OK_CHANNEL = "diawars:image_check_ok"
 
+        /** Diawars Admin client mod: full image pulls (admin image inspection). */
+        const val ADMIN_REQ_CHANNEL = "diawars:admin_img_req"
+
+        /** Server answers admin mod full image pulls through this channel. */
+        const val ADMIN_DATA_CHANNEL = "diawars:admin_img_data"
+
         private val GSON = Gson()
 
         fun writeVarIntPrefixedUtf8(text: String): ByteArray {
@@ -85,6 +91,7 @@ class ImageListener(
             REQ_CHANNEL -> handleDownloadRequest(player, message)
             OFFER_CHANNEL -> handleOffer(player, message)
             CHECK_CHANNEL -> handleSplitNameCheck(player, message)
+            ADMIN_REQ_CHANNEL -> handleAdminDownloadRequest(player, message)
             else -> return
         }
     }
@@ -174,6 +181,41 @@ class ImageListener(
             plugin.imageManager.requestFullImage(player, mapId, owner, file, knownHash)
         } catch (e: Exception) {
             plugin.logger.warning("Invalid image request from ${player.name}: ${e.message}")
+        }
+    }
+
+    /**
+     * Admin mod image inspection: full-resolution pull by owner UUID + file
+     * name. Direct addressing is admin-only on this dedicated channel; the
+     * public map channel ([REQ_CHANNEL]) stays map-id-only for players.
+     * Answers flow out through [ADMIN_DATA_CHANNEL].
+     */
+    private fun handleAdminDownloadRequest(player: Player, message: ByteArray) {
+        if (!player.hasPermission("diawars.admin") || !plugin.adminGuiManager.hasAdminMod(player.uniqueId)) {
+            return
+        }
+        val json = try {
+            readVarIntPrefixedUtf8(message)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid admin image request from ${player.name}: ${e.message}")
+            return
+        }
+        try {
+            val root = GSON.fromJson(json, JsonObject::class.java)
+                ?: throw IllegalArgumentException("JSON is null")
+            val owner = root.get("owner")?.takeIf { it.isJsonPrimitive }?.asString?.let {
+                try {
+                    UUID.fromString(it)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            } ?: throw IllegalArgumentException("Missing owner")
+            val file = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
+                ?: throw IllegalArgumentException("Missing file")
+            val knownHash = root.get("knownHash")?.takeIf { it.isJsonPrimitive }?.asString
+            plugin.imageManager.requestAdminImage(player, owner, file, knownHash)
+        } catch (e: Exception) {
+            plugin.logger.warning("Invalid admin image request from ${player.name}: ${e.message}")
         }
     }
 
