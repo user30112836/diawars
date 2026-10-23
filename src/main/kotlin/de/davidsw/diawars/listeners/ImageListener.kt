@@ -206,19 +206,30 @@ class ImageListener(
             val knownHash = root.get("knownHash")?.takeIf { it.isJsonPrimitive }?.asString
             val shotId = root.get("shot")?.takeIf { it.isJsonPrimitive }?.asString
             if (shotId != null) {
-                // Report screenshot pull (pseudo owner = ImageManager.SHOT_OWNER).
+                // Report screenshot pull (explicit shot form).
                 plugin.imageManager.requestAdminShot(player, shotId, knownHash)
                 return
             }
-            val owner = root.get("owner")?.takeIf { it.isJsonPrimitive }?.asString?.let {
+            val ownerRaw = root.get("owner")?.takeIf { it.isJsonPrimitive }?.asString
+            val fileRaw = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
+            if (ownerRaw != null && ownerRaw.equals(ImageManager.SHOT_OWNER, ignoreCase = true)) {
+                // Admin mod report-shot pull: pseudo owner + "<reportId>.png"
+                // file (the client sends the same owner/file shape as images).
+                val reportId = fileRaw?.removeSuffix(".png")
+                if (reportId.isNullOrBlank()) {
+                    throw IllegalArgumentException("Missing file")
+                }
+                plugin.imageManager.requestAdminShot(player, reportId, knownHash)
+                return
+            }
+            val owner = ownerRaw?.let {
                 try {
                     UUID.fromString(it)
                 } catch (_: IllegalArgumentException) {
                     null
                 }
             } ?: throw IllegalArgumentException("Missing owner")
-            val file = root.get("file")?.takeIf { it.isJsonPrimitive }?.asString
-                ?: throw IllegalArgumentException("Missing file")
+            val file = fileRaw ?: throw IllegalArgumentException("Missing file")
             plugin.imageManager.requestAdminImage(player, owner, file, knownHash)
         } catch (e: Exception) {
             plugin.logger.warning("Invalid admin image request from ${player.name}: ${e.message}")
