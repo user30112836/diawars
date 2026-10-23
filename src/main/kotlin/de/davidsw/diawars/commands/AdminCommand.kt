@@ -24,6 +24,11 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         }
 
         if (args.isEmpty()) {
+            // Admin-mod admins get the client mod GUI here; everyone else keeps
+            // the chat help (also the fallback for outdated/missing admin mod).
+            if (sender is Player && plugin.adminGuiManager.openGui(sender)) {
+                return true
+            }
             sendHelp(sender)
             return true
         }

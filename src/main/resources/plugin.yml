@@ -65,7 +65,7 @@ commands:
     usage: /<command>
     permission: diawars.use
   admin:
-    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Report-, Mod-Anfrage-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder, Config)
+    description: Admin-Befehle (Reload, Inventar-Inspektion, Log, Bug-, Report-, Mod-Anfrage-, Event-, PvP- und Lobby-Verwaltung, Server-Nachrichten, Bilder, Config). Ohne Argumente öffnet die Diawars Admin-Mod die Admin-GUI.
     usage: /<command> <reload|inv|log|bug|report|mods|event|pvp|lobby|msg|image|config>
     permission: diawars.admin
 

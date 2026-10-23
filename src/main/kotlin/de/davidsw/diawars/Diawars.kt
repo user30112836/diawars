@@ -15,6 +15,7 @@ import de.davidsw.diawars.commands.ScoresCommand
 import de.davidsw.diawars.commands.SelfKillCommand
 import de.davidsw.diawars.commands.TeamZonesCommand
 import de.davidsw.diawars.commands.VaultCommand
+import de.davidsw.diawars.listeners.AdminModListener
 import de.davidsw.diawars.listeners.AfkActivityListener
 import de.davidsw.diawars.listeners.BugListener
 import de.davidsw.diawars.listeners.ClientInfoListener
@@ -39,6 +40,7 @@ import de.davidsw.diawars.listeners.RewardListener
 import de.davidsw.diawars.listeners.VaultListener
 import de.davidsw.diawars.listeners.WhitelistListener
 import de.davidsw.diawars.listeners.WorldProtectionListener
+import de.davidsw.diawars.managers.AdminGuiManager
 import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
 import de.davidsw.diawars.managers.BugManager
@@ -180,6 +182,7 @@ class Diawars : JavaPlugin() {
     lateinit var reportManager: ReportManager
     lateinit var nightVisionManager: NightVisionManager
     lateinit var recipeManager: RecipeManager
+    lateinit var adminGuiManager: AdminGuiManager
 
     lateinit var store: Store
     lateinit var menu: Menu
@@ -240,6 +243,8 @@ class Diawars : JavaPlugin() {
         reportManager = ReportManager(this)
         nightVisionManager = NightVisionManager(this)
         recipeManager = RecipeManager(this)
+        // Needs the managers and stores above (GUI data pulls).
+        adminGuiManager = AdminGuiManager(this)
 
         menu = Menu(
             mainMenu = MainMenu(this),
@@ -289,6 +294,7 @@ class Diawars : JavaPlugin() {
         server.pluginManager.registerEvents(ReportListener(this), this)
         server.pluginManager.registerEvents(WhitelistListener(this), this)
         server.pluginManager.registerEvents(NightVisionListener(this), this)
+        server.pluginManager.registerEvents(AdminModListener(this), this)
         server.pluginManager.registerEvents(recipeManager, this)
 
         server.messenger.registerIncomingPluginChannel(this, ClientInfoListener.CHANNEL, ClientInfoListener(this))
@@ -312,6 +318,13 @@ class Diawars : JavaPlugin() {
             ModWhitelistManager.REQUEST_CHANNEL,
             WhitelistListener(this),
         )
+        // Diawars Admin client mod: handshake, admin-only registration and GUI data pulls.
+        server.messenger.registerIncomingPluginChannel(this, AdminModListener.HANDSHAKE_CHANNEL, AdminModListener(this))
+        server.messenger.registerIncomingPluginChannel(this, AdminModListener.CLIENT_INFO_CHANNEL, AdminModListener(this))
+        server.messenger.registerIncomingPluginChannel(this, AdminModListener.FETCH_CHANNEL, AdminModListener(this))
+        server.messenger.registerOutgoingPluginChannel(this, AdminModListener.ACK_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, AdminModListener.OPEN_CHANNEL)
+        server.messenger.registerOutgoingPluginChannel(this, AdminModListener.DATA_CHANNEL)
 
         getCommand("teamzones")?.setExecutor(TeamZonesCommand(this))
         getCommand("pvp")?.setExecutor(PvPCommand(this))
