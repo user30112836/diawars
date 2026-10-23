@@ -159,6 +159,7 @@ class AdminGuiManager(private val plugin: Diawars) {
         "images_player" -> buildImagesPlayer(filter)
         "log" -> buildLog(filter)
         "players" -> buildPlayers()
+        "pvp" -> buildPvp()
         "eventids" -> buildEventIds()
         else -> null
     }
@@ -322,6 +323,21 @@ class AdminGuiManager(private val plugin: Diawars) {
                 items.add(JsonObject().apply {
                     addProperty("name", player.name)
                     addProperty("uuid", player.uniqueId.toString())
+                })
+            }
+        return JsonObject().apply { add("items", items) }
+    }
+
+    /** Online players with their current PvP state (PvP-Verwaltung list). */
+    private fun buildPvp(): JsonObject {
+        val items = JsonArray()
+        plugin.server.onlinePlayers
+            .sortedBy { it.name.lowercase() }
+            .forEach { player ->
+                items.add(JsonObject().apply {
+                    addProperty("name", player.name)
+                    addProperty("uuid", player.uniqueId.toString())
+                    addProperty("pvp", plugin.store.pvpStatusStore.isPvPEnabled(player.uniqueId))
                 })
             }
         return JsonObject().apply { add("items", items) }
