@@ -28,6 +28,7 @@ border:
 pvp-toggle:
   default-enabled: true
   delay-seconds: 300
+  lava-protection-radius: 5.0
 
 dia-timer:
   yellow: 3000 # 2.5min

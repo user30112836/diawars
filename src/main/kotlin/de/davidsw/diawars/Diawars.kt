@@ -44,6 +44,7 @@ import de.davidsw.diawars.managers.AdminGuiManager
 import de.davidsw.diawars.managers.AfkManager
 import de.davidsw.diawars.managers.BorderManager
 import de.davidsw.diawars.managers.BugManager
+import de.davidsw.diawars.managers.ConfigManager
 import de.davidsw.diawars.managers.ContainerExplosionManager
 import de.davidsw.diawars.managers.DiamondLimitManager
 import de.davidsw.diawars.managers.DiamondLogManager
@@ -181,6 +182,7 @@ class Diawars : JavaPlugin() {
     lateinit var textInputManager: TextInputManager
     lateinit var reportManager: ReportManager
     lateinit var nightVisionManager: NightVisionManager
+    lateinit var configManager: ConfigManager
     lateinit var recipeManager: RecipeManager
     lateinit var adminGuiManager: AdminGuiManager
 
@@ -242,6 +244,7 @@ class Diawars : JavaPlugin() {
         // and textInputManager (reason dialog).
         reportManager = ReportManager(this)
         nightVisionManager = NightVisionManager(this)
+        configManager = ConfigManager(this)
         recipeManager = RecipeManager(this)
         // Needs the managers and stores above (GUI data pulls).
         adminGuiManager = AdminGuiManager(this)

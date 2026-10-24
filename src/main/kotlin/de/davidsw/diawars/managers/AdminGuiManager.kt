@@ -150,6 +150,7 @@ class AdminGuiManager(private val plugin: Diawars) {
 
     private fun buildSection(section: String, filter: String, admin: Player): JsonObject? = when (section) {
         "overview" -> buildOverview()
+        "config" -> buildConfig()
         "bugs" -> buildBugs(admin)
         "reports" -> buildReports(admin)
         "report" -> buildReport(filter)
@@ -177,6 +178,20 @@ class AdminGuiManager(private val plugin: Diawars) {
         addProperty("lobbyLocked", plugin.lobbyManager.locked)
         addProperty("lobbyPlayers", plugin.lobbyManager.lobbyPlayerCount())
         addProperty("nightVision", plugin.config.getBoolean("night-vision-toggle", true))
+    }
+
+    private fun buildConfig(): JsonObject {
+        val items = com.google.gson.JsonArray()
+        plugin.configManager.all().forEach { opt ->
+            items.add(com.google.gson.JsonObject().apply {
+                addProperty("key", opt.key)
+                addProperty("type", opt.type.name)
+                addProperty("value", plugin.configManager.displayValue(opt.key))
+                addProperty("default", opt.default.toString())
+                addProperty("description", opt.description)
+            })
+        }
+        return com.google.gson.JsonObject().apply { add("items", items) }
     }
 
     private fun buildBugs(admin: Player): JsonObject {

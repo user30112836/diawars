@@ -832,24 +832,49 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
     // ------------------------------------------------------------------
 
     private fun handleConfig(sender: CommandSender, args: List<String>) {
-        if (args.size != 2 || !args[0].equals("night-vision-toggle", ignoreCase = true)) {
-            sender.sendMessage(mm("<red>Verwendung: /admin config night-vision-toggle &lt;true|false&gt;</red>"))
+        if (args.isEmpty() || args[0].equals("list", ignoreCase = true)) {
+            val prefix = args.getOrNull(1)
+            sender.sendMessage(mm("<gold>=== Konfiguration ===</gold>"))
+            plugin.configManager.all()
+                .filter { prefix == null || it.key.startsWith(prefix, ignoreCase = true) }
+                .forEach { opt ->
+                    sender.sendMessage(mm("<yellow>${opt.key}</yellow><gray> = </gray><white>${plugin.configManager.displayValue(opt.key)}</white><gray> (${opt.type}, Standard: ${opt.default})</gray>"))
+                }
+            sender.sendMessage(mm("<gray>/admin config set <schluessel> <wert> zum Aendern, /admin config get <schluessel></gray>"))
             return
         }
-        val value = when (args[1].lowercase()) {
-            "true", "on", "enable" -> true
-            "false", "off", "disable" -> false
-            else -> {
-                sender.sendMessage(mm("<red>Verwendung: /admin config night-vision-toggle &lt;true|false&gt;</red>"))
+        if (args[0].equals("get", ignoreCase = true)) {
+            if (args.size < 2) {
+                sender.sendMessage(mm("<red>Verwendung: /admin config get &lt;schluessel&gt;</red>"))
                 return
             }
+            val key = args[1]
+            val opt = plugin.configManager.option(key)
+            if (opt == null) {
+                sender.sendMessage(mm("<red>Unbekannte Einstellung: $key</red>"))
+                return
+            }
+            sender.sendMessage(mm("<yellow>$key</yellow><gray> = </gray><white>${plugin.configManager.displayValue(key)}</white>"))
+            return
         }
-        plugin.config.set("night-vision-toggle", value)
-        plugin.saveConfig()
-        plugin.nightVisionManager.refreshGlobalState()
-        sender.sendMessage(
-            mm("<green>✓ Nachtsicht wurde ${if (value) "aktiviert" else "deaktiviert"}!</green>"),
-        )
+        if (args[0].equals("set", ignoreCase = true)) {
+            if (args.size < 3) {
+                sender.sendMessage(mm("<red>Verwendung: /admin config set &lt;schluessel&gt; &lt;wert&gt;</red>"))
+                return
+            }
+            val key = args[1]
+            val value = args.drop(2).joinToString(" ")
+            sender.sendMessage(mm(plugin.configManager.set(key, value)))
+            return
+        }
+        // Backwards-compatible shorthand: /admin config <key> <value...>
+        if (args.size >= 2) {
+            val key = args[0]
+            val value = args.drop(1).joinToString(" ")
+            sender.sendMessage(mm(plugin.configManager.set(key, value)))
+            return
+        }
+        sender.sendMessage(mm("<red>Verwendung: /admin config [list|get|set] ...</red>"))
     }
 
     // ------------------------------------------------------------------
@@ -888,7 +913,9 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild ansehen</gray>
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
                 <yellow>/admin image ban|unban &lt;spieler&gt;</yellow><gray> - Bilder-Funktion sperren/entsperren</gray>
-                <yellow>/admin config night-vision-toggle &lt;true|false&gt;</yellow><gray> - Nachtsicht erlauben/sperren</gray>
+                <yellow>/admin config list [präfix]</yellow><gray> - Alle Einstellungen auflisten</gray>
+                <yellow>/admin config get &lt;schluessel&gt;</yellow><gray> - Wert anzeigen</gray>
+                <yellow>/admin config set &lt;schluessel&gt; &lt;wert&gt;</yellow><gray> - Wert ändern</gray>
                 """.trimIndent(),
             ),
         )
@@ -1038,10 +1065,24 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
 
             "config" -> {
                 if (args.size == 2) {
-                    return listOf("night-vision-toggle").filter { it.startsWith(args[1].lowercase()) }
+                    val subs = listOf("list", "get", "set") + plugin.configManager.all().map { it.key }
+                    return subs.filter { it.startsWith(args[1].lowercase(), ignoreCase = true) }
                 }
-                if (args.size == 3 && args[1].equals("night-vision-toggle", ignoreCase = true)) {
-                    return listOf("true", "false").filter { it.startsWith(args[2].lowercase()) }
+                if (args.size == 3 && (args[1].equals("get", ignoreCase = true) || args[1].equals("set", ignoreCase = true))) {
+                    return plugin.configManager.all().map { it.key }
+                        .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
+                }
+                if (args.size == 3) {
+                    val opt = plugin.configManager.option(args[1])
+                    if (opt != null && opt.type == de.davidsw.diawars.managers.ConfigManager.Type.BOOL) {
+                        return listOf("true", "false").filter { it.startsWith(args[2].lowercase()) }
+                    }
+                }
+                if (args.size >= 4 && args[1].equals("set", ignoreCase = true)) {
+                    val opt = plugin.configManager.option(args[2])
+                    if (opt != null && opt.type == de.davidsw.diawars.managers.ConfigManager.Type.BOOL) {
+                        return listOf("true", "false").filter { it.startsWith(args[3].lowercase()) }
+                    }
                 }
             }
         }
