@@ -568,6 +568,13 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 Bukkit.broadcast(mm("<green>Die Lobby wurde wieder freigegeben!</green>"))
             }
 
+            "spawn" -> {
+                val p = sender as? org.bukkit.entity.Player
+                    ?: run { sender.sendMessage(mm("<red>Nur als Spieler moeglich.</red>")); return }
+                plugin.lobbyManager.setSpawnToLocation(p.location)
+                sender.sendMessage(mm("<green>OK Lobby-Spawn auf deine Position gesetzt.</green>"))
+            }
+
             "status" -> {
                 val state = if (plugin.lobbyManager.locked) "<red>gesperrt</red>" else "<green>offen</green>"
                 val count = plugin.lobbyManager.lobbyPlayerCount()
@@ -585,6 +592,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <gold>=== Lobby-Administration ===</gold>
                 <yellow>/admin lobby lock</yellow><gray> - Lobby sperren (Spieler können nicht raus)</gray>
                 <yellow>/admin lobby unlock</yellow><gray> - Lobby wieder freigeben</gray>
+                <yellow>/admin lobby spawn</yellow><gray> - Lobby-Spawn auf deine Position setzen</gray>
                 <yellow>/admin lobby status</yellow><gray> - Sperrstatus anzeigen</gray>
                 """.trimIndent(),
             ),
@@ -1194,7 +1202,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
 
             "lobby" -> {
                 if (args.size == 2) {
-                    return listOf("lock", "unlock", "status").filter { it.startsWith(args[1].lowercase()) }
+                    return listOf("lock", "unlock", "spawn", "status").filter { it.startsWith(args[1].lowercase()) }
                 }
             }
 

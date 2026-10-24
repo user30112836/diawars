@@ -45,6 +45,16 @@ class LobbyManager(private val plugin: Diawars) {
         )
     }
 
+    fun setSpawnToLocation(location: org.bukkit.Location) {
+        plugin.config.set("lobby.world", location.world?.name ?: plugin.config.getString("lobby.world", "lobby"))
+        plugin.config.set("lobby.spawn-point.x", location.x)
+        plugin.config.set("lobby.spawn-point.y", location.y)
+        plugin.config.set("lobby.spawn-point.z", location.z)
+        plugin.config.set("lobby.spawn-point.yaw", location.yaw.toDouble())
+        plugin.config.set("lobby.spawn-point.pitch", location.pitch.toDouble())
+        plugin.saveConfig()
+    }
+
     fun ensureWorldLoaded() {
         val world = getWorld(worldName) ?: WorldCreator(worldName)
             .type(WorldType.FLAT)
