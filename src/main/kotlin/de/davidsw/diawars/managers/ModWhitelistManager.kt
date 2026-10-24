@@ -62,6 +62,7 @@ class ModWhitelistManager(private val plugin: Diawars) {
     private val whitelistFile = ConfigFiles.resolve(plugin, "mod_whitelist.yml")
     private var whitelist: Set<String> = emptySet()
     private var allowedMods: List<AllowedMod> = emptyList()
+    private var libraries: List<String> = emptyList()
     private var allowedDisplayNames: Set<String> = emptySet()
 
     sealed interface Result {
@@ -106,8 +107,9 @@ class ModWhitelistManager(private val plugin: Diawars) {
         // compatibility with existing server configs.
         // The check set only contains check ids (what clients report);
         // display names are purely cosmetic.
+        libraries = config.getStringList("libraries")
         whitelist = (allowedMods.map { it.checkId.lowercase() } +
-                config.getStringList("libraries") +
+                libraries +
                 config.getStringList("mods")).map { it.lowercase() }.toSet()
         plugin.logger.info("Loaded ${allowedMods.size} allowed mod(s), ${whitelist.size} whitelisted mod(s).")
     }
@@ -120,6 +122,7 @@ class ModWhitelistManager(private val plugin: Diawars) {
 
     /** Mods players install themselves, display-name sorted. */
     fun getAllowedMods(): List<AllowedMod> = allowedMods
+    fun getLibraries(): List<String> = libraries
 
     fun isAllowed(modId: String): Boolean = modId.lowercase() in whitelist || modId.lowercase() in defaultMods
 
@@ -268,5 +271,50 @@ class ModWhitelistManager(private val plugin: Diawars) {
             mm("<yellow>⚠ Es gibt <gold>$count</gold> offene(n) Mod-Anfrage(n). " +
                     "Nutze <white>/admin mods list</white> um sie anzusehen.</yellow>"),
         )
+    }
+
+
+    fun addAllowedMod(check: String, display: String?): String {
+        val config = YamlConfiguration.loadConfiguration(whitelistFile)
+        val raw = config.get("allowed_mods") as? MutableList<Any> ?: mutableListOf()
+        // remove existing with same check
+        raw.removeIf { it is Map<*, *> && it["check"]?.toString()?.equals(check, ignoreCase = true) == true }
+        raw.add(mapOf("check" to check, "display" to (display ?: prettyName(check))))
+        config.set("allowed_mods", raw)
+        config.save(whitelistFile)
+        loadFromConfig()
+        return "OK Mod '$check' hinzugefuegt."
+    }
+
+    fun removeAllowedMod(check: String): Boolean {
+        val config = YamlConfiguration.loadConfiguration(whitelistFile)
+        val raw = config.get("allowed_mods") as? MutableList<Any> ?: return false
+        val before = raw.size
+        raw.removeIf { it is Map<*, *> && it["check"]?.toString()?.equals(check, ignoreCase = true) == true }
+        if (raw.size == before) return false
+        config.set("allowed_mods", raw)
+        config.save(whitelistFile)
+        loadFromConfig()
+        return true
+    }
+
+    fun addLibrary(id: String): String {
+        val config = YamlConfiguration.loadConfiguration(whitelistFile)
+        val list = config.getStringList("libraries").toMutableList()
+        if (id !in list) list.add(id)
+        config.set("libraries", list)
+        config.save(whitelistFile)
+        loadFromConfig()
+        return "OK Library '$id' hinzugefuegt."
+    }
+
+    fun removeLibrary(id: String): Boolean {
+        val config = YamlConfiguration.loadConfiguration(whitelistFile)
+        val list = config.getStringList("libraries").toMutableList()
+        if (!list.remove(id)) return false
+        config.set("libraries", list)
+        config.save(whitelistFile)
+        loadFromConfig()
+        return true
     }
 }

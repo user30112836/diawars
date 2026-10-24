@@ -45,6 +45,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
             "lobby" -> handleLobby(sender, args.drop(1))
             "msg" -> handleMsg(sender, args.drop(1))
             "image" -> handleImage(sender, args.drop(1))
+            "team" -> handleTeam(sender, args.drop(1))
+            "vault" -> handleVaultConfig(sender, args.drop(1))
             "config" -> handleConfig(sender, args.drop(1))
             else -> sendHelp(sender)
         }
@@ -277,6 +279,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 }
                 respondMods(sender, plugin.modWhitelistManager.resolveRequest(args[1]))
             }
+
+            "whitelist" -> handleModWhitelist(sender, args.drop(1))
 
             else -> sendModsHelp(sender)
         }
@@ -877,6 +881,174 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         sender.sendMessage(mm("<red>Verwendung: /admin config [list|get|set] ...</red>"))
     }
 
+
+    // ------------------------------------------------------------------
+    // team config (teams.yml)
+    // ------------------------------------------------------------------
+
+    private fun handleTeam(sender: CommandSender, args: List<String>) {
+        if (args.isEmpty()) {
+            sender.sendMessage(mm("<red>Verwendung: /admin team list|name|spawn|player ...</red>"))
+            return
+        }
+        when (args[0].lowercase()) {
+            "list" -> {
+                Team.entries.forEach { team ->
+                    val members = plugin.teamManager.getTeamMembers(team).size
+                    val spawn = plugin.teamManager.getSpawnLocation(team)
+                    sender.sendMessage(mm("<yellow>${team.configKey}</yellow><gray>: ${team.displayName}, Spawn=${spawn?.world?.name ?: "?"} ${spawn?.blockX ?: 0}/${spawn?.blockY ?: 0}/${spawn?.blockZ ?: 0}, Mitglieder=$members</gray>"))
+                }
+            }
+            "name" -> {
+                if (args.size < 3) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin team name &lt;team-a|team-b&gt; &lt;name&gt;</red>"))
+                    return
+                }
+                val team = Team.entries.firstOrNull { it.configKey.equals(args[1], ignoreCase = true) }
+                    ?: run { sender.sendMessage(mm("<red>Unbekanntes Team: ${args[1]}</red>")); return }
+                val name = args.drop(2).joinToString(" ")
+                plugin.teamManager.setDisplayName(team, name)
+                sender.sendMessage(mm("<green>OK ${team.configKey} display-name = $name</green>"))
+            }
+            "spawn" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin team spawn &lt;team-a|team-b&gt; [world x y z yaw pitch] (oder am eigenen Standort)</red>"))
+                    return
+                }
+                val team = Team.entries.firstOrNull { it.configKey.equals(args[1], ignoreCase = true) }
+                    ?: run { sender.sendMessage(mm("<red>Unbekanntes Team: ${args[1]}</red>")); return }
+                if (args.size >= 8) {
+                    val world = args[2]
+                    val x = args[3].toDoubleOrNull(); val y = args[4].toDoubleOrNull(); val z = args[5].toDoubleOrNull()
+                    val yaw = args[6].toFloatOrNull(); val pitch = args[7].toFloatOrNull()
+                    if (x == null || y == null || z == null || yaw == null || pitch == null) {
+                        sender.sendMessage(mm("<red>Ungueltige Koordinaten.</red>"))
+                        return
+                    }
+                    plugin.teamManager.setSpawn(team, world, x, y, z, yaw, pitch)
+                } else {
+                    val p = sender as? org.bukkit.entity.Player
+                        ?: run { sender.sendMessage(mm("<red>Standort nur als Spieler oder Koordinaten angeben.</red>")); return }
+                    plugin.teamManager.setSpawn(team, p.world.name, p.location.x, p.location.y, p.location.z, p.location.yaw, p.location.pitch)
+                }
+                sender.sendMessage(mm("<green>OK Spawn fuer ${team.configKey} gesetzt.</green>"))
+            }
+            "player" -> {
+                if (args.size < 4) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin team player add|remove &lt;team&gt; &lt;spieler&gt;</red>"))
+                    return
+                }
+                val action = args[1].lowercase()
+                val team = Team.entries.firstOrNull { it.configKey.equals(args[2], ignoreCase = true) }
+                    ?: run { sender.sendMessage(mm("<red>Unbekanntes Team: ${args[2]}</red>")); return }
+                val target = resolveKnownPlayer(args[3])
+                    ?: run { sender.sendMessage(mm("<red>Unbekannter Spieler: ${args[3]}</red>")); return }
+                when (action) {
+                    "add" -> { plugin.teamManager.addPlayer(team, target.uniqueId); sender.sendMessage(mm("<green>OK Spieler hinzugefuegt.</green>")) }
+                    "remove" -> { plugin.teamManager.removePlayer(team, target.uniqueId); sender.sendMessage(mm("<green>OK Spieler entfernt.</green>")) }
+                    else -> sender.sendMessage(mm("<red>add oder remove.</red>"))
+                }
+            }
+            else -> sender.sendMessage(mm("<red>Unbekannter Unterbefehl.</red>"))
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // vault config (vaults.yml)
+    // ------------------------------------------------------------------
+
+    private fun handleVaultConfig(sender: CommandSender, args: List<String>) {
+        if (args.isEmpty()) {
+            sender.sendMessage(mm("<red>Verwendung: /admin vault list|set|add|remove ...</red>"))
+            return
+        }
+        when (args[0].lowercase()) {
+            "list" -> {
+                plugin.vaultManager.getAllVaults().forEach { v ->
+                    sender.sendMessage(mm("<yellow>${v.id}</yellow><gray>: ${v.displayName}, team=${v.team.configKey}, world=${v.world}, min=${v.minX}/${v.minY}/${v.minZ}, max=${v.maxX}/${v.maxZ}</gray>"))
+                }
+            }
+            "set" -> {
+                if (args.size < 4) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin vault set &lt;id&gt; &lt;feld&gt; &lt;wert&gt;</red>"))
+                    return
+                }
+                val id = args[1]; val field = args[2]; val value = args.drop(3).joinToString(" ")
+                sender.sendMessage(mm(plugin.vaultManager.setVaultField(id, field, value)))
+            }
+            "remove" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin vault remove &lt;id&gt;</red>"))
+                    return
+                }
+                if (plugin.vaultManager.removeVault(args[1])) sender.sendMessage(mm("<green>OK Vault entfernt.</green>"))
+                else sender.sendMessage(mm("<red>Vault nicht gefunden.</red>"))
+            }
+            "add" -> {
+                // /admin vault add <id> <team> <world> x1 y1 z1 x2 y2 z2 [display-name...]
+                if (args.size < 10) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin vault add &lt;id&gt; &lt;team&gt; &lt;world&gt; x1 y1 z1 x2 y2 z2 [name...]</red>"))
+                    return
+                }
+                val id = args[1]; val team = args[2]; val world = args[3]
+                val nums = args.slice(4..9).map { it.toIntOrNull() }
+                if (nums.any { it == null }) { sender.sendMessage(mm("<red>Ungueltige Koordinaten.</red>")); return }
+                val name = if (args.size > 10) args.drop(10).joinToString(" ") else id
+                sender.sendMessage(mm(plugin.vaultManager.addVault(id, name, world, team, nums.take(3).map { it!! }, nums.drop(3).map { it!! })))
+            }
+            else -> sender.sendMessage(mm("<red>Unbekannter Unterbefehl.</red>"))
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // mod whitelist config (mod_whitelist.yml)
+    // ------------------------------------------------------------------
+
+    private fun handleModWhitelist(sender: CommandSender, args: List<String>) {
+        if (args.isEmpty()) {
+            sender.sendMessage(mm("<red>Verwendung: /admin mods whitelist list|add|remove|library ...</red>"))
+            return
+        }
+        when (args[0].lowercase()) {
+            "list" -> {
+                sender.sendMessage(mm("<gold>=== Erlaubte Mods ===</gold>"))
+                plugin.modWhitelistManager.getAllowedMods().forEach { m ->
+                    sender.sendMessage(mm("<gray>- ${m.checkId} = ${m.displayName}</gray>"))
+                }
+                sender.sendMessage(mm("<gold>=== Libraries ===</gold>"))
+                plugin.modWhitelistManager.getLibraries().forEach { id -> sender.sendMessage(mm("<gray>- $id</gray>")) }
+            }
+            "add" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin mods whitelist add &lt;check&gt; [display]</red>"))
+                    return
+                }
+                val check = args[1]
+                val display = if (args.size > 2) args.drop(2).joinToString(" ") else null
+                sender.sendMessage(mm(plugin.modWhitelistManager.addAllowedMod(check, display)))
+            }
+            "remove" -> {
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin mods whitelist remove &lt;check&gt;</red>"))
+                    return
+                }
+                if (plugin.modWhitelistManager.removeAllowedMod(args[1])) sender.sendMessage(mm("<green>OK Mod entfernt.</green>"))
+                else sender.sendMessage(mm("<red>Mod nicht gefunden.</red>"))
+            }
+            "library" -> {
+                if (args.size < 3) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin mods whitelist library add|remove &lt;id&gt;</red>"))
+                    return
+                }
+                when (args[1].lowercase()) {
+                    "add" -> sender.sendMessage(mm(plugin.modWhitelistManager.addLibrary(args[2])))
+                    "remove" -> if (plugin.modWhitelistManager.removeLibrary(args[2])) sender.sendMessage(mm("<green>OK Library entfernt.</green>")) else sender.sendMessage(mm("<red>Library nicht gefunden.</red>"))
+                    else -> sender.sendMessage(mm("<red>add oder remove.</red>"))
+                }
+            }
+            else -> sender.sendMessage(mm("<red>Unbekannter Unterbefehl.</red>"))
+        }
+    }
     // ------------------------------------------------------------------
     // help
     // ------------------------------------------------------------------
@@ -1060,6 +1232,38 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                             return files.filter { it.startsWith(args[3], ignoreCase = true) }
                         }
                     }
+                }
+            }
+
+            "team" -> {
+                if (args.size == 2) {
+                    return (Team.entries.map { it.configKey } + listOf("list", "name", "spawn", "player"))
+                        .filter { it.startsWith(args[1].lowercase(), ignoreCase = true) }
+                }
+                if (args.size == 3 && (args[1].equals("name", true) || args[1].equals("spawn", true))) {
+                    return Team.entries.map { it.configKey }
+                        .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
+                }
+                if (args.size == 3 && args[1].equals("player", true)) {
+                    return listOf("add", "remove").filter { it.startsWith(args[2].lowercase()) }
+                }
+                if (args.size == 4 && args[1].equals("player", true)) {
+                    return Team.entries.map { it.configKey }
+                        .filter { it.startsWith(args[3].lowercase(), ignoreCase = true) }
+                }
+            }
+
+            "vault" -> {
+                if (args.size == 2) {
+                    return listOf("list", "set", "add", "remove").filter { it.startsWith(args[1].lowercase()) }
+                }
+                if (args.size == 3 && (args[1].equals("set", true) || args[1].equals("remove", true))) {
+                    return plugin.vaultManager.getAllVaults().map { it.id }
+                        .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
+                }
+                if (args.size == 3 && args[1].equals("set", true)) {
+                    return listOf("display-name", "world", "team", "corner1.x", "corner1.y", "corner1.z", "corner2.x", "corner2.y", "corner2.z")
+                        .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
                 }
             }
 

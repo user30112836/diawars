@@ -96,4 +96,44 @@ class TeamManager(private val plugin: Diawars) {
         val yaw: Float,
         val pitch: Float,
     )
+    fun setDisplayName(team: Team, name: String) {
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        config.set("${team.configKey}.display-name", name)
+        config.save(teamsFile)
+        loadTeamsFromConfig()
+    }
+
+    fun setSpawn(team: Team, world: String?, x: Double, y: Double, z: Double, yaw: Float, pitch: Float) {
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        val path = "${team.configKey}.spawn-point"
+        if (world != null) config.set("$path.world", world)
+        config.set("$path.x", x)
+        config.set("$path.y", y)
+        config.set("$path.z", z)
+        config.set("$path.yaw", yaw.toDouble())
+        config.set("$path.pitch", pitch.toDouble())
+        config.save(teamsFile)
+        loadTeamsFromConfig()
+    }
+
+    fun addPlayer(team: Team, uuid: UUID) {
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        val path = "${team.configKey}.players"
+        val list = config.getStringList(path).toMutableList()
+        val s = uuid.toString()
+        if (s !in list) list.add(s)
+        config.set(path, list)
+        config.save(teamsFile)
+        loadTeamsFromConfig()
+    }
+
+    fun removePlayer(team: Team, uuid: UUID) {
+        val config = YamlConfiguration.loadConfiguration(teamsFile)
+        val path = "${team.configKey}.players"
+        val list = config.getStringList(path).toMutableList()
+        list.remove(uuid.toString())
+        config.set(path, list)
+        config.save(teamsFile)
+        loadTeamsFromConfig()
+    }
 }

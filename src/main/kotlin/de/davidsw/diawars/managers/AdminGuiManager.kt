@@ -4,6 +4,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.listeners.AdminModListener
+import de.davidsw.diawars.managers.Team
 import de.davidsw.diawars.listeners.ImageListener
 import de.davidsw.diawars.stores.EventState
 import de.davidsw.diawars.util.DateTimeParser
@@ -151,6 +152,10 @@ class AdminGuiManager(private val plugin: Diawars) {
     private fun buildSection(section: String, filter: String, admin: Player): JsonObject? = when (section) {
         "overview" -> buildOverview()
         "config" -> buildConfig()
+        "teams" -> buildTeams()
+        "vaults" -> buildVaults()
+        "whitelist" -> buildWhitelist()
+        "config" -> buildConfig()
         "bugs" -> buildBugs(admin)
         "reports" -> buildReports(admin)
         "report" -> buildReport(filter)
@@ -192,6 +197,59 @@ class AdminGuiManager(private val plugin: Diawars) {
             })
         }
         return com.google.gson.JsonObject().apply { add("items", items) }
+    }
+
+
+    private fun buildTeams(): JsonObject {
+        val items = com.google.gson.JsonArray()
+        Team.entries.forEach { team ->
+            val spawn = plugin.teamManager.getSpawnLocation(team)
+            val members = com.google.gson.JsonArray()
+            plugin.teamManager.getTeamMembers(team).forEach { members.add(it.toString()) }
+            items.add(com.google.gson.JsonObject().apply {
+                addProperty("key", team.configKey)
+                addProperty("displayName", team.displayName)
+                addProperty("spawnWorld", spawn?.world?.name)
+                addProperty("spawnX", spawn?.x ?: 0.0)
+                addProperty("spawnY", spawn?.y ?: 0.0)
+                addProperty("spawnZ", spawn?.z ?: 0.0)
+                addProperty("spawnYaw", spawn?.yaw ?: 0f)
+                addProperty("spawnPitch", spawn?.pitch ?: 0f)
+                add("members", members)
+            })
+        }
+        return com.google.gson.JsonObject().apply { add("items", items) }
+    }
+
+    private fun buildVaults(): JsonObject {
+        val items = com.google.gson.JsonArray()
+        plugin.vaultManager.getAllVaults().forEach { v ->
+            items.add(com.google.gson.JsonObject().apply {
+                addProperty("id", v.id)
+                addProperty("displayName", v.displayName)
+                addProperty("world", v.world)
+                addProperty("team", v.team.configKey)
+                addProperty("minX", v.minX); addProperty("minY", v.minY); addProperty("minZ", v.minZ)
+                addProperty("maxX", v.maxX); addProperty("maxZ", v.maxZ)
+            })
+        }
+        return com.google.gson.JsonObject().apply { add("items", items) }
+    }
+
+    private fun buildWhitelist(): JsonObject {
+        val mods = com.google.gson.JsonArray()
+        plugin.modWhitelistManager.getAllowedMods().forEach { m ->
+            mods.add(com.google.gson.JsonObject().apply {
+                addProperty("check", m.checkId)
+                addProperty("display", m.displayName)
+            })
+        }
+        val libs = com.google.gson.JsonArray()
+        plugin.modWhitelistManager.getLibraries().forEach { libs.add(it) }
+        return com.google.gson.JsonObject().apply {
+            add("mods", mods)
+            add("libraries", libs)
+        }
     }
 
     private fun buildBugs(admin: Player): JsonObject {

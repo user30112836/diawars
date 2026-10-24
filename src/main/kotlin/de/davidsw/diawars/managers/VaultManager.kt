@@ -106,4 +106,47 @@ class VaultManager(private val plugin: Diawars) {
         val z = location.z.coerceIn(region.minZ.toDouble(), region.maxZ + 1.0)
         return location.distance(Location(location.world, x, y, z))
     }
+
+
+    fun removeVault(id: String): Boolean {
+        val config = YamlConfiguration.loadConfiguration(vaultsFile)
+        if (!config.contains(id)) return false
+        config.set(id, null)
+        config.save(vaultsFile)
+        loadFromConfig()
+        return true
+    }
+
+    fun setVaultField(id: String, field: String, raw: String): String {
+        val config = YamlConfiguration.loadConfiguration(vaultsFile)
+        if (!config.contains(id)) return "Vault '$id' existiert nicht."
+        val allowed = setOf("display-name", "world", "team", "corner1.x", "corner1.y", "corner1.z", "corner2.x", "corner2.y", "corner2.z")
+        if (field !in allowed) return "Unbekanntes Feld: $field"
+        val value: Any = when {
+            field == "team" -> {
+                val team = Team.entries.firstOrNull { it.configKey == raw } ?: return "Unbekanntes Team: $raw"
+                team.configKey
+            }
+            field.endsWith(".x") || field.endsWith(".y") || field.endsWith(".z") -> raw.toIntOrNull() ?: return "Ungueltiger Integer: $raw"
+            else -> raw
+        }
+        config.set("$id.$field", value)
+        config.save(vaultsFile)
+        loadFromConfig()
+        return "OK $id.$field = $value"
+    }
+
+    fun addVault(id: String, displayName: String, world: String, teamKey: String, c1: List<Int>, c2: List<Int>): String {
+        val team = Team.entries.firstOrNull { it.configKey == teamKey } ?: return "Unbekanntes Team: $teamKey"
+        val config = YamlConfiguration.loadConfiguration(vaultsFile)
+        if (config.contains(id)) return "Vault '$id' existiert bereits."
+        config.set("$id.display-name", displayName)
+        config.set("$id.world", world)
+        config.set("$id.team", team.configKey)
+        config.set("$id.corner1.x", c1[0]); config.set("$id.corner1.y", c1[1]); config.set("$id.corner1.z", c1[2])
+        config.set("$id.corner2.x", c2[0]); config.set("$id.corner2.y", c2[1]); config.set("$id.corner2.z", c2[2])
+        config.save(vaultsFile)
+        loadFromConfig()
+        return "OK Vault '$id' erstellt."
+    }
 }
