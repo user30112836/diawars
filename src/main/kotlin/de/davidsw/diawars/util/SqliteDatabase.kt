@@ -188,6 +188,64 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
             )
             """.trimIndent(),
         ),
+        // v3: preferences, queued messages, rewards, image limits/bans, vault data.
+        listOf(
+            """
+            CREATE TABLE border_preferences (
+                player            TEXT PRIMARY KEY,
+                enabled           INTEGER NOT NULL,
+                particle_type     TEXT NOT NULL,
+                color             TEXT NOT NULL,
+                render_distance   INTEGER NOT NULL,
+                density_horizontal INTEGER NOT NULL,
+                density_vertical  INTEGER NOT NULL,
+                amount            INTEGER NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE scoreboard_preferences (
+                player          TEXT PRIMARY KEY,
+                sidebar_enabled INTEGER NOT NULL,
+                components      TEXT NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE pending_messages (
+                player   TEXT PRIMARY KEY,
+                messages TEXT NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE rewards (
+                player TEXT PRIMARY KEY,
+                amount INTEGER NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE image_limits (
+                player      TEXT PRIMARY KEY,
+                limit_value INTEGER NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE image_bans (
+                player TEXT PRIMARY KEY
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE vault_diamonds (
+                vault    TEXT PRIMARY KEY,
+                diamonds INTEGER NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE vault_claims (
+                vault   TEXT PRIMARY KEY,
+                owner   TEXT NOT NULL,
+                invited TEXT NOT NULL
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {

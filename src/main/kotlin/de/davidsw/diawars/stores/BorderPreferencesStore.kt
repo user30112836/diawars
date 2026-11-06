@@ -3,9 +3,11 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ColorParser
 import de.davidsw.diawars.util.ParticleParser
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.Color
 import org.bukkit.Particle
 import org.bukkit.configuration.file.YamlConfiguration
+import java.sql.Connection
 import java.util.UUID
 import kotlin.collections.iterator
 
@@ -32,7 +34,7 @@ data class BorderPreference(
     val amount: Int = 1,
 )
 
-class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_preferences.yml") {
+class BorderPreferencesStore(plugin: Diawars) : SqlStore(plugin, "border_preferences") {
     companion object {
         const val RENDER_DISTANCE_MIN = 8
         const val RENDER_DISTANCE_MAX = 64
@@ -41,8 +43,10 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
     }
 
     private val preferences = mutableMapOf<UUID, BorderPreference>()
+    private val dirty = DirtyKeys<UUID>()
 
     init {
+        migrateLegacyYaml("border_preferences.yml", "border_preferences") { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -90,6 +94,7 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
 
     fun resetToDefault(playerId: UUID) {
         preferences.remove(playerId)
+        dirty.touch(playerId)
         markDirty()
     }
 
@@ -97,6 +102,7 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
 
     private fun update(playerId: UUID, transform: (BorderPreference) -> BorderPreference) {
         preferences[playerId] = transform(getPreference(playerId))
+        dirty.touch(playerId)
         markDirty()
     }
 
@@ -115,40 +121,96 @@ class BorderPreferencesStore(plugin: Diawars) : YamlStore(plugin, "border_prefer
         )
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
+    override fun loadFrom(connection: Connection) {
+        preferences.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT player, enabled, particle_type, color, render_distance, " +
+                    "density_horizontal, density_vertical, amount FROM border_preferences",
+            ).use { rs ->
+                while (rs.next()) {
+                    try {
+                        preferences[UUID.fromString(rs.getString("player"))] = BorderPreference(
+                            enabled = rs.getInt("enabled") != 0,
+                            particleType = rs.getString("particle_type")?.takeIf { ParticleParser.parse(it) != null }
+                                ?: "REDSTONE",
+                            color = ColorParser.parseOrDefault(rs.getString("color") ?: "YELLOW"),
+                            renderDistance = rs.getInt("render_distance")
+                                .coerceIn(RENDER_DISTANCE_MIN, RENDER_DISTANCE_MAX),
+                            density = BorderDensity.clamped(
+                                horizontal = rs.getInt("density_horizontal"),
+                                vertical = rs.getInt("density_vertical"),
+                            ),
+                            amount = rs.getInt("amount").coerceIn(AMOUNT_MIN, AMOUNT_MAX),
+                        )
+                    } catch (e: Exception) {
+                        plugin.logger.warning(
+                            "An error occurred while loading the border-settings for ${rs.getString("player")}: ${e.message}",
+                        )
+                    }
+                }
+            }
+        }
+        plugin.logger.info("Loaded border preferences for ${preferences.size} player(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        for (playerId in dirty.drain()) {
+            val pref = preferences[playerId]
+            if (pref == null) {
+                ops += SqlOp("DELETE FROM border_preferences WHERE player = ?", listOf(playerId))
+                continue
+            }
+            ops += SqlOp(
+                "INSERT INTO border_preferences (player, enabled, particle_type, color, render_distance, " +
+                    "density_horizontal, density_vertical, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT(player) DO UPDATE SET enabled = excluded.enabled, " +
+                    "particle_type = excluded.particle_type, color = excluded.color, " +
+                    "render_distance = excluded.render_distance, " +
+                    "density_horizontal = excluded.density_horizontal, " +
+                    "density_vertical = excluded.density_vertical, amount = excluded.amount",
+                listOf(
+                    playerId, pref.enabled, pref.particleType,
+                    "${pref.color.red},${pref.color.green},${pref.color.blue}",
+                    pref.renderDistance, pref.density.horizontal, pref.density.vertical, pref.amount,
+                ),
+            )
+        }
+    }
+
+    /** Parses the pre-SQLite `border_preferences.yml` into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
         for (key in yaml.getKeys(false)) {
             try {
-                val uuid = UUID.fromString(key)
+                val playerId = UUID.fromString(key)
                 val section = yaml.getConfigurationSection(key) ?: continue
-
-                preferences[uuid] = BorderPreference(
+                val pref = BorderPreference(
                     enabled = section.getBoolean("enabled", true),
-                    particleType = section.getString("particle-type")?.takeIf { ParticleParser.parse(it) != null } ?: "REDSTONE",
+                    particleType = section.getString("particle-type")?.takeIf { ParticleParser.parse(it) != null }
+                        ?: "REDSTONE",
                     color = ColorParser.parseOrDefault(section.getString("color") ?: "YELLOW"),
                     renderDistance = section.getInt("render-distance", 32)
                         .coerceIn(RENDER_DISTANCE_MIN, RENDER_DISTANCE_MAX),
                     density = BorderDensity.clamped(
                         horizontal = section.getInt("density.horizontal", 2),
-                        vertical   = section.getInt("density.vertical", 3),
+                        vertical = section.getInt("density.vertical", 3),
                     ),
                     amount = section.getInt("amount", 1).coerceIn(AMOUNT_MIN, AMOUNT_MAX),
                 )
+                ops += SqlOp(
+                    "INSERT INTO border_preferences (player, enabled, particle_type, color, render_distance, " +
+                        "density_horizontal, density_vertical, amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    listOf(
+                        playerId, pref.enabled, pref.particleType,
+                        "${pref.color.red},${pref.color.green},${pref.color.blue}",
+                        pref.renderDistance, pref.density.horizontal, pref.density.vertical, pref.amount,
+                    ),
+                )
             } catch (e: Exception) {
-                plugin.logger.warning("An error occurred while loading the border-settings for $key: ${e.message}")
+                plugin.logger.warning("An error occurred while importing the border-settings for $key: ${e.message}")
             }
         }
-    }
-
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((uuid, pref) in preferences) {
-            val key = uuid.toString()
-            yaml.set("$key.enabled", pref.enabled)
-            yaml.set("$key.particle-type", pref.particleType)
-            yaml.set("$key.color", "${pref.color.red},${pref.color.green},${pref.color.blue}")
-            yaml.set("$key.render-distance", pref.renderDistance)
-            yaml.set("$key.density.horizontal", pref.density.horizontal)
-            yaml.set("$key.density.vertical", pref.density.vertical)
-            yaml.set("$key.amount", pref.amount)
-        }
+        return ops
     }
 }
