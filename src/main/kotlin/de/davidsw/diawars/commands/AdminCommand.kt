@@ -973,7 +973,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         when (args[0].lowercase()) {
             "list" -> {
                 plugin.vaultManager.getAllVaults().forEach { v ->
-                    sender.sendMessage(mm("<yellow>${v.id}</yellow><gray>: ${v.displayName}, team=${v.team.configKey}, world=${v.world}, min=${v.minX}/${v.minY}/${v.minZ}, max=${v.maxX}/${v.maxZ}</gray>"))
+                    sender.sendMessage(mm("<yellow>${v.id}</yellow><gray>: ${v.displayName}, team=${v.team.configKey}, world=${v.world}, X ${v.minX}..${v.maxX}, Z ${v.minZ}..${v.maxZ}</gray>"))
                 }
             }
             "set" -> {
@@ -993,16 +993,17 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 else sender.sendMessage(mm("<red>Vault nicht gefunden.</red>"))
             }
             "add" -> {
-                // /admin vault add <id> <team> <world> x1 y1 z1 x2 y2 z2 [display-name...]
-                if (args.size < 10) {
-                    sender.sendMessage(mm("<red>Verwendung: /admin vault add &lt;id&gt; &lt;team&gt; &lt;world&gt; x1 y1 z1 x2 y2 z2 [name...]</red>"))
+                // /admin vault add <team> — id/name are generated, the 10x10
+                // area is centred on the admin's current block position.
+                if (args.size < 2) {
+                    sender.sendMessage(mm("<red>Verwendung: /admin vault add &lt;team&gt; (erstellt einen 10x10-Vault an deiner Position)</red>"))
                     return
                 }
-                val id = args[1]; val team = args[2]; val world = args[3]
-                val nums = args.slice(4..9).map { it.toIntOrNull() }
-                if (nums.any { it == null }) { sender.sendMessage(mm("<red>Ungueltige Koordinaten.</red>")); return }
-                val name = if (args.size > 10) args.drop(10).joinToString(" ") else id
-                sender.sendMessage(mm(plugin.vaultManager.addVault(id, name, world, team, nums.take(3).map { it!! }, nums.drop(3).map { it!! })))
+                if (sender !is Player) {
+                    sender.sendMessage(mm("<red>Dieser Befehl funktioniert nur als Spieler.</red>"))
+                    return
+                }
+                sender.sendMessage(mm(plugin.vaultManager.addVaultAt(sender, args[1])))
             }
             else -> sender.sendMessage(mm("<red>Unbekannter Unterbefehl.</red>"))
         }
@@ -1093,6 +1094,8 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image inspect &lt;spieler&gt; &lt;datei&gt;</yellow><gray> - Bild ansehen</gray>
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
                 <yellow>/admin image ban|unban &lt;spieler&gt;</yellow><gray> - Bilder-Funktion sperren/entsperren</gray>
+                <yellow>/admin vault list</yellow><gray> - Vaults auflisten</gray>
+                <yellow>/admin vault add &lt;team&gt;</yellow><gray> - 10x10-Vault an deiner Position erstellen</gray>
                 <yellow>/admin config list [präfix]</yellow><gray> - Alle Einstellungen auflisten</gray>
                 <yellow>/admin config get &lt;schluessel&gt;</yellow><gray> - Wert anzeigen</gray>
                 <yellow>/admin config set &lt;schluessel&gt; &lt;wert&gt;</yellow><gray> - Wert ändern</gray>
@@ -1112,7 +1115,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
         args: Array<out String>,
     ): List<String> {
         if (args.size == 1) {
-            return listOf("reload", "inv", "log", "bug", "report", "mods", "event", "pvp", "lobby", "msg", "image", "config")
+            return listOf("reload", "inv", "log", "bug", "report", "mods", "event", "pvp", "lobby", "msg", "image", "vault", "config")
                 .filter { it.startsWith(args[0].lowercase()) }
         }
 
@@ -1270,7 +1273,11 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                         .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
                 }
                 if (args.size == 3 && args[1].equals("set", true)) {
-                    return listOf("display-name", "world", "team", "corner1.x", "corner1.y", "corner1.z", "corner2.x", "corner2.y", "corner2.z")
+                    return listOf("display-name", "world", "team", "corner1.x", "corner1.z", "corner2.x", "corner2.z")
+                        .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
+                }
+                if (args.size == 3 && args[1].equals("add", true)) {
+                    return Team.entries.map { it.configKey }
                         .filter { it.startsWith(args[2].lowercase(), ignoreCase = true) }
                 }
             }

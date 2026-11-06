@@ -5,22 +5,25 @@ import de.davidsw.diawars.util.ConfigFiles
 import de.davidsw.diawars.util.MaterialSets.VAULT_UNDERGROUND
 import org.bukkit.Location
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Player
 
+/**
+ * A vault is a 2D (X/Z) area spanning the full world height; Y is not part of
+ * the model any more. Old vaults.yml entries may still carry corner Y values,
+ * they are simply ignored.
+ */
 data class VaultRegion(
     val id: String,
     val displayName: String,
     val world: String,
     val team: Team,
-    val minX: Int, val minY: Int, val minZ: Int,
+    val minX: Int, val minZ: Int,
     val maxX: Int, val maxZ: Int,
 ) {
     fun contains(location: Location): Boolean {
         val world = location.world ?: return false
         if (world.name != this.world) return false
-        val x = location.blockX
-        val y = location.blockY
-        val z = location.blockZ
-        return x in minX..maxX && y >= minY && z in minZ..maxZ
+        return location.blockX in minX..maxX && location.blockZ in minZ..maxZ
     }
 }
 
@@ -50,8 +53,8 @@ class VaultManager(private val plugin: Diawars) {
                 val c1 = vaultSection.getConfigurationSection("corner1") ?: continue
                 val c2 = vaultSection.getConfigurationSection("corner2") ?: continue
 
-                val x1 = c1.getInt("x"); val y1 = c1.getInt("y"); val z1 = c1.getInt("z")
-                val x2 = c2.getInt("x"); val y2 = c2.getInt("y"); val z2 = c2.getInt("z")
+                val x1 = c1.getInt("x"); val z1 = c1.getInt("z")
+                val x2 = c2.getInt("x"); val z2 = c2.getInt("z")
 
                 list += VaultRegion(
                     id = id,
@@ -59,7 +62,6 @@ class VaultManager(private val plugin: Diawars) {
                     world = world,
                     team = team,
                     minX = minOf(x1, x2), maxX = maxOf(x1, x2),
-                    minY = minOf(y1, y2),
                     minZ = minOf(z1, z2), maxZ = maxOf(z1, z2),
                 )
             } catch (e: Exception) {
@@ -102,9 +104,8 @@ class VaultManager(private val plugin: Diawars) {
 
     private fun distanceToRegion(region: VaultRegion, location: Location): Double {
         val x = location.x.coerceIn(region.minX.toDouble(), region.maxX + 1.0)
-        val y = location.y.coerceIn(region.minY.toDouble(), Double.POSITIVE_INFINITY)
         val z = location.z.coerceIn(region.minZ.toDouble(), region.maxZ + 1.0)
-        return location.distance(Location(location.world, x, y, z))
+        return location.distance(Location(location.world, x, location.y, z))
     }
 
 
@@ -120,14 +121,14 @@ class VaultManager(private val plugin: Diawars) {
     fun setVaultField(id: String, field: String, raw: String): String {
         val config = YamlConfiguration.loadConfiguration(vaultsFile)
         if (!config.contains(id)) return "Vault '$id' existiert nicht."
-        val allowed = setOf("display-name", "world", "team", "corner1.x", "corner1.y", "corner1.z", "corner2.x", "corner2.y", "corner2.z")
+        val allowed = setOf("display-name", "world", "team", "corner1.x", "corner1.z", "corner2.x", "corner2.z")
         if (field !in allowed) return "Unbekanntes Feld: $field"
         val value: Any = when {
             field == "team" -> {
                 val team = Team.entries.firstOrNull { it.configKey == raw } ?: return "Unbekanntes Team: $raw"
                 team.configKey
             }
-            field.endsWith(".x") || field.endsWith(".y") || field.endsWith(".z") -> raw.toIntOrNull() ?: return "Ungueltiger Integer: $raw"
+            field.endsWith(".x") || field.endsWith(".z") -> raw.toIntOrNull() ?: return "Ungueltiger Integer: $raw"
             else -> raw
         }
         config.set("$id.$field", value)
@@ -136,17 +137,51 @@ class VaultManager(private val plugin: Diawars) {
         return "OK $id.$field = $value"
     }
 
-    fun addVault(id: String, displayName: String, world: String, teamKey: String, c1: List<Int>, c2: List<Int>): String {
+    /**
+     * Creates a vault for [teamKey] as a 10x10 block area centred on the
+     * player's current block position (full blocks, no fractions). The id and
+     * display name are generated per team: {@code team-a-vault-3} / "Vault A3".
+     */
+    fun addVaultAt(player: Player, teamKey: String): String {
         val team = Team.entries.firstOrNull { it.configKey == teamKey } ?: return "Unbekanntes Team: $teamKey"
         val config = YamlConfiguration.loadConfiguration(vaultsFile)
-        if (config.contains(id)) return "Vault '$id' existiert bereits."
+
+        val teamVaults = regions.filter { it.team == team }
+        var number = (teamVaults.mapNotNull { trailingNumber(it.id) } + teamVaults.mapNotNull { trailingNumber(it.displayName) })
+            .maxOrNull()?.plus(1) ?: 1
+        var id = "${team.configKey}-vault-$number"
+        while (config.contains(id)) {
+            number++
+            id = "${team.configKey}-vault-$number"
+        }
+
+        val letter = when (team) {
+            Team.TEAM_A -> "A"
+            Team.TEAM_B -> "B"
+        }
+        val displayName = "Vault $letter$number"
+
+        val blockX = player.location.blockX
+        val blockZ = player.location.blockZ
+        val minX = blockX - 5
+        val maxX = blockX + 4
+        val minZ = blockZ - 5
+        val maxZ = blockZ + 4
+
         config.set("$id.display-name", displayName)
-        config.set("$id.world", world)
+        config.set("$id.world", player.world.name)
         config.set("$id.team", team.configKey)
-        config.set("$id.corner1.x", c1[0]); config.set("$id.corner1.y", c1[1]); config.set("$id.corner1.z", c1[2])
-        config.set("$id.corner2.x", c2[0]); config.set("$id.corner2.y", c2[1]); config.set("$id.corner2.z", c2[2])
+        config.set("$id.corner1.x", minX)
+        config.set("$id.corner1.z", minZ)
+        config.set("$id.corner2.x", maxX)
+        config.set("$id.corner2.z", maxZ)
         config.save(vaultsFile)
         loadFromConfig()
-        return "OK Vault '$id' erstellt."
+
+        return "OK Vault <white>$id</white> ($displayName) erstellt: ${player.world.name} X $minX..$maxX, Z $minZ..$maxZ."
     }
+
+    /** Trailing digits of an id/name ("team-a-vault-3" / "Vault A3" -> 3). */
+    private fun trailingNumber(value: String): Int? =
+        Regex("(\\d+)$").find(value)?.groupValues?.get(1)?.toIntOrNull()
 }

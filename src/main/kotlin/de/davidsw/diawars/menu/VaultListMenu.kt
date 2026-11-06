@@ -151,11 +151,8 @@ class VaultListMenu(private val plugin: Diawars) {
         }
     }
 
-    private fun formatLocation(vault: VaultRegion): String {
-        val centerX = (vault.minX + vault.maxX) / 2
-        val centerZ = (vault.minZ + vault.maxZ) / 2
-        return "$centerX, ${vault.minY}, $centerZ"
-    }
+    private fun formatLocation(vault: VaultRegion): String =
+        "X ${vault.minX}..${vault.maxX}, Z ${vault.minZ}..${vault.maxZ}"
 
     private fun teamColor(team: de.davidsw.diawars.managers.Team): String = when (team) {
         de.davidsw.diawars.managers.Team.TEAM_A -> "green"

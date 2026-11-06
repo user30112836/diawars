@@ -229,7 +229,7 @@ class AdminGuiManager(private val plugin: Diawars) {
                 addProperty("displayName", v.displayName)
                 addProperty("world", v.world)
                 addProperty("team", v.team.configKey)
-                addProperty("minX", v.minX); addProperty("minY", v.minY); addProperty("minZ", v.minZ)
+                addProperty("minX", v.minX); addProperty("minZ", v.minZ)
                 addProperty("maxX", v.maxX); addProperty("maxZ", v.maxZ)
             })
         }
