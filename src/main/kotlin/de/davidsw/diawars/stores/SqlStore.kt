@@ -10,6 +10,24 @@ import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** Collects the keys (players, vaults, …) that changed since the last flush. */
+internal class DirtyKeys<K> {
+    private val keys = mutableSetOf<K>()
+
+    val isEmpty: Boolean get() = keys.isEmpty()
+
+    fun touch(key: K) {
+        keys.add(key)
+    }
+
+    fun drain(): Set<K> {
+        if (keys.isEmpty()) return emptySet()
+        val drained = keys.toSet()
+        keys.clear()
+        return drained
+    }
+}
+
 /**
  * SQLite-backed counterpart of [YamlStore]. Stores keep their whole state in
  * memory exactly like before; only the persistence sink changes.
@@ -89,6 +107,12 @@ abstract class SqlStore(protected val plugin: Diawars, protected val storeName: 
         if (!dirty.getAndSet(false)) return false
         write(isFinal = false)
         return true
+    }
+
+    /** Persists everything pending, off-thread (counterpart of [YamlStore.saveImmediately]). */
+    fun saveImmediately() {
+        dirty.set(false)
+        write(isFinal = false)
     }
 
     override fun flushNow(isFinal: Boolean) {

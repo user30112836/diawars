@@ -110,6 +110,84 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
             )
             """.trimIndent(),
         ),
+        // v2: per-player scores, states, spawns and preferences.
+        listOf(
+            """
+            CREATE TABLE diamond_scores (
+                player   TEXT PRIMARY KEY,
+                diamonds INTEGER NOT NULL,
+                name     TEXT NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE pvp_status (
+                player             TEXT PRIMARY KEY,
+                enabled            INTEGER NOT NULL,
+                toggle_active      INTEGER NOT NULL,
+                toggle_start       INTEGER NOT NULL,
+                toggle_destination INTEGER NOT NULL,
+                old_time           INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE night_vision (
+                player TEXT PRIMARY KEY
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE onboarding (
+                player             TEXT PRIMARY KEY,
+                entered_main_world INTEGER NOT NULL DEFAULT 0,
+                starter_diamonds   INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE main_spawns (
+                player TEXT PRIMARY KEY,
+                world  TEXT NOT NULL,
+                x      REAL NOT NULL,
+                y      REAL NOT NULL,
+                z      REAL NOT NULL,
+                yaw    REAL NOT NULL,
+                pitch  REAL NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE world_spawns (
+                world  TEXT NOT NULL,
+                player TEXT NOT NULL,
+                x      REAL NOT NULL,
+                y      REAL NOT NULL,
+                z      REAL NOT NULL,
+                yaw    REAL NOT NULL,
+                pitch  REAL NOT NULL,
+                PRIMARY KEY (world, player)
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE player_states (
+                store      TEXT NOT NULL,
+                player     TEXT NOT NULL,
+                inventory  BLOB,
+                armor      BLOB,
+                offhand    BLOB,
+                enderchest BLOB,
+                gamemode   TEXT NOT NULL,
+                world      TEXT NOT NULL,
+                x          REAL NOT NULL,
+                y          REAL NOT NULL,
+                z          REAL NOT NULL,
+                yaw        REAL NOT NULL,
+                pitch      REAL NOT NULL,
+                health     REAL NOT NULL,
+                food       INTEGER NOT NULL,
+                saturation REAL NOT NULL,
+                exp        REAL NOT NULL,
+                level      INTEGER NOT NULL,
+                PRIMARY KEY (store, player)
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {
