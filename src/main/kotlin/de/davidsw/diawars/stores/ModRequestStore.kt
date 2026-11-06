@@ -1,7 +1,9 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.configuration.file.YamlConfiguration
+import java.sql.Connection
 import java.util.UUID
 
 /**
@@ -21,11 +23,11 @@ data class ModRequest(
 )
 
 /**
- * Persistence for mod whitelist requests ({@code mod_requests.yml}), shaped
- * like [BugStore]: sequential ids, open-vs-resolved state, per-admin read
- * marks so the join notice knows when something new arrived.
+ * Persistence for mod whitelist requests, shaped like [BugStore]: sequential
+ * ids, open-vs-resolved state, per-admin read marks so the join notice knows
+ * when something new arrived.
  */
-class ModRequestStore(plugin: Diawars) : YamlStore(plugin, "mod_requests.yml") {
+class ModRequestStore(plugin: Diawars) : SqlStore(plugin, "mod_requests") {
     companion object {
         /** Refresh cap for per-admin read marks (mirrors BugStore). */
         const val MAX_ADMIN_READS = 100
@@ -33,9 +35,13 @@ class ModRequestStore(plugin: Diawars) : YamlStore(plugin, "mod_requests.yml") {
 
     private val cache = mutableMapOf<String, ModRequest>()
     private val adminReads = mutableMapOf<UUID, Long>()
+    private val dirtyIds = mutableSetOf<String>()
+    private var adminReadsDirty = false
     private var nextId = 1
+    private var legacyNextId = 1
 
     init {
+        migrateLegacyYaml("mod_requests.yml", "mod_requests") { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -50,6 +56,7 @@ class ModRequestStore(plugin: Diawars) : YamlStore(plugin, "mod_requests.yml") {
         cache[id] = request
         // Infrequent player-facing writes: persist synchronously so requests
         // survive a crash instead of resurrecting as open.
+        touch(id)
         flushNow()
         return request
     }
@@ -58,6 +65,7 @@ class ModRequestStore(plugin: Diawars) : YamlStore(plugin, "mod_requests.yml") {
         val request = cache[id] ?: return false
         if (request.resolved) return false
         request.resolved = true
+        touch(id)
         flushNow()
         return true
     }
@@ -73,56 +81,112 @@ class ModRequestStore(plugin: Diawars) : YamlStore(plugin, "mod_requests.yml") {
         while (adminReads.size > MAX_ADMIN_READS) {
             adminReads.minByOrNull { it.value }?.key?.let { adminReads.remove(it) } ?: break
         }
+        adminReadsDirty = true
+        markDirty()
         flushNow()
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((id, request) in cache) {
-            yaml.set("requests.$id.requester", request.requester.toString())
-            yaml.set("requests.$id.requester-name", request.requesterName)
-            yaml.set("requests.$id.display-name", request.displayName)
-            yaml.set("requests.$id.requested-at", request.requestedAt)
-            yaml.set("requests.$id.resolved", request.resolved)
-        }
-        for ((admin, timestamp) in adminReads) {
-            yaml.set("admin-reads.$admin", timestamp)
-        }
-        yaml.set("next-id", nextId)
+    private fun touch(id: String) {
+        dirtyIds.add(id)
+        markDirty()
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
-        yaml.getConfigurationSection("requests")?.let { requestsSection ->
-            for (id in requestsSection.getKeys(false)) {
+    override fun loadFrom(connection: Connection) {
+        cache.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT id, requester, requester_name, display_name, requested_at, resolved FROM mod_requests",
+            ).use { rs ->
+                while (rs.next()) {
+                    try {
+                        cache[rs.getString("id")] = ModRequest(
+                            id = rs.getString("id"),
+                            requester = UUID.fromString(rs.getString("requester")),
+                            requesterName = rs.getString("requester_name") ?: "?",
+                            displayName = rs.getString("display_name") ?: "",
+                            requestedAt = rs.getLong("requested_at"),
+                            resolved = rs.getInt("resolved") != 0,
+                        )
+                    } catch (e: Exception) {
+                        plugin.logger.warning(
+                            "Could not load mod request ${rs.getString("id")}: ${e.message}",
+                        )
+                    }
+                }
+            }
+        }
+        adminReads.clear()
+        loadAdminReads(connection, adminReads)
+        nextId = maxOf(legacyNextId, highestId(connection, "mod_requests") + 1)
+        plugin.logger.info("Loaded ${cache.size} mod request(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        if (dirtyIds.isNotEmpty()) {
+            for (id in dirtyIds) {
+                val request = cache[id]
+                if (request == null) {
+                    ops += SqlOp("DELETE FROM mod_requests WHERE id = ?", listOf(id))
+                } else {
+                    ops += SqlOp(
+                        "INSERT INTO mod_requests (id, requester, requester_name, display_name, requested_at, resolved) " +
+                            "VALUES (?, ?, ?, ?, ?, ?) " +
+                            "ON CONFLICT(id) DO UPDATE SET requester = excluded.requester, " +
+                            "requester_name = excluded.requester_name, display_name = excluded.display_name, " +
+                            "requested_at = excluded.requested_at, resolved = excluded.resolved",
+                        listOf(
+                            id, request.requester, request.requesterName,
+                            request.displayName, request.requestedAt, request.resolved,
+                        ),
+                    )
+                }
+            }
+            dirtyIds.clear()
+        }
+        if (adminReadsDirty) {
+            writeAdminReads(ops, adminReads)
+            adminReadsDirty = false
+        }
+    }
+
+    /** Parses the pre-SQLite `mod_requests.yml` into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
+        yaml.getConfigurationSection("requests")?.let { section ->
+            for (id in section.getKeys(false)) {
                 try {
-                    val section = requestsSection.getConfigurationSection(id) ?: continue
-                    val requesterString = section.getString("requester") ?: continue
-                    cache[id] = ModRequest(
-                        id = id,
-                        requester = UUID.fromString(requesterString),
-                        requesterName = section.getString("requester-name") ?: "?",
-                        displayName = section.getString("display-name") ?: "",
-                        requestedAt = section.getLong("requested-at", 0L),
-                        resolved = section.getBoolean("resolved", false),
+                    val entry = section.getConfigurationSection(id) ?: continue
+                    val requester = UUID.fromString(entry.getString("requester") ?: continue)
+                    ops += SqlOp(
+                        "INSERT INTO mod_requests (id, requester, requester_name, display_name, requested_at, resolved) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                        listOf(
+                            id,
+                            requester,
+                            entry.getString("requester-name") ?: "?",
+                            entry.getString("display-name") ?: "",
+                            entry.getLong("requested-at", 0L),
+                            entry.getBoolean("resolved", false),
+                        ),
                     )
                 } catch (e: Exception) {
-                    plugin.logger.warning("Could not load mod request $id: ${e.message}")
+                    plugin.logger.warning("Could not import mod request $id: ${e.message}")
                 }
             }
         }
-
-        yaml.getConfigurationSection("admin-reads")?.let { readsSection ->
-            for (key in readsSection.getKeys(false)) {
+        yaml.getConfigurationSection("admin-reads")?.let { section ->
+            for (key in section.getKeys(false)) {
                 try {
-                    adminReads[UUID.fromString(key)] = readsSection.getLong(key)
+                    ops += SqlOp(
+                        "INSERT INTO admin_reads (store, admin, last_read) VALUES (?, ?, ?)",
+                        listOf(storeName, UUID.fromString(key), section.getLong(key)),
+                    )
                 } catch (e: Exception) {
-                    plugin.logger.warning("Could not load admin read state for $key: ${e.message}")
+                    plugin.logger.warning("Could not import admin read state for $key: ${e.message}")
                 }
             }
         }
-
-        val highestExisting = cache.keys.mapNotNull { it.toIntOrNull() }.maxOrNull() ?: 0
-        nextId = maxOf(yaml.getInt("next-id", 1), highestExisting + 1)
-
-        plugin.logger.info("Loaded ${cache.size} mod request(s).")
+        legacyNextId = yaml.getInt("next-id", 1)
+        return ops
     }
 }

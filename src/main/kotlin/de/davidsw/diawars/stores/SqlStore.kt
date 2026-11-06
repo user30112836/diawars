@@ -3,6 +3,9 @@ package de.davidsw.diawars.stores
 import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.SqlOp
 import de.davidsw.diawars.util.SqliteDatabase
+import de.davidsw.diawars.util.StoreFiles
+import org.bukkit.configuration.file.YamlConfiguration
+import java.io.File
 import java.sql.Connection
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
@@ -36,6 +39,45 @@ abstract class SqlStore(protected val plugin: Diawars, protected val storeName: 
             db.read { connection -> loadFrom(connection) }
         } catch (e: Exception) {
             plugin.logger.severe("Could not load $storeName from the database: ${e.message}")
+        }
+    }
+
+    /**
+     * One-time import of the legacy YAML file this store used before the SQLite
+     * migration: reads it on startup when [table] is still empty, writes all rows
+     * in one transaction and renames the file to `<name>.migrated` (kept as the
+     * manual rollback path). A failed import keeps the file, so it retries.
+     */
+    protected fun migrateLegacyYaml(
+        legacyFileName: String,
+        table: String,
+        buildRows: (YamlConfiguration) -> List<SqlOp>,
+    ) {
+        val legacy = StoreFiles.resolve(plugin, legacyFileName)
+        if (!legacy.exists()) return
+        try {
+            val populated = db.read { connection ->
+                connection.createStatement().use { statement ->
+                    statement.executeQuery("SELECT COUNT(*) FROM $table").use { rs ->
+                        rs.next() && rs.getInt(1) > 0
+                    }
+                }
+            }
+            if (populated) {
+                plugin.logger.info("$legacyFileName was already migrated to $table.")
+            } else {
+                val ops = buildRows(YamlConfiguration.loadConfiguration(legacy))
+                db.execute(ops)
+                plugin.logger.info("Imported ${ops.size} row(s) from $legacyFileName into $table.")
+            }
+            val target = File(legacy.parentFile, "${legacy.name}.migrated")
+            if (legacy.renameTo(target)) {
+                plugin.logger.info("Kept the legacy file as ${target.name}.")
+            } else {
+                plugin.logger.warning("Could not rename $legacyFileName to ${target.name}.")
+            }
+        } catch (e: Exception) {
+            plugin.logger.severe("Could not import $legacyFileName: ${e.message}")
         }
     }
 

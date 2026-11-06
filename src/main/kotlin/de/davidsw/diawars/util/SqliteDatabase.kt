@@ -65,7 +65,51 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
      * `schema_version` bump, so a failed migration never leaves half a schema.
      */
     private val migrations: List<List<String>> = listOf(
-        // v1 onwards: appended per store family as stores migrate off YAML.
+        // v1: the three admin-facing record stores (bugs, reports, mod requests).
+        listOf(
+            """
+            CREATE TABLE bugs (
+                id          TEXT PRIMARY KEY,
+                reporter    TEXT NOT NULL,
+                description TEXT NOT NULL,
+                reported_at INTEGER NOT NULL,
+                resolved    INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE reports (
+                id            TEXT PRIMARY KEY,
+                reporter      TEXT NOT NULL,
+                reported_at   INTEGER NOT NULL,
+                source        TEXT NOT NULL,
+                target_player TEXT,
+                target_name   TEXT,
+                target_owner  TEXT,
+                target_file   TEXT,
+                reason        TEXT,
+                shot          INTEGER NOT NULL DEFAULT 0,
+                resolved      INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE mod_requests (
+                id             TEXT PRIMARY KEY,
+                requester      TEXT NOT NULL,
+                requester_name TEXT NOT NULL,
+                display_name   TEXT NOT NULL,
+                requested_at   INTEGER NOT NULL,
+                resolved       INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE admin_reads (
+                store     TEXT NOT NULL,
+                admin     TEXT NOT NULL,
+                last_read INTEGER NOT NULL,
+                PRIMARY KEY (store, admin)
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {
