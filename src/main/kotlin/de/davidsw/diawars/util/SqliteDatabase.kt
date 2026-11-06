@@ -1,0 +1,203 @@
+package de.davidsw.diawars.util
+
+import de.davidsw.diawars.Diawars
+import java.io.File
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.PreparedStatement
+import java.util.UUID
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+
+/**
+ * One prepared statement queued for the database thread.
+ *
+ * Statements are built on the main thread (so ItemStack/NBT serialization stays
+ * there, exactly like the YAML stores used to do) and only executed off-thread.
+ * [params] entries may be null, UUID, Enum, Boolean, String, Number or byte[];
+ * everything else is handed to [PreparedStatement.setObject].
+ */
+data class SqlOp(val sql: String, val params: List<Any?>) {
+    constructor(sql: String, vararg params: Any?) : this(sql, params.toList())
+}
+
+internal fun PreparedStatement.bind(params: List<Any?>) {
+    params.forEachIndexed { index, value ->
+        val i = index + 1
+        when (value) {
+            null -> setObject(i, null)
+            is UUID -> setString(i, value.toString())
+            is Enum<*> -> setString(i, value.name)
+            is Boolean -> setInt(i, if (value) 1 else 0)
+            else -> setObject(i, value)
+        }
+    }
+}
+
+/**
+ * The plugin's single SQLite connection (`plugins/Diawars/data/diawars.db`).
+ *
+ * SQLite is a single-writer database, so one connection guarded by one lock is
+ * both the simplest and the fastest setup here — no pool is needed. Reads only
+ * happen at startup (every store keeps its data in memory), writes happen on
+ * the dedicated `diawars-db` thread (periodic flush) or synchronously on the
+ * caller's thread ([execute], used by `flushNow`).
+ *
+ * The file is opened in WAL mode so a crash cannot corrupt the last committed
+ * transaction and readers never block the writer.
+ */
+class SqliteDatabase(private val plugin: Diawars, private val file: File) {
+    private val lock = ReentrantLock()
+    private val executor: ExecutorService =
+        Executors.newSingleThreadExecutor { runnable ->
+            Thread(runnable, "diawars-db").apply { isDaemon = true }
+        }
+
+    private var connection: Connection? = null
+
+    /**
+     * Incremental schema migrations; entry index + 1 is the schema version it
+     * produces. Each entry runs inside a single transaction together with the
+     * `schema_version` bump, so a failed migration never leaves half a schema.
+     */
+    private val migrations: List<List<String>> = listOf(
+        // v1 onwards: appended per store family as stores migrate off YAML.
+    )
+
+    fun open() {
+        file.parentFile?.mkdirs()
+        // Explicit load: the driver is shaded into the plugin jar and found through
+        // its service file, but this makes a missing/blocked driver fail loudly here.
+        Class.forName("org.sqlite.JDBC")
+
+        val conn = DriverManager.getConnection("jdbc:sqlite:${file.absolutePath}")
+        conn.createStatement().use { statement ->
+            statement.execute("PRAGMA journal_mode=WAL")
+            statement.execute("PRAGMA synchronous=NORMAL")
+            statement.execute("PRAGMA foreign_keys=ON")
+            statement.execute("PRAGMA busy_timeout=5000")
+        }
+        lock.withLock { connection = conn }
+        migrate(conn)
+        plugin.logger.info("Opened database ${file.name} (schema v${schemaVersion(conn)}).")
+    }
+
+    private fun migrate(conn: Connection) {
+        conn.createStatement().use {
+            it.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)")
+        }
+        if (conn.createStatement().use { statement ->
+                statement.executeQuery("SELECT COUNT(*) FROM schema_version").use { rs -> rs.next() && rs.getInt(1) == 0 }
+            }
+        ) {
+            conn.createStatement().use { it.execute("INSERT INTO schema_version (version) VALUES (0)") }
+        }
+
+        var current = schemaVersion(conn)
+        for (index in current until migrations.size) {
+            val target = index + 1
+            conn.autoCommit = false
+            try {
+                conn.createStatement().use { statement ->
+                    migrations[index].forEach { statement.execute(it) }
+                    statement.execute("UPDATE schema_version SET version = $target")
+                }
+                conn.commit()
+                plugin.logger.info("Applied database migration v$target.")
+            } catch (e: Exception) {
+                conn.rollback()
+                throw IllegalStateException("Database migration v$target failed: ${e.message}", e)
+            } finally {
+                conn.autoCommit = true
+            }
+            current = target
+        }
+    }
+
+    private fun schemaVersion(conn: Connection): Int =
+        conn.createStatement().use { statement ->
+            statement.executeQuery("SELECT version FROM schema_version").use { rs ->
+                if (rs.next()) rs.getInt(1) else 0
+            }
+        }
+
+    private fun connection(): Connection =
+        connection ?: throw IllegalStateException("Database is not open")
+
+    /** Runs [block] on the single connection (used for startup reads). */
+    fun <T> read(block: (Connection) -> T): T = lock.withLock { block(connection()) }
+
+    /**
+     * Executes [ops] in one transaction on the calling thread. Used for
+     * `flushNow` (custody transfers that must survive a crash) and shutdown.
+     */
+    fun execute(ops: List<SqlOp>) {
+        if (ops.isEmpty()) return
+        lock.withLock {
+            val conn = connection()
+            val previousAutoCommit = conn.autoCommit
+            conn.autoCommit = false
+            try {
+                ops.forEach { op -> conn.prepareStatement(op.sql).use { it.bind(op.params); it.executeUpdate() } }
+                conn.commit()
+            } catch (e: Exception) {
+                try {
+                    conn.rollback()
+                } catch (_: Exception) {
+                }
+                plugin.logger.severe("Could not write to ${file.name}: ${e.message}")
+            } finally {
+                try {
+                    conn.autoCommit = previousAutoCommit
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    /**
+     * Queues [ops] for the database thread. Before the plugin is enabled (or
+     * after the executor shut down) the batch runs inline instead of being lost.
+     */
+    fun submit(ops: List<SqlOp>) {
+        if (ops.isEmpty()) return
+        if (!plugin.isEnabled) {
+            execute(ops)
+            return
+        }
+        try {
+            executor.execute { execute(ops) }
+        } catch (_: RejectedExecutionException) {
+            execute(ops)
+        }
+    }
+
+    /** Drains queued writes, checkpoints the WAL and closes the connection. */
+    fun close() {
+        executor.shutdown()
+        try {
+            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                plugin.logger.warning("Database writes did not finish within 10s, closing anyway.")
+            }
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        lock.withLock {
+            val conn = connection ?: return@withLock
+            try {
+                conn.createStatement().use { it.execute("PRAGMA wal_checkpoint(TRUNCATE)") }
+            } catch (_: Exception) {
+            }
+            try {
+                conn.close()
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not close the database: ${e.message}")
+            }
+            connection = null
+        }
+    }
+}

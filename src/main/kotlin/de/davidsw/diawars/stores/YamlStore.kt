@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.concurrent.atomic.AtomicLong
 
-abstract class YamlStore(protected val plugin: Diawars, fileName: String) {
+abstract class YamlStore(protected val plugin: Diawars, fileName: String) : PersistentStore {
     protected val storeFile: File = StoreFiles.resolve(plugin, fileName)
 
     private val writeLock = Any()
@@ -38,7 +38,7 @@ abstract class YamlStore(protected val plugin: Diawars, fileName: String) {
         }
     }
 
-    fun markDirty() {
+    override fun markDirty() {
         dirty = true
     }
 
@@ -54,14 +54,14 @@ abstract class YamlStore(protected val plugin: Diawars, fileName: String) {
         write(serialize(isFinal = false), async = true)
     }
 
-    fun flushIfDirty(): Boolean {
+    override fun flushIfDirty(): Boolean {
         if (!dirty) return false
         dirty = false
         write(serialize(false), async = true)
         return true
     }
 
-    fun flushNow(isFinal: Boolean = false) {
+    override fun flushNow(isFinal: Boolean) {
         dirty = false
         write(serialize(isFinal), async = false)
     }

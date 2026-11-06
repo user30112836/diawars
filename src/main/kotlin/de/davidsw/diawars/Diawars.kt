@@ -99,7 +99,8 @@ import de.davidsw.diawars.stores.ReportStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
-import de.davidsw.diawars.stores.YamlStore
+import de.davidsw.diawars.stores.PersistentStore
+import de.davidsw.diawars.util.SqliteDatabase
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
@@ -142,7 +143,7 @@ class Store(
     val reportStore: ReportStore,
     val modRequestStore: ModRequestStore,
 ) {
-    private val all: List<YamlStore> = listOf(
+    private val all: List<PersistentStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
@@ -188,9 +189,11 @@ class Diawars : JavaPlugin() {
 
     lateinit var store: Store
     lateinit var menu: Menu
+    lateinit var database: SqliteDatabase
 
     override fun onEnable() {
         saveDefaultConfig()
+        openDatabase()
 
         store = Store(
             playerDiamondStore = PlayerDiamondStore(this),
@@ -381,9 +384,26 @@ class Diawars : JavaPlugin() {
 
     override fun onDisable() {
         eventManager.saveActiveInventories()
-        store.flushAllNow()
+        if (::store.isInitialized) store.flushAllNow()
         diamondLogManager.flushSync()
+        if (::database.isInitialized) database.close()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
+    }
+
+    /**
+     * Opens the shared SQLite database before any store is constructed. A store
+     * that cannot reach the database would silently start empty (and later
+     * overwrite), so a broken database disables the plugin instead.
+     */
+    private fun openDatabase() {
+        database = SqliteDatabase(this, java.io.File(dataFolder, "data/diawars.db"))
+        try {
+            database.open()
+        } catch (e: Exception) {
+            logger.severe("Could not open the database: ${e.message}")
+            e.printStackTrace()
+            server.pluginManager.disablePlugin(this)
+        }
     }
 }

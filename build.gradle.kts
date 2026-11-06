@@ -21,6 +21,9 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
     compileOnly("de.tr7zw:item-nbt-api-plugin:2.15.7")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    // Runtime data storage. Shaded into the jar (all platform natives included);
+    // NOT relocated: the driver resolves its native libraries by package path.
+    implementation("org.xerial:sqlite-jdbc:3.54.1.0")
 }
 
 tasks {
@@ -29,6 +32,12 @@ tasks {
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         minecraftVersion("26.2")
+    }
+
+    shadowJar {
+        // The JDBC driver is discovered via META-INF/services; without merging the
+        // service files the shaded driver would not register itself.
+        mergeServiceFiles()
     }
 }
 
