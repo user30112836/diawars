@@ -256,6 +256,57 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
             )
             """.trimIndent(),
         ),
+        // v5: events (incl. configs and saved player inventories) and image maps.
+        listOf(
+            """
+            CREATE TABLE events (
+                id         TEXT PRIMARY KEY,
+                name       TEXT NOT NULL,
+                creator    TEXT NOT NULL,
+                state      TEXT NOT NULL,
+                world      TEXT NOT NULL,
+                start_time INTEGER NOT NULL DEFAULT 0,
+                end_time   INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE used_event_ids (
+                id TEXT PRIMARY KEY
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE event_configs (
+                event             TEXT PRIMARY KEY,
+                gamemode          TEXT NOT NULL,
+                advance_time      INTEGER NOT NULL,
+                fixed_time        INTEGER NOT NULL,
+                gamerules         TEXT NOT NULL,
+                effects           TEXT NOT NULL,
+                starting_inventory BLOB,
+                starting_armor    BLOB,
+                starting_offhand  BLOB
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE event_inventories (
+                event      TEXT NOT NULL,
+                player     TEXT NOT NULL,
+                inventory  BLOB,
+                armor      BLOB,
+                offhand    BLOB,
+                enderchest BLOB,
+                PRIMARY KEY (event, player)
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE image_maps (
+                map_id  INTEGER PRIMARY KEY,
+                owner   TEXT NOT NULL,
+                file    TEXT NOT NULL,
+                deleted INTEGER NOT NULL DEFAULT 0
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {

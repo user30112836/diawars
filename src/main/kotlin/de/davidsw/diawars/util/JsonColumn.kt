@@ -2,6 +2,7 @@ package de.davidsw.diawars.util
 
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
+import com.google.gson.reflect.TypeToken
 
 /**
  * JSON columns for values that are read as a whole anyway (lists, nested
@@ -22,4 +23,16 @@ object JsonColumn {
             emptyList()
         }
     }
+
+    /** Decodes a JSON object of booleans (e.g. event game rules). */
+    fun booleanMap(raw: String?): Map<String, Boolean> {
+        if (raw.isNullOrBlank()) return emptyMap()
+        return try {
+            gson.fromJson<Map<String, Boolean>>(raw, BOOLEAN_MAP) ?: emptyMap()
+        } catch (_: JsonParseException) {
+            emptyMap()
+        }
+    }
+
+    private val BOOLEAN_MAP = object : TypeToken<Map<String, Boolean>>() {}.type
 }
