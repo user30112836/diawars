@@ -38,7 +38,7 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
     private val dirty = DirtyKeys<UUID>()
 
     init {
-        migrateLegacyYaml(fileName, "player_states") { yaml -> legacyRows(yaml) }
+        migrateLegacyYaml(fileName, "player_states", "store" to storeName) { yaml -> legacyRows(yaml) }
         load()
     }
 

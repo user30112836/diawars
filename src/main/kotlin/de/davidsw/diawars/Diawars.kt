@@ -99,7 +99,7 @@ import de.davidsw.diawars.stores.ReportStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
-import de.davidsw.diawars.stores.PersistentStore
+import de.davidsw.diawars.stores.SqlStore
 import de.davidsw.diawars.util.SqliteDatabase
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
@@ -143,7 +143,7 @@ class Store(
     val reportStore: ReportStore,
     val modRequestStore: ModRequestStore,
 ) {
-    private val all: List<PersistentStore> = listOf(
+    private val all: List<SqlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
@@ -193,7 +193,9 @@ class Diawars : JavaPlugin() {
 
     override fun onEnable() {
         saveDefaultConfig()
-        openDatabase()
+        // A store that starts without a working database would load empty and later
+        // overwrite good data, so a failed open aborts the enable instead.
+        if (!openDatabase()) return
 
         store = Store(
             playerDiamondStore = PlayerDiamondStore(this),
@@ -383,27 +385,29 @@ class Diawars : JavaPlugin() {
     }
 
     override fun onDisable() {
-        eventManager.saveActiveInventories()
+        if (::eventManager.isInitialized) eventManager.saveActiveInventories()
         if (::store.isInitialized) store.flushAllNow()
-        diamondLogManager.flushSync()
+        if (::diamondLogManager.isInitialized) diamondLogManager.flushSync()
         if (::database.isInitialized) database.close()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
     }
 
     /**
-     * Opens the shared SQLite database before any store is constructed. A store
-     * that cannot reach the database would silently start empty (and later
-     * overwrite), so a broken database disables the plugin instead.
+     * Opens the shared SQLite database before any store is constructed.
+     * Returns false when the database could not be opened (the plugin is then
+     * disabled and [onEnable] stops before building any store).
      */
-    private fun openDatabase() {
+    private fun openDatabase(): Boolean {
         database = SqliteDatabase(this, java.io.File(dataFolder, "data/diawars.db"))
-        try {
+        return try {
             database.open()
+            true
         } catch (e: Exception) {
             logger.severe("Could not open the database: ${e.message}")
             e.printStackTrace()
             server.pluginManager.disablePlugin(this)
+            false
         }
     }
 }

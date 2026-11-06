@@ -51,6 +51,15 @@ internal fun PreparedStatement.bind(params: List<Any?>) {
  * transaction and readers never block the writer.
  */
 class SqliteDatabase(private val plugin: Diawars, private val file: File) {
+    companion object {
+        /**
+         * Cap for [retryOps]. A broken database (read-only file, full disk) would
+         * otherwise grow the queue with every flush; past this point the oldest
+         * statements are dropped and the loss is logged loudly.
+         */
+        private const val MAX_RETRY_OPS = 20_000
+    }
+
     private val lock = ReentrantLock()
     private val executor: ExecutorService =
         Executors.newSingleThreadExecutor { runnable ->
@@ -58,6 +67,14 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
         }
 
     private var connection: Connection? = null
+
+    /**
+     * Batches that failed to commit, replayed before the next write. The in-memory
+     * caches are unaffected by a failed flush, so without this the affected rows
+     * would only reach disk again on their next mutation.
+     */
+    private val retryOps = mutableListOf<SqlOp>()
+    private var retryDropped = 0
 
     /**
      * Incremental schema migrations; entry index + 1 is the schema version it
@@ -375,15 +392,24 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
     /**
      * Executes [ops] in one transaction on the calling thread. Used for
      * `flushNow` (custody transfers that must survive a crash) and shutdown.
+     *
+     * A failed batch is kept and replayed before the next write, so a transient
+     * failure (locked file, full disk) does not silently lose already-drained
+     * changes from the stores' dirty tracking.
      */
     fun execute(ops: List<SqlOp>) {
         if (ops.isEmpty()) return
         lock.withLock {
-            val conn = connection()
+            // Queued writes may still arrive while the plugin is shutting down, after
+            // the connection was closed; dropping them is correct then.
+            val conn = connection ?: return@withLock
+            val batch = if (retryOps.isEmpty()) ops else retryOps.toList() + ops
+            retryOps.clear()
+            retryDropped = 0
             val previousAutoCommit = conn.autoCommit
             conn.autoCommit = false
             try {
-                ops.forEach { op -> conn.prepareStatement(op.sql).use { it.bind(op.params); it.executeUpdate() } }
+                batch.forEach { op -> conn.prepareStatement(op.sql).use { it.bind(op.params); it.executeUpdate() } }
                 conn.commit()
             } catch (e: Exception) {
                 try {
@@ -391,6 +417,16 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
                 } catch (_: Exception) {
                 }
                 plugin.logger.severe("Could not write to ${file.name}: ${e.message}")
+                retryOps.addAll(batch)
+                if (retryOps.size > MAX_RETRY_OPS) {
+                    val dropped = retryOps.size - MAX_RETRY_OPS
+                    retryOps.subList(0, dropped).clear()
+                    retryDropped += dropped
+                    plugin.logger.severe(
+                        "Database write queue is full: dropped $dropped pending statement(s) " +
+                            "($retryDropped in total).",
+                    )
+                }
             } finally {
                 try {
                     conn.autoCommit = previousAutoCommit
@@ -429,6 +465,27 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
         }
         lock.withLock {
             val conn = connection ?: return@withLock
+            if (retryOps.isNotEmpty()) {
+                plugin.logger.warning("Retrying ${retryOps.size} pending database statement(s) before shutdown.")
+                val batch = retryOps.toList()
+                retryOps.clear()
+                try {
+                    conn.autoCommit = false
+                    batch.forEach { op -> conn.prepareStatement(op.sql).use { it.bind(op.params); it.executeUpdate() } }
+                    conn.commit()
+                } catch (e: Exception) {
+                    try {
+                        conn.rollback()
+                    } catch (_: Exception) {
+                    }
+                    plugin.logger.severe("Final database write failed, ${batch.size} statement(s) lost: ${e.message}")
+                } finally {
+                    try {
+                        conn.autoCommit = true
+                    } catch (_: Exception) {
+                    }
+                }
+            }
             try {
                 conn.createStatement().use { it.execute("PRAGMA wal_checkpoint(TRUNCATE)") }
             } catch (_: Exception) {

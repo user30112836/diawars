@@ -29,15 +29,15 @@ internal class DirtyKeys<K> {
 }
 
 /**
- * SQLite-backed counterpart of [YamlStore]. Stores keep their whole state in
- * memory exactly like before; only the persistence sink changes.
+ * Base class for every persisted store: the whole state lives in memory and
+ * [writeTo] mirrors the changed rows into SQLite.
  *
- * Same threading contract as [YamlStore]: the statements (including any
- * ItemStack serialization) are built on the main thread in [writeTo], while
- * executing them happens on the `diawars-db` thread ([flushIfDirty]) or inline
- * on the caller's thread ([flushNow], custody transfers).
+ * Threading contract: the statements (including any ItemStack serialization)
+ * are built on the main thread in [writeTo], while executing them happens on
+ * the `diawars-db` thread ([flushIfDirty]) or inline on the caller's thread
+ * ([flushNow], for custody transfers that must survive a crash).
  */
-abstract class SqlStore(protected val plugin: Diawars, protected val storeName: String) : PersistentStore {
+abstract class SqlStore(protected val plugin: Diawars, protected val storeName: String) {
     protected val db: SqliteDatabase get() = plugin.database
 
     private val dirty = AtomicBoolean(false)
@@ -65,18 +65,29 @@ abstract class SqlStore(protected val plugin: Diawars, protected val storeName: 
      * migration: reads it on startup when [table] is still empty, writes all rows
      * in one transaction and renames the file to `<name>.migrated` (kept as the
      * manual rollback path). A failed import keeps the file, so it retries.
+     *
+     * [scope] is required for tables that hold several logical stores (the
+     * discriminator column and this store's value, e.g. `player_states`), so an
+     * already-populated sibling store cannot make this file look migrated.
      */
     protected fun migrateLegacyYaml(
         legacyFileName: String,
         table: String,
+        scope: Pair<String, String>? = null,
         buildRows: (YamlConfiguration) -> List<SqlOp>,
     ) {
         val legacy = StoreFiles.resolve(plugin, legacyFileName)
         if (!legacy.exists()) return
         try {
             val populated = db.read { connection ->
-                connection.createStatement().use { statement ->
-                    statement.executeQuery("SELECT COUNT(*) FROM $table").use { rs ->
+                val sql = if (scope == null) {
+                    "SELECT COUNT(*) FROM $table"
+                } else {
+                    "SELECT COUNT(*) FROM $table WHERE ${scope.first} = ?"
+                }
+                connection.prepareStatement(sql).use { statement ->
+                    if (scope != null) statement.setString(1, scope.second)
+                    statement.executeQuery().use { rs ->
                         rs.next() && rs.getInt(1) > 0
                     }
                 }
@@ -99,23 +110,23 @@ abstract class SqlStore(protected val plugin: Diawars, protected val storeName: 
         }
     }
 
-    override fun markDirty() {
+    fun markDirty() {
         dirty.set(true)
     }
 
-    override fun flushIfDirty(): Boolean {
+    fun flushIfDirty(): Boolean {
         if (!dirty.getAndSet(false)) return false
         write(isFinal = false)
         return true
     }
 
-    /** Persists everything pending, off-thread (counterpart of [YamlStore.saveImmediately]). */
+    /** Persists everything pending, off-thread. */
     fun saveImmediately() {
         dirty.set(false)
         write(isFinal = false)
     }
 
-    override fun flushNow(isFinal: Boolean) {
+    fun flushNow(isFinal: Boolean = false) {
         dirty.set(false)
         write(isFinal)
     }
