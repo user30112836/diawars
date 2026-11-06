@@ -29,8 +29,8 @@ class EventStore(plugin: Diawars) : SqlStore(plugin, "events") {
     private val cache = mutableMapOf<String, GameEvent>()
     private val byWorld = mutableMapOf<String, String>() // worldName -> eventId
     private val usedIds = mutableSetOf<String>()
-    private val dirty = DirtyKeys<String>()
     private val newUsedIds = mutableSetOf<String>()
+    private val removedIds = mutableSetOf<String>()
 
     init {
         migrateLegacyYaml("events.yml", "events") { yaml -> legacyRows(yaml) }
@@ -58,14 +58,13 @@ class EventStore(plugin: Diawars) : SqlStore(plugin, "events") {
         usedIds.add(event.id)
         newUsedIds.add(event.id)
         byWorld[event.worldName] = event.id
-        dirty.touch(event.id)
         saveImmediately()
     }
 
     fun removeEvent(id: String) {
         val ev = cache.remove(id)
         if (ev != null) byWorld.remove(ev.worldName)
-        dirty.touch(id)
+        removedIds.add(id)
         saveImmediately()
     }
 
@@ -107,29 +106,35 @@ class EventStore(plugin: Diawars) : SqlStore(plugin, "events") {
         plugin.logger.info("Loaded ${cache.size} event(s).")
     }
 
+    /**
+     * Events are few and their fields are mutated in place by
+     * [de.davidsw.diawars.managers.EventManager] (state, name, timeframe), so the
+     * whole cache is rewritten — same contract as the old YAML store, where
+     * `markDirty()` also persisted every event.
+     */
     override fun writeTo(ops: MutableList<SqlOp>) {
         for (id in newUsedIds.toList()) {
             ops += SqlOp("INSERT INTO used_event_ids (id) VALUES (?) ON CONFLICT(id) DO NOTHING", listOf(id))
         }
         newUsedIds.clear()
 
-        for (id in dirty.drain()) {
-            val event = cache[id]
-            if (event == null) {
-                ops += SqlOp("DELETE FROM events WHERE id = ?", listOf(id))
-            } else {
-                ops += SqlOp(
-                    "INSERT INTO events (id, name, creator, state, world, start_time, end_time) " +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?) " +
-                        "ON CONFLICT(id) DO UPDATE SET name = excluded.name, creator = excluded.creator, " +
-                        "state = excluded.state, world = excluded.world, start_time = excluded.start_time, " +
-                        "end_time = excluded.end_time",
-                    listOf(
-                        id, event.name, event.creator, event.state,
-                        event.worldName, event.startTime, event.endTime,
-                    ),
-                )
-            }
+        for (id in removedIds) {
+            ops += SqlOp("DELETE FROM events WHERE id = ?", listOf(id))
+        }
+        removedIds.clear()
+
+        for (event in cache.values) {
+            ops += SqlOp(
+                "INSERT INTO events (id, name, creator, state, world, start_time, end_time) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT(id) DO UPDATE SET name = excluded.name, creator = excluded.creator, " +
+                    "state = excluded.state, world = excluded.world, start_time = excluded.start_time, " +
+                    "end_time = excluded.end_time",
+                listOf(
+                    event.id, event.name, event.creator, event.state,
+                    event.worldName, event.startTime, event.endTime,
+                ),
+            )
         }
     }
 
