@@ -4,6 +4,7 @@ import de.davidsw.diawars.Diawars
 import de.davidsw.diawars.util.ConfigFiles
 import de.davidsw.diawars.util.MaterialSets.VAULT_UNDERGROUND
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 
@@ -139,8 +140,10 @@ class VaultManager(private val plugin: Diawars) {
 
     /**
      * Creates a vault for [teamKey] as a 10x10 block area centred on the
-     * player's current block position (full blocks, no fractions). The id and
-     * display name are generated per team: {@code team-a-vault-3} / "Vault A3".
+     * player's current block position (full blocks, no fractions). The whole
+     * 10x10 area one block below the player is replaced with bedrock so the
+     * vault has a floor to place diamond blocks on. The id and display name
+     * are generated per team: {@code team-a-vault-3} / "Vault A3".
      */
     fun addVaultAt(player: Player, teamKey: String): String {
         val team = Team.entries.firstOrNull { it.configKey == teamKey } ?: return "Unbekanntes Team: $teamKey"
@@ -176,9 +179,20 @@ class VaultManager(private val plugin: Diawars) {
         config.set("$id.corner2.x", maxX)
         config.set("$id.corner2.z", maxZ)
         config.save(vaultsFile)
+
+        // Build the vault floor: replace the 10x10 area at player Y - 1 with
+        // bedrock so diamond blocks can be placed on it (VAULT_UNDERGROUND).
+        val world = player.world
+        val floorY = (player.location.blockY - 1).coerceAtLeast(world.minHeight)
+        for (x in minX..maxX) {
+            for (z in minZ..maxZ) {
+                world.getBlockAt(x, floorY, z).setType(Material.BEDROCK, false)
+            }
+        }
+
         loadFromConfig()
 
-        return "OK Vault <white>$id</white> ($displayName) erstellt: ${player.world.name} X $minX..$maxX, Z $minZ..$maxZ."
+        return "OK Vault <white>$id</white> ($displayName) erstellt: ${player.world.name} X $minX..$maxX, Z $minZ..$maxZ, Boden auf Y $floorY aus Bedrock."
     }
 
     /** Trailing digits of an id/name ("team-a-vault-3" / "Vault A3" -> 3). */
