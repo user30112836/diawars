@@ -246,6 +246,16 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
             )
             """.trimIndent(),
         ),
+        // v4: reported client info (nested snapshot, kept as one JSON document).
+        listOf(
+            """
+            CREATE TABLE client_info (
+                player      TEXT PRIMARY KEY,
+                data        TEXT NOT NULL,
+                reported_at INTEGER NOT NULL
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {
