@@ -139,9 +139,9 @@ class VaultManager(private val plugin: Diawars) {
     }
 
     /**
-     * Creates a vault for [teamKey] as a 10x10 block area centred on the
+     * Creates a vault for [teamKey] as an 11x11 block area centred on the
      * player's current block position (full blocks, no fractions). The whole
-     * 10x10 area one block below the player is replaced with bedrock so the
+     * 11x11 area one block below the player is replaced with bedrock so the
      * vault has a floor to place diamond blocks on. The id and display name
      * are generated per team: {@code team-a-vault-3} / "Vault A3".
      */
@@ -167,9 +167,9 @@ class VaultManager(private val plugin: Diawars) {
         val blockX = player.location.blockX
         val blockZ = player.location.blockZ
         val minX = blockX - 5
-        val maxX = blockX + 4
+        val maxX = blockX + 5
         val minZ = blockZ - 5
-        val maxZ = blockZ + 4
+        val maxZ = blockZ + 5
 
         config.set("$id.display-name", displayName)
         config.set("$id.world", player.world.name)
@@ -180,7 +180,7 @@ class VaultManager(private val plugin: Diawars) {
         config.set("$id.corner2.z", maxZ)
         config.save(vaultsFile)
 
-        // Build the vault floor: replace the 10x10 area at player Y - 1 with
+        // Build the vault floor: replace the 11x11 area at player Y - 1 with
         // bedrock so diamond blocks can be placed on it (VAULT_UNDERGROUND).
         val world = player.world
         val floorY = (player.location.blockY - 1).coerceAtLeast(world.minHeight)

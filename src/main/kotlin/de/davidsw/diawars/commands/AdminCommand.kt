@@ -993,10 +993,10 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 else sender.sendMessage(mm("<red>Vault nicht gefunden.</red>"))
             }
             "add" -> {
-                // /admin vault add <team> — id/name are generated, the 10x10
+                // /admin vault add <team> — id/name are generated, the 11x11
                 // area is centred on the admin's current block position.
                 if (args.size < 2) {
-                    sender.sendMessage(mm("<red>Verwendung: /admin vault add &lt;team&gt; (erstellt einen 10x10-Vault an deiner Position)</red>"))
+                    sender.sendMessage(mm("<red>Verwendung: /admin vault add &lt;team&gt; (erstellt einen 11x11-Vault an deiner Position)</red>"))
                     return
                 }
                 if (sender !is Player) {
@@ -1095,7 +1095,7 @@ class AdminCommand(private val plugin: Diawars) : CommandExecutor, TabCompleter 
                 <yellow>/admin image remove &lt;spieler&gt; &lt;datei|all&gt;</yellow><gray> - Bild(er) löschen</gray>
                 <yellow>/admin image ban|unban &lt;spieler&gt;</yellow><gray> - Bilder-Funktion sperren/entsperren</gray>
                 <yellow>/admin vault list</yellow><gray> - Vaults auflisten</gray>
-                <yellow>/admin vault add &lt;team&gt;</yellow><gray> - 10x10-Vault an deiner Position erstellen</gray>
+                <yellow>/admin vault add &lt;team&gt;</yellow><gray> - 11x11-Vault an deiner Position erstellen</gray>
                 <yellow>/admin config list [präfix]</yellow><gray> - Alle Einstellungen auflisten</gray>
                 <yellow>/admin config get &lt;schluessel&gt;</yellow><gray> - Wert anzeigen</gray>
                 <yellow>/admin config set &lt;schluessel&gt; &lt;wert&gt;</yellow><gray> - Wert ändern</gray>
