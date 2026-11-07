@@ -1,7 +1,9 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.configuration.file.YamlConfiguration
+import java.sql.Connection
 import java.util.UUID
 
 data class BugReport(
@@ -12,17 +14,21 @@ data class BugReport(
     var resolved: Boolean = false,
 )
 
-class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
+class BugStore(plugin: Diawars) : SqlStore(plugin, "bugs") {
     companion object {
-        /** Cap for per-admin read marks so departed admins don't grow the file forever. */
+        /** Cap for per-admin read marks so departed admins don't grow the table forever. */
         const val MAX_ADMIN_READS = 100
     }
 
     private val cache = mutableMapOf<String, BugReport>()
     private val adminReads = mutableMapOf<UUID, Long>()
+    private val dirtyIds = mutableSetOf<String>()
+    private var adminReadsDirty = false
     private var nextId = 1
+    private var legacyNextId = 1
 
     init {
+        migrateLegacyYaml("bugs.yml", "bugs") { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -34,6 +40,7 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
         cache[id] = bug
         // Infrequent player-facing writes: persist synchronously so reports and
         // resolutions survive a crash instead of resurrecting as unresolved.
+        touch(id)
         flushNow()
         return bug
     }
@@ -42,6 +49,7 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
         val bug = cache[id] ?: return false
         if (bug.resolved) return false
         bug.resolved = true
+        touch(id)
         flushNow()
         return true
     }
@@ -57,54 +65,105 @@ class BugStore(plugin: Diawars) : YamlStore(plugin, "bugs.yml") {
         while (adminReads.size > MAX_ADMIN_READS) {
             adminReads.minByOrNull { it.value }?.key?.let { adminReads.remove(it) } ?: break
         }
+        adminReadsDirty = true
+        markDirty()
         flushNow()
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((id, bug) in cache) {
-            yaml.set("bugs.$id.reporter", bug.reporter.toString())
-            yaml.set("bugs.$id.description", bug.description)
-            yaml.set("bugs.$id.reported-at", bug.reportedAt)
-            yaml.set("bugs.$id.resolved", bug.resolved)
-        }
-        for ((admin, timestamp) in adminReads) {
-            yaml.set("admin-reads.$admin", timestamp)
-        }
-        yaml.set("next-id", nextId)
+    private fun touch(id: String) {
+        dirtyIds.add(id)
+        markDirty()
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
-        yaml.getConfigurationSection("bugs")?.let { bugsSection ->
-            for (id in bugsSection.getKeys(false)) {
+    override fun loadFrom(connection: Connection) {
+        cache.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT id, reporter, description, reported_at, resolved FROM bugs",
+            ).use { rs ->
+                while (rs.next()) {
+                    try {
+                        val id = rs.getString("id")
+                        cache[id] = BugReport(
+                            id = id,
+                            reporter = UUID.fromString(rs.getString("reporter")),
+                            description = rs.getString("description") ?: "",
+                            reportedAt = rs.getLong("reported_at"),
+                            resolved = rs.getInt("resolved") != 0,
+                        )
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Could not load bug report ${rs.getString("id")}: ${e.message}")
+                    }
+                }
+            }
+        }
+        adminReads.clear()
+        loadAdminReads(connection, adminReads)
+        nextId = maxOf(legacyNextId, highestId(connection, "bugs") + 1)
+        plugin.logger.info("Loaded ${cache.size} bug report(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        if (dirtyIds.isNotEmpty()) {
+            for (id in dirtyIds) {
+                val bug = cache[id]
+                if (bug == null) {
+                    ops += SqlOp("DELETE FROM bugs WHERE id = ?", listOf(id))
+                } else {
+                    ops += SqlOp(
+                        "INSERT INTO bugs (id, reporter, description, reported_at, resolved) " +
+                            "VALUES (?, ?, ?, ?, ?) " +
+                            "ON CONFLICT(id) DO UPDATE SET reporter = excluded.reporter, " +
+                            "description = excluded.description, reported_at = excluded.reported_at, " +
+                            "resolved = excluded.resolved",
+                        listOf(id, bug.reporter, bug.description, bug.reportedAt, bug.resolved),
+                    )
+                }
+            }
+            dirtyIds.clear()
+        }
+        if (adminReadsDirty) {
+            writeAdminReads(ops, adminReads)
+            adminReadsDirty = false
+        }
+    }
+
+    /** Parses the pre-SQLite `bugs.yml` into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
+        yaml.getConfigurationSection("bugs")?.let { section ->
+            for (id in section.getKeys(false)) {
                 try {
-                    val section = bugsSection.getConfigurationSection(id) ?: continue
-                    val reporterString = section.getString("reporter") ?: continue
-                    cache[id] = BugReport(
-                        id = id,
-                        reporter = UUID.fromString(reporterString),
-                        description = section.getString("description") ?: "",
-                        reportedAt = section.getLong("reported-at", 0L),
-                        resolved = section.getBoolean("resolved", false),
+                    val entry = section.getConfigurationSection(id) ?: continue
+                    val reporter = entry.getString("reporter") ?: continue
+                    ops += SqlOp(
+                        "INSERT INTO bugs (id, reporter, description, reported_at, resolved) VALUES (?, ?, ?, ?, ?)",
+                        listOf(
+                            id,
+                            UUID.fromString(reporter),
+                            entry.getString("description") ?: "",
+                            entry.getLong("reported-at", 0L),
+                            entry.getBoolean("resolved", false),
+                        ),
                     )
                 } catch (e: Exception) {
-                    plugin.logger.warning("Could not load bug report $id: ${e.message}")
+                    plugin.logger.warning("Could not import bug report $id: ${e.message}")
                 }
             }
         }
-
-        yaml.getConfigurationSection("admin-reads")?.let { readsSection ->
-            for (key in readsSection.getKeys(false)) {
+        yaml.getConfigurationSection("admin-reads")?.let { section ->
+            for (key in section.getKeys(false)) {
                 try {
-                    adminReads[UUID.fromString(key)] = readsSection.getLong(key)
+                    ops += SqlOp(
+                        "INSERT INTO admin_reads (store, admin, last_read) VALUES (?, ?, ?)",
+                        listOf(storeName, UUID.fromString(key), section.getLong(key)),
+                    )
                 } catch (e: Exception) {
-                    plugin.logger.warning("Could not load admin read state for $key: ${e.message}")
+                    plugin.logger.warning("Could not import admin read state for $key: ${e.message}")
                 }
             }
         }
-
-        val highestExisting = cache.keys.mapNotNull { it.toIntOrNull() }.maxOrNull() ?: 0
-        nextId = maxOf(yaml.getInt("next-id", 1), highestExisting + 1)
-
-        plugin.logger.info("Loaded ${cache.size} bug report(s).")
+        legacyNextId = yaml.getInt("next-id", 1)
+        return ops
     }
 }

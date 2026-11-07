@@ -81,6 +81,7 @@ import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.BugStore
 import de.davidsw.diawars.stores.ClientInfoStore
+import de.davidsw.diawars.stores.DiamondLogStore
 import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
@@ -96,10 +97,12 @@ import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ReportStore
+import de.davidsw.diawars.stores.ReportShotStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
-import de.davidsw.diawars.stores.YamlStore
+import de.davidsw.diawars.stores.SqlStore
+import de.davidsw.diawars.util.SqliteDatabase
 import org.bukkit.Bukkit.getWorlds
 import org.bukkit.GameRules
 import org.bukkit.plugin.java.JavaPlugin
@@ -140,15 +143,19 @@ class Store(
     val imageBanStore: ImageBanStore,
     val nightVisionStore: NightVisionStore,
     val reportStore: ReportStore,
+    val reportShotStore: ReportShotStore,
+    val diamondLogStore: DiamondLogStore,
     val modRequestStore: ModRequestStore,
 ) {
-    private val all: List<YamlStore> = listOf(
+    // reportShotStore is missing here on purpose: screenshots are written inline
+    // on upload (custody write), so there is nothing to flush periodically.
+    private val all: List<SqlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
         imageLimitStore, imageMapStore, imageBanStore, nightVisionStore, reportStore,
-        modRequestStore,
+        modRequestStore, diamondLogStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -188,9 +195,13 @@ class Diawars : JavaPlugin() {
 
     lateinit var store: Store
     lateinit var menu: Menu
+    lateinit var database: SqliteDatabase
 
     override fun onEnable() {
         saveDefaultConfig()
+        // A store that starts without a working database would load empty and later
+        // overwrite good data, so a failed open aborts the enable instead.
+        if (!openDatabase()) return
 
         store = Store(
             playerDiamondStore = PlayerDiamondStore(this),
@@ -215,6 +226,8 @@ class Diawars : JavaPlugin() {
             imageBanStore = ImageBanStore(this),
             nightVisionStore = NightVisionStore(this),
             reportStore = ReportStore(this),
+            reportShotStore = ReportShotStore(this),
+            diamondLogStore = DiamondLogStore(this),
             modRequestStore = ModRequestStore(this),
         )
 
@@ -380,10 +393,29 @@ class Diawars : JavaPlugin() {
     }
 
     override fun onDisable() {
-        eventManager.saveActiveInventories()
-        store.flushAllNow()
-        diamondLogManager.flushSync()
+        if (::eventManager.isInitialized) eventManager.saveActiveInventories()
+        if (::store.isInitialized) store.flushAllNow()
+        if (::diamondLogManager.isInitialized) diamondLogManager.flushSync()
+        if (::database.isInitialized) database.close()
         server.scheduler.cancelTasks(this)
         logger.info("The Diawars-Plugin got deactivated!")
+    }
+
+    /**
+     * Opens the shared SQLite database before any store is constructed.
+     * Returns false when the database could not be opened (the plugin is then
+     * disabled and [onEnable] stops before building any store).
+     */
+    private fun openDatabase(): Boolean {
+        database = SqliteDatabase(this, java.io.File(dataFolder, "diawars.db"))
+        return try {
+            database.open()
+            true
+        } catch (e: Exception) {
+            logger.severe("Could not open the database: ${e.message}")
+            e.printStackTrace()
+            server.pluginManager.disablePlugin(this)
+            false
+        }
     }
 }

@@ -1,6 +1,8 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.ItemBlob
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
@@ -8,6 +10,7 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.sql.Connection
 import java.util.UUID
 
 data class PlayerSavedState(
@@ -29,10 +32,13 @@ data class PlayerSavedState(
     val level: Int,
 )
 
-class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") : YamlStore(plugin, fileName) {
+class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") :
+    SqlStore(plugin, fileName.removeSuffix(".yml")) {
     private val cache = mutableMapOf<UUID, PlayerSavedState>()
+    private val dirty = DirtyKeys<UUID>()
 
     init {
+        migrateLegacyYaml(fileName, "player_states", "store" to storeName) { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -58,6 +64,7 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
         // Custody transfer: the live inventory is cleared/teleported right after this
         // call, so persist synchronously. An async write could still be in flight on
         // crash, resurrecting the snapshot and duplicating items on restore.
+        dirty.touch(player.uniqueId)
         flushNow()
     }
 
@@ -67,6 +74,7 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
         val state = cache.remove(player.uniqueId) ?: return false
         // Durable removal BEFORE granting items back: a crash after this point must
         // not find the snapshot on disk again (second restore = duplicated items).
+        dirty.touch(player.uniqueId)
         flushNow()
 
         if (!minimal) {
@@ -94,32 +102,79 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
         return true
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((uuid, state) in cache) {
-            val key = uuid.toString()
-            yaml.set("$key.inventory", state.inventory)
-            yaml.set("$key.armor", state.armor)
-            yaml.set("$key.offhand", state.offHand)
-            yaml.set("$key.enderchest", state.enderChest)
-            yaml.set("$key.gamemode", state.gameMode.name)
-            yaml.set("$key.world", state.worldName)
-            yaml.set("$key.x", state.x)
-            yaml.set("$key.y", state.y)
-            yaml.set("$key.z", state.z)
-            yaml.set("$key.yaw", state.yaw)
-            yaml.set("$key.pitch", state.pitch)
-            yaml.set("$key.health", state.health)
-            yaml.set("$key.food", state.foodLevel)
-            yaml.set("$key.saturation", state.saturation)
-            yaml.set("$key.exp", state.exp)
-            yaml.set("$key.level", state.level)
+    override fun loadFrom(connection: Connection) {
+        cache.clear()
+        connection.prepareStatement(
+            "SELECT player, inventory, armor, offhand, enderchest, gamemode, world, " +
+                "x, y, z, yaw, pitch, health, food, saturation, exp, level FROM player_states WHERE store = ?",
+        ).use { statement ->
+            statement.setString(1, storeName)
+            statement.executeQuery().use { rs ->
+                while (rs.next()) {
+                    try {
+                        cache[UUID.fromString(rs.getString("player"))] = PlayerSavedState(
+                            inventory = ItemBlob.decodeItems(rs.getBytes("inventory")),
+                            armor = ItemBlob.decodeItems(rs.getBytes("armor")),
+                            offHand = ItemBlob.decodeItem(rs.getBytes("offhand")),
+                            enderChest = ItemBlob.decodeItems(rs.getBytes("enderchest")),
+                            gameMode = GameMode.valueOf(rs.getString("gamemode") ?: "SURVIVAL"),
+                            worldName = rs.getString("world") ?: plugin.server.worlds.first().name,
+                            x = rs.getDouble("x"),
+                            y = rs.getDouble("y"),
+                            z = rs.getDouble("z"),
+                            yaw = rs.getDouble("yaw").toFloat(),
+                            pitch = rs.getDouble("pitch").toFloat(),
+                            health = rs.getDouble("health"),
+                            foodLevel = rs.getInt("food"),
+                            saturation = rs.getDouble("saturation").toFloat(),
+                            exp = rs.getDouble("exp").toFloat(),
+                            level = rs.getInt("level"),
+                        )
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Could not load player state for ${rs.getString("player")}: ${e.message}")
+                    }
+                }
+            }
+        }
+        plugin.logger.info("Loaded ${cache.size} saved $storeName state(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        for (playerId in dirty.drain()) {
+            val state = cache[playerId]
+            if (state == null) {
+                ops += SqlOp("DELETE FROM player_states WHERE store = ? AND player = ?", listOf(storeName, playerId))
+                continue
+            }
+            ops += SqlOp(
+                "INSERT INTO player_states (store, player, inventory, armor, offhand, enderchest, gamemode, world, " +
+                    "x, y, z, yaw, pitch, health, food, saturation, exp, level) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+                    "ON CONFLICT(store, player) DO UPDATE SET inventory = excluded.inventory, armor = excluded.armor, " +
+                    "offhand = excluded.offhand, enderchest = excluded.enderchest, gamemode = excluded.gamemode, " +
+                    "world = excluded.world, x = excluded.x, y = excluded.y, z = excluded.z, yaw = excluded.yaw, " +
+                    "pitch = excluded.pitch, health = excluded.health, food = excluded.food, " +
+                    "saturation = excluded.saturation, exp = excluded.exp, level = excluded.level",
+                listOf(
+                    storeName, playerId,
+                    ItemBlob.encodeItems(state.inventory),
+                    ItemBlob.encodeItems(state.armor),
+                    ItemBlob.encodeItem(state.offHand),
+                    ItemBlob.encodeItems(state.enderChest),
+                    state.gameMode, state.worldName,
+                    state.x, state.y, state.z, state.yaw, state.pitch,
+                    state.health, state.foodLevel, state.saturation, state.exp, state.level,
+                ),
+            )
         }
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
+    /** Parses the legacy YAML file into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
         for (key in yaml.getKeys(false)) {
             try {
-                val uuid = UUID.fromString(key)
+                val playerId = UUID.fromString(key)
                 val section = yaml.getConfigurationSection(key) ?: continue
 
                 @Suppress("UNCHECKED_CAST")
@@ -129,29 +184,31 @@ class PlayerStateStore(plugin: Diawars, fileName: String = "player_states.yml") 
                 @Suppress("UNCHECKED_CAST")
                 val armor = (section.getList("armor") as? List<ItemStack?>) ?: emptyList()
 
-                cache[uuid] = PlayerSavedState(
-                    inventory = inventory,
-                    armor = armor,
-                    offHand = section.getItemStack("offhand"),
-                    enderChest = enderChest,
-                    gameMode = GameMode.valueOf(section.getString("gamemode") ?: "SURVIVAL"),
-                    worldName = section.getString("world") ?: plugin.server.worlds.first().name,
-                    x = section.getDouble("x"),
-                    y = section.getDouble("y"),
-                    z = section.getDouble("z"),
-                    yaw = section.getDouble("yaw").toFloat(),
-                    pitch = section.getDouble("pitch").toFloat(),
-                    health = section.getDouble("health", 20.0),
-                    foodLevel = section.getInt("food", 20),
-                    saturation = section.getDouble("saturation", 5.0).toFloat(),
-                    exp = section.getDouble("exp", 0.0).toFloat(),
-                    level = section.getInt("level", 0),
+                ops += SqlOp(
+                    "INSERT INTO player_states (store, player, inventory, armor, offhand, enderchest, gamemode, world, " +
+                        "x, y, z, yaw, pitch, health, food, saturation, exp, level) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    listOf(
+                        storeName, playerId,
+                        ItemBlob.encodeItems(inventory),
+                        ItemBlob.encodeItems(armor),
+                        ItemBlob.encodeItem(section.getItemStack("offhand")),
+                        ItemBlob.encodeItems(enderChest),
+                        GameMode.valueOf(section.getString("gamemode") ?: "SURVIVAL"),
+                        section.getString("world") ?: plugin.server.worlds.first().name,
+                        section.getDouble("x"), section.getDouble("y"), section.getDouble("z"),
+                        section.getDouble("yaw").toFloat(), section.getDouble("pitch").toFloat(),
+                        section.getDouble("health", 20.0),
+                        section.getInt("food", 20),
+                        section.getDouble("saturation", 5.0).toFloat(),
+                        section.getDouble("exp", 0.0).toFloat(),
+                        section.getInt("level", 0),
+                    ),
                 )
             } catch (e: Exception) {
-                plugin.logger.warning("Could not load event player state for $key: ${e.message}")
+                plugin.logger.warning("Could not import player state for $key: ${e.message}")
             }
         }
-
-        plugin.logger.info("Loaded ${cache.size} saved event player state(s).")
+        return ops
     }
 }

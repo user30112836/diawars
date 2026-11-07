@@ -3,8 +3,11 @@ package de.davidsw.diawars.stores
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.JsonColumn
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
+import java.sql.Connection
 import java.util.UUID
 
 data class ModEntry(
@@ -13,21 +16,21 @@ data class ModEntry(
 )
 
 data class OldModEntry(
-    val loader: String,
-    val id: String,
+    val loader: String = "unknown",
+    val id: String = "",
 )
 
 data class Loader(
-    val type: String,
-    val version: String,
+    val type: String = "unknown",
+    val version: String = "unknown",
 )
 
 data class ClientInfo(
-    val minecraftVersion: String,
-    val activeLoader: Loader,
+    val minecraftVersion: String = "unknown",
+    val activeLoader: Loader = Loader(),
     val previousLoaders: List<Loader> = emptyList(),
 
-    val activeMods: List<ModEntry>,
+    val activeMods: List<ModEntry> = emptyList(),
     val previousMods: List<OldModEntry> = emptyList(),
 
     val activeResourcePacks: List<String> = emptyList(),
@@ -58,7 +61,7 @@ private data class ClientInfoDto(
 
 class ClientInfoStore(
     plugin: Diawars,
-) : YamlStore(plugin, "client_info.yml") {
+) : SqlStore(plugin, "client_info") {
 
     companion object {
         /** Cap for every previous-* history list so client_info.yml cannot grow forever. */
@@ -68,8 +71,10 @@ class ClientInfoStore(
     private val cache = mutableMapOf<UUID, ClientInfo>()
     private val gson = Gson()
     private val reportedPlayers = mutableSetOf<UUID>()
+    private val dirty = DirtyKeys<UUID>()
 
     init {
+        migrateLegacyYaml("client_info.yml", "client_info") { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -162,6 +167,7 @@ class ClientInfoStore(
             )
 
             cache[playerId] = updatedInfo
+            dirty.touch(playerId)
 
             // Packet-frequency path: defer persistence to the periodic/shutdown
             // flush instead of serializing the whole file per client packet.
@@ -252,130 +258,62 @@ class ClientInfoStore(
                 ).distinct().takeLast(MAX_HISTORY)
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((uuid, info) in cache) {
-            saveClientInfo(yaml, uuid, info)
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        for (playerId in dirty.drain()) {
+            val info = cache[playerId]
+            if (info == null) {
+                ops += SqlOp("DELETE FROM client_info WHERE player = ?", listOf(playerId))
+            } else {
+                ops += SqlOp(
+                    "INSERT INTO client_info (player, data, reported_at) VALUES (?, ?, ?) " +
+                        "ON CONFLICT(player) DO UPDATE SET data = excluded.data, reported_at = excluded.reported_at",
+                    listOf(playerId, JsonColumn.encode(info), info.reportedAt),
+                )
+            }
         }
     }
 
-    private fun saveClientInfo(
-        config: YamlConfiguration,
-        uuid: UUID,
-        info: ClientInfo,
-    ) {
-        val path = uuid.toString()
-
-        config.set("$path.minecraft-version", info.minecraftVersion)
-        config.set("$path.reported-at", info.reportedAt)
-
-        config.set(
-            "$path.active-loader.type",
-            info.activeLoader.type,
-        )
-        config.set(
-            "$path.active-loader.version",
-            info.activeLoader.version,
-        )
-
-        config.set(
-            "$path.previous-loaders",
-            info.previousLoaders.map { loader ->
-                mapOf(
-                    "type" to loader.type,
-                    "version" to loader.version,
-                )
-            },
-        )
-
-        config.set(
-            "$path.active-mods",
-            info.activeMods.map { mod ->
-                mapOf(
-                    "id" to mod.id,
-                    "version" to mod.version,
-                )
-            },
-        )
-
-        config.set(
-            "$path.previous-mods",
-            info.previousMods.map { mod ->
-                mapOf(
-                    "loader" to mod.loader,
-                    "id" to mod.id,
-                )
-            },
-        )
-
-        config.set(
-            "$path.active-resource-packs",
-            info.activeResourcePacks,
-        )
-
-        config.set(
-            "$path.previous-resource-packs",
-            info.previousResourcePacks,
-        )
-
-        config.set(
-            "$path.shader-mod-installed",
-            info.shaderModInstalled,
-        )
-
-        config.set(
-            "$path.ever-shader-mod-installed",
-            info.everShaderModInstalled,
-        )
-
-        config.set(
-            "$path.shaders-enabled",
-            info.shadersEnabled,
-        )
-
-        config.set(
-            "$path.ever-shaders-enabled",
-            info.everShadersEnabled,
-        )
-
-        config.set(
-            "$path.active-shader-pack",
-            info.activeShaderPack,
-        )
-
-        config.set(
-            "$path.previous-shader-packs",
-            info.previousShaderPacks,
-        )
+    override fun loadFrom(connection: Connection) {
+        cache.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery("SELECT player, data FROM client_info").use { rs ->
+                while (rs.next()) {
+                    val rawPlayer = rs.getString("player")
+                    try {
+                        val data = rs.getString("data")
+                        if (data.isNullOrBlank()) continue
+                        cache[UUID.fromString(rawPlayer)] = gson.fromJson(data, ClientInfo::class.java)
+                    } catch (e: Exception) {
+                        plugin.logger.warning("Could not load client info for $rawPlayer: ${e.message}")
+                    }
+                }
+            }
+        }
+        plugin.logger.info("Loaded client info for ${cache.size} player(s).")
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
-        cache.clear()
-
+    /** Parses the pre-SQLite `client_info.yml` into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
         for (key in yaml.getKeys(false)) {
-            val uuid = try {
+            val playerId = try {
                 UUID.fromString(key)
             } catch (_: IllegalArgumentException) {
-                plugin.logger.warning(
-                    "Ignoring invalid UUID in ${storeFile.name}: $key"
-                )
+                plugin.logger.warning("Ignoring invalid UUID in the legacy client info file: $key")
                 continue
             }
-
-            val section = yaml.getConfigurationSection(key)
-                ?: continue
-
+            val section = yaml.getConfigurationSection(key) ?: continue
             try {
-                cache[uuid] = loadClientInfo(section)
-            } catch (e: Exception) {
-                plugin.logger.warning(
-                    "Could not load client info for $key: ${e.message}"
+                val info = loadClientInfo(section)
+                ops += SqlOp(
+                    "INSERT INTO client_info (player, data, reported_at) VALUES (?, ?, ?)",
+                    listOf(playerId, JsonColumn.encode(info), info.reportedAt),
                 )
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not import client info for $key: ${e.message}")
             }
         }
-
-        plugin.logger.info(
-            "Loaded client info for ${cache.size} player(s)."
-        )
+        return ops
     }
 
     private fun loadClientInfo(

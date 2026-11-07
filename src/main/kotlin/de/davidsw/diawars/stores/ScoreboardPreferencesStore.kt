@@ -1,7 +1,10 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.JsonColumn
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.configuration.file.YamlConfiguration
+import java.sql.Connection
 import java.util.UUID
 
 enum class ScoreboardComponent(val configKey: String, val label: String) {
@@ -17,10 +20,14 @@ data class ScoreboardPreference(
     val enabledComponents: Set<ScoreboardComponent> = ScoreboardComponent.entries.toSet(),
 )
 
-class ScoreboardPreferencesStore(plugin: Diawars) : YamlStore(plugin, "scoreboard_preferences.yml") {
+class ScoreboardPreferencesStore(plugin: Diawars) : SqlStore(plugin, "scoreboard_preferences") {
     private val preferences = mutableMapOf<UUID, ScoreboardPreference>()
+    private val dirty = DirtyKeys<UUID>()
 
-    init { load() }
+    init {
+        migrateLegacyYaml("scoreboard_preferences.yml", "scoreboard_preferences") { yaml -> legacyRows(yaml) }
+        load()
+    }
 
     fun getPreference(playerId: UUID): ScoreboardPreference = preferences[playerId] ?: ScoreboardPreference()
 
@@ -43,45 +50,93 @@ class ScoreboardPreferencesStore(plugin: Diawars) : YamlStore(plugin, "scoreboar
 
     fun resetToDefault(playerId: UUID) {
         preferences.remove(playerId)
+        dirty.touch(playerId)
         markDirty()
     }
 
     private fun update(playerId: UUID, transform: (ScoreboardPreference) -> ScoreboardPreference) {
         preferences[playerId] = transform(getPreference(playerId))
+        dirty.touch(playerId)
         markDirty()
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
-        for (key in yaml.getKeys(false)) {
-            try {
-                val uuid = UUID.fromString(key)
-                val section = yaml.getConfigurationSection(key)
-
-                if (section == null) {
-                    // Legacy format: key -> boolean (only stored whether the sidebar was on)
-                    preferences[uuid] = ScoreboardPreference(sidebarEnabled = yaml.getBoolean(key, true))
-                    continue
+    override fun loadFrom(connection: Connection) {
+        preferences.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT player, sidebar_enabled, components FROM scoreboard_preferences",
+            ).use { rs ->
+                while (rs.next()) {
+                    try {
+                        preferences[UUID.fromString(rs.getString("player"))] = ScoreboardPreference(
+                            sidebarEnabled = rs.getInt("sidebar_enabled") != 0,
+                            enabledComponents = JsonColumn.strings(rs.getString("components"))
+                                .mapNotNull { name -> ScoreboardComponent.entries.firstOrNull { it.name == name } }
+                                .toSet(),
+                        )
+                    } catch (e: Exception) {
+                        plugin.logger.warning(
+                            "Could not load scoreboard preferences for ${rs.getString("player")}: ${e.message}",
+                        )
+                    }
                 }
-
-                val sidebarEnabled = section.getBoolean("sidebar-enabled", true)
-                val components = ScoreboardComponent.entries
-                    .filter { section.getBoolean("components.${it.configKey}", true) }
-                    .toSet()
-
-                preferences[uuid] = ScoreboardPreference(sidebarEnabled, components)
-            } catch (e: Exception) {
-                plugin.logger.warning("Could not load scoreboard preferences for $key: ${e.message}")
             }
+        }
+        plugin.logger.info("Loaded scoreboard preferences for ${preferences.size} player(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        for (playerId in dirty.drain()) {
+            val pref = preferences[playerId]
+            if (pref == null) {
+                ops += SqlOp("DELETE FROM scoreboard_preferences WHERE player = ?", listOf(playerId))
+                continue
+            }
+            ops += SqlOp(
+                "INSERT INTO scoreboard_preferences (player, sidebar_enabled, components) VALUES (?, ?, ?) " +
+                    "ON CONFLICT(player) DO UPDATE SET sidebar_enabled = excluded.sidebar_enabled, " +
+                    "components = excluded.components",
+                listOf(
+                    playerId,
+                    pref.sidebarEnabled,
+                    JsonColumn.encode(ScoreboardComponent.entries.filter { it in pref.enabledComponents }.map { it.name }),
+                ),
+            )
         }
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((uuid, pref) in preferences) {
-            val key = uuid.toString()
-            yaml.set("$key.sidebar-enabled", pref.sidebarEnabled)
-            ScoreboardComponent.entries.forEach {
-                yaml.set("$key.components.${it.configKey}", it in pref.enabledComponents)
+    /** Parses the pre-SQLite `scoreboard_preferences.yml` (both legacy layouts). */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
+        for (key in yaml.getKeys(false)) {
+            try {
+                val playerId = UUID.fromString(key)
+                val section = yaml.getConfigurationSection(key)
+
+                val pref = if (section == null) {
+                    // Legacy format: key -> boolean (only stored whether the sidebar was on)
+                    ScoreboardPreference(sidebarEnabled = yaml.getBoolean(key, true))
+                } else {
+                    ScoreboardPreference(
+                        sidebarEnabled = section.getBoolean("sidebar-enabled", true),
+                        enabledComponents = ScoreboardComponent.entries
+                            .filter { section.getBoolean("components.${it.configKey}", true) }
+                            .toSet(),
+                    )
+                }
+
+                ops += SqlOp(
+                    "INSERT INTO scoreboard_preferences (player, sidebar_enabled, components) VALUES (?, ?, ?)",
+                    listOf(
+                        playerId,
+                        pref.sidebarEnabled,
+                        JsonColumn.encode(ScoreboardComponent.entries.filter { it in pref.enabledComponents }.map { it.name }),
+                    ),
+                )
+            } catch (e: Exception) {
+                plugin.logger.warning("Could not import scoreboard preferences for $key: ${e.message}")
             }
         }
+        return ops
     }
 }

@@ -1,10 +1,13 @@
 package de.davidsw.diawars.stores
 
 import de.davidsw.diawars.Diawars
+import de.davidsw.diawars.util.ItemBlob
+import de.davidsw.diawars.util.SqlOp
 import org.bukkit.Material
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import java.sql.Connection
 import java.util.UUID
 
 data class EventPlayerInventory(
@@ -14,10 +17,13 @@ data class EventPlayerInventory(
     val enderChest: List<ItemStack?>,
 )
 
-class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inventories.yml") {
+class EventInventoryStore(plugin: Diawars) : SqlStore(plugin, "event_player_inventories") {
     private val cache = mutableMapOf<String, MutableMap<UUID, EventPlayerInventory>>()
+    private val dirty = DirtyKeys<Pair<String, UUID>>()
+    private val clearedEvents = mutableSetOf<String>()
 
     init {
+        migrateLegacyYaml("event_player_inventories.yml", "event_inventories") { yaml -> legacyRows(yaml) }
         load()
     }
 
@@ -31,6 +37,7 @@ class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inv
         )
         // Custody transfer (leaveWorld/saveActiveInventories): persist synchronously
         // so a crash cannot resurrect a stale snapshot and duplicate inventories.
+        dirty.touch(eventId to player.uniqueId)
         flushNow()
     }
 
@@ -48,29 +55,81 @@ class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inv
     }
 
     fun clearEvent(eventId: String) {
-        if (cache.remove(eventId) != null) flushNow()
+        if (cache.remove(eventId) != null) {
+            clearedEvents += eventId
+            markDirty()
+            flushNow()
+        }
     }
 
-    override fun writeTo(yaml: YamlConfiguration) {
-        for ((eventId, players) in cache) {
-            for ((uuid, inv) in players) {
-                val key = "$eventId.$uuid"
-                yaml.set("$key.inventory", inv.inventory)
-                yaml.set("$key.armor", inv.armor)
-                yaml.set("$key.offhand", inv.offHand)
-                yaml.set("$key.enderchest", inv.enderChest)
+    override fun loadFrom(connection: Connection) {
+        cache.clear()
+        connection.createStatement().use { statement ->
+            statement.executeQuery(
+                "SELECT event, player, inventory, armor, offhand, enderchest FROM event_inventories",
+            ).use { rs ->
+                while (rs.next()) {
+                    try {
+                        val eventId = rs.getString("event")
+                        cache.getOrPut(eventId) { mutableMapOf() }[UUID.fromString(rs.getString("player"))] =
+                            EventPlayerInventory(
+                                inventory = ItemBlob.decodeItems(rs.getBytes("inventory")),
+                                armor = ItemBlob.decodeItems(rs.getBytes("armor")),
+                                offHand = ItemBlob.decodeItem(rs.getBytes("offhand")),
+                                enderChest = ItemBlob.decodeItems(rs.getBytes("enderchest")),
+                            )
+                    } catch (e: Exception) {
+                        plugin.logger.warning(
+                            "Could not load event inventory for ${rs.getString("event")}/${rs.getString("player")}: ${e.message}",
+                        )
+                    }
+                }
+            }
+        }
+        plugin.logger.info("Loaded event inventories for ${cache.size} event(s).")
+    }
+
+    override fun writeTo(ops: MutableList<SqlOp>) {
+        for (eventId in clearedEvents) {
+            ops += SqlOp("DELETE FROM event_inventories WHERE event = ?", listOf(eventId))
+        }
+        val cleared = clearedEvents.toSet()
+        clearedEvents.clear()
+
+        for ((eventId, playerId) in dirty.drain()) {
+            if (eventId in cleared) continue
+            val saved = cache[eventId]?.get(playerId)
+            if (saved == null) {
+                ops += SqlOp(
+                    "DELETE FROM event_inventories WHERE event = ? AND player = ?",
+                    listOf(eventId, playerId),
+                )
+            } else {
+                ops += SqlOp(
+                    "INSERT INTO event_inventories (event, player, inventory, armor, offhand, enderchest) " +
+                        "VALUES (?, ?, ?, ?, ?, ?) " +
+                        "ON CONFLICT(event, player) DO UPDATE SET inventory = excluded.inventory, " +
+                        "armor = excluded.armor, offhand = excluded.offhand, enderchest = excluded.enderchest",
+                    listOf(
+                        eventId, playerId,
+                        ItemBlob.encodeItems(saved.inventory),
+                        ItemBlob.encodeItems(saved.armor),
+                        ItemBlob.encodeItem(saved.offHand),
+                        ItemBlob.encodeItems(saved.enderChest),
+                    ),
+                )
             }
         }
     }
 
-    override fun readFrom(yaml: YamlConfiguration) {
+    /** Parses the pre-SQLite `event_player_inventories.yml` into insert statements. */
+    private fun legacyRows(yaml: YamlConfiguration): List<SqlOp> {
+        val ops = mutableListOf<SqlOp>()
         for (eventId in yaml.getKeys(false)) {
             val eventSection = yaml.getConfigurationSection(eventId) ?: continue
-            val perEvent = mutableMapOf<UUID, EventPlayerInventory>()
-
             for (key in eventSection.getKeys(false)) {
                 try {
-                    val uuid = UUID.fromString(key)
+                    val playerId = UUID.fromString(key)
                     val section = eventSection.getConfigurationSection(key) ?: continue
 
                     @Suppress("UNCHECKED_CAST")
@@ -80,20 +139,22 @@ class EventInventoryStore(plugin: Diawars) : YamlStore(plugin, "event_player_inv
                     @Suppress("UNCHECKED_CAST")
                     val enderChest = (section.getList("enderchest") as? List<ItemStack?>) ?: emptyList()
 
-                    perEvent[uuid] = EventPlayerInventory(
-                        inventory = inventory,
-                        armor = armor,
-                        offHand = section.getItemStack("offhand"),
-                        enderChest = enderChest,
+                    ops += SqlOp(
+                        "INSERT INTO event_inventories (event, player, inventory, armor, offhand, enderchest) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                        listOf(
+                            eventId, playerId,
+                            ItemBlob.encodeItems(inventory),
+                            ItemBlob.encodeItems(armor),
+                            ItemBlob.encodeItem(section.getItemStack("offhand")),
+                            ItemBlob.encodeItems(enderChest),
+                        ),
                     )
                 } catch (e: Exception) {
-                    plugin.logger.warning("Could not load event inventory for $eventId/$key: ${e.message}")
+                    plugin.logger.warning("Could not import event inventory for $eventId/$key: ${e.message}")
                 }
             }
-
-            cache[eventId] = perEvent
         }
-
-        plugin.logger.info("Loaded event inventories for ${cache.size} event(s).")
+        return ops
     }
 }
