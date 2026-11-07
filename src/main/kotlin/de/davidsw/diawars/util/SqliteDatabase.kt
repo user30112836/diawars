@@ -325,6 +325,25 @@ class SqliteDatabase(private val plugin: Diawars, private val file: File) {
             )
             """.trimIndent(),
         ),
+        // v6: report screenshots (were reports/<id>.png) and the diamond log
+        // (was logs/YYYY-MM-DD.txt).
+        listOf(
+            """
+            CREATE TABLE report_shots (
+                report   TEXT PRIMARY KEY,
+                data     BLOB NOT NULL,
+                saved_at INTEGER NOT NULL
+            )
+            """.trimIndent(),
+            """
+            CREATE TABLE diamond_log (
+                id        INTEGER PRIMARY KEY,
+                logged_at INTEGER NOT NULL,
+                day       TEXT NOT NULL,
+                line      TEXT NOT NULL
+            )
+            """.trimIndent(),
+        ),
     )
 
     fun open() {

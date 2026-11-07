@@ -81,6 +81,7 @@ import de.davidsw.diawars.menu.VaultMenu
 import de.davidsw.diawars.stores.BorderPreferencesStore
 import de.davidsw.diawars.stores.BugStore
 import de.davidsw.diawars.stores.ClientInfoStore
+import de.davidsw.diawars.stores.DiamondLogStore
 import de.davidsw.diawars.stores.EventConfigStore
 import de.davidsw.diawars.stores.EventInventoryStore
 import de.davidsw.diawars.stores.EventStore
@@ -96,6 +97,7 @@ import de.davidsw.diawars.stores.PlayerStateStore
 import de.davidsw.diawars.stores.PvPStatusStore
 import de.davidsw.diawars.stores.RewardStore
 import de.davidsw.diawars.stores.ReportStore
+import de.davidsw.diawars.stores.ReportShotStore
 import de.davidsw.diawars.stores.ScoreboardPreferencesStore
 import de.davidsw.diawars.stores.VaultClaimStore
 import de.davidsw.diawars.stores.VaultDiamondStore
@@ -141,15 +143,19 @@ class Store(
     val imageBanStore: ImageBanStore,
     val nightVisionStore: NightVisionStore,
     val reportStore: ReportStore,
+    val reportShotStore: ReportShotStore,
+    val diamondLogStore: DiamondLogStore,
     val modRequestStore: ModRequestStore,
 ) {
+    // reportShotStore is missing here on purpose: screenshots are written inline
+    // on upload (custody write), so there is nothing to flush periodically.
     private val all: List<SqlStore> = listOf(
         playerDiamondStore, borderPreferencesStore, pvpStatusStore,
         lobbyStateStore, eventStateStore, eventStore, eventInventoryStore, eventConfigStore,
         playerSpawnStore, rewardStore, scoreboardPreferencesStore, messageStore,
         vaultDiamondStore, vaultClaimStore, bugStore, onboardingStore, clientInfoStore,
         imageLimitStore, imageMapStore, imageBanStore, nightVisionStore, reportStore,
-        modRequestStore,
+        modRequestStore, diamondLogStore,
     )
 
     fun flushDirty(): Int = all.count { it.flushIfDirty() }
@@ -220,6 +226,8 @@ class Diawars : JavaPlugin() {
             imageBanStore = ImageBanStore(this),
             nightVisionStore = NightVisionStore(this),
             reportStore = ReportStore(this),
+            reportShotStore = ReportShotStore(this),
+            diamondLogStore = DiamondLogStore(this),
             modRequestStore = ModRequestStore(this),
         )
 

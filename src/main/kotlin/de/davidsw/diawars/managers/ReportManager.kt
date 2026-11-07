@@ -42,8 +42,9 @@ import javax.imageio.ImageIO
  * </ul>
  *
  * <p>Screenshot upload reuses the regular chunked image pipeline tagged with
- * the {@code report} field (see [ImageListener]); the attachment is stored
- * under {@code reports/<id>.png} instead of the gallery. Admins review with
+ * the {@code report} field (see [ImageListener]); the attachment is stored as a
+ * PNG BLOB in the database ({@code report_shots}, was {@code reports/<id>.png})
+ * instead of the gallery. Admins review with
  * {@code /admin report list|view|shot|resolve}, where every report is marked
  * with its submission path; the screenshot is handed out as a map rendered by
  * [ReportShotRenderer].</p>
@@ -120,29 +121,20 @@ class ReportManager(private val plugin: Diawars) {
 
     fun reportsDir(): File = File(plugin.dataFolder, "reports")
 
-    private fun shotFile(id: String): File = File(reportsDir(), "$id.png")
+    private val shotStore get() = plugin.store.reportShotStore
 
     /**
      * Raw screenshot PNG for the admin mod viewer (see ImageManager
      * requestAdminShot). Ids come from the admin channel, so they are
      * strictly validated: report-id charset only and no path tricks.
      */
-    fun shotBytes(id: String): ByteArray? {
-        if (!id.matches(Regex("[A-Za-z0-9_-]{1,64}"))) return null
-        return try {
-            val f = shotFile(id)
-            if (f.isFile) f.readBytes() else null
-        } catch (_: Exception) {
-            null
-        }
-    }
+    fun shotBytes(id: String): ByteArray? = shotStore.load(id)
 
     /** Decoded 128x128 preview of the attached screenshot for map rendering. */
     fun loadShotImage(id: String): java.awt.image.BufferedImage? {
-        val f = shotFile(id)
-        if (!f.isFile) return null
+        val bytes = shotStore.load(id) ?: return null
         val decoded = try {
-            f.inputStream().use { ImageIO.read(it) }
+            ByteArrayInputStream(bytes).use { ImageIO.read(it) }
         } catch (_: Exception) {
             null
         } ?: return null
@@ -508,11 +500,13 @@ class ReportManager(private val plugin: Diawars) {
         }
 
         return try {
-            val target = shotFile(entry.id)
-            target.parentFile?.mkdirs()
-            ImageIO.write(decoded, "png", target)
+            // Re-encode so only a validated PNG reaches the database, exactly like
+            // the old ImageIO.write(file) did.
+            val png = java.io.ByteArrayOutputStream()
+            ImageIO.write(decoded, "png", png)
+            shotStore.save(entry.id, png.toByteArray())
             if (!store.setShot(entry.id)) {
-                target.delete()
+                shotStore.delete(entry.id)
                 return Result.Error("<red>An diesem Report hängt bereits ein Screenshot.</red>")
             }
             Result.Success("<green>✓ Screenshot an Report <gold>#${entry.id}</gold> angehängt!</green>")
@@ -615,7 +609,7 @@ class ReportManager(private val plugin: Diawars) {
      */
     fun giveShotMap(admin: Player, id: String): Result {
         val report = store.get(id) ?: return Result.Error("<red>Dieser Report existiert nicht!</red>")
-        if (!report.shot || !shotFile(id).isFile) {
+        if (!report.shot || !shotStore.contains(id)) {
             return Result.Error("<red>Dieser Report hat keinen Screenshot-Anhang!</red>")
         }
         val mapView = Bukkit.createMap(admin.world)
