@@ -399,7 +399,7 @@ class Diawars : JavaPlugin() {
      * disabled and [onEnable] stops before building any store).
      */
     private fun openDatabase(): Boolean {
-        database = SqliteDatabase(this, java.io.File(dataFolder, "data/diawars.db"))
+        database = SqliteDatabase(this, java.io.File(dataFolder, "diawars.db"))
         return try {
             database.open()
             true

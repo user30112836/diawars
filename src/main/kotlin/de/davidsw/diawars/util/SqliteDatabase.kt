@@ -39,7 +39,8 @@ internal fun PreparedStatement.bind(params: List<Any?>) {
 }
 
 /**
- * The plugin's single SQLite connection (`plugins/Diawars/data/diawars.db`).
+ * The plugin's single SQLite connection (`plugins/Diawars/diawars.db`, next to
+ * the plugin's YAML files).
  *
  * SQLite is a single-writer database, so one connection guarded by one lock is
  * both the simplest and the fastest setup here — no pool is needed. Reads only
